@@ -1,16 +1,19 @@
 name: "Jetracer"
 N: 20
-integrator_step: 0.2
+integrator_step: 0.1
+n_discs: 0
 
 verbose: false
 debug_visuals: false
 
 solver_settings:
-    iterations: 2 # 1
-    solver_type: SQP_RTI # SQP_RTI (default) or SQP
+  iterations: 6 #2 # 1
+  solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 20
 max_obstacles: 8
+obstacle_radius: 0.5
+robot_radius: 0.325
 braking_acceleration: 1.0
 
 contouring:
@@ -26,3 +29,6 @@ weights:
   rotational_velocity: 2. #0.05
 
 reference_velocity: 0.5
+
+
+
