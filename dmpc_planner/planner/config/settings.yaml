@@ -1,0 +1,28 @@
+name: "jackal"
+N: 20
+integrator_step: 0.2
+
+verbose: false
+debug_visuals: false
+
+solver_settings:
+    iterations: 2 # 1
+    solver_type: SQP_RTI # SQP_RTI (default) or SQP
+
+control_frequency: 20
+max_obstacles: 8
+braking_acceleration: 1.0
+
+contouring:
+  num_segments: 5
+
+decomp:
+  max_constraints: 16
+
+weights:
+  goal: 5.
+  velocity: 0.02
+  acceleration: 0.05
+  rotational_velocity: 2. #0.05
+
+reference_velocity: 0.5
