@@ -21,17 +21,17 @@ class DynamicsModel:
         self.params = None
         self.nx_integrate = None
 
-    def discrete_dynamics(self, z, p, settings, **kwargs):
-        params = settings["params"]
-        params.load(p)
-        self.load(z)
-        self.load_settings(settings)
+    # def discrete_dynamics(self, z, p, settings, **kwargs):
+    #     params = settings["params"]
+    #     params.load(p)
+    #     self.load(z)
+    #     self.load_settings(settings)
 
-        nx_integrate = self.nx if self.nx_integrate is None else self.nx_integrate
-        # integrated_states = forces_discrete_dynamics(z, p, self, settings, nx=nx_integrate, **kwargs)
+    #     nx_integrate = self.nx if self.nx_integrate is None else self.nx_integrate
+    #     # integrated_states = forces_discrete_dynamics(z, p, self, settings, nx=nx_integrate, **kwargs)
 
-        integrated_states = self.model_discrete_dynamics(z, integrated_states, **kwargs)
-        return integrated_states
+    #     integrated_states = self.model_discrete_dynamics(z, integrated_states, **kwargs)
+    #     return integrated_states
 
     def model_discrete_dynamics(self, z, integrated_states, **kwargs):
         return integrated_states
@@ -50,11 +50,8 @@ class DynamicsModel:
         return z
 
     def get_acados_dynamics(self):
-        self._x_dot = cd.SX.sym("x_dot", self.nx)
-
-        f_expl = numpy_to_casadi(self.continuous_model(self._z[self.nu :], self._z[: self.nu]))
-        f_impl = self._x_dot - f_expl
-        return f_expl, f_impl
+        f_expl = self.continuous_model(self._z[self.nu :], self._z[: self.nu])
+        return f_expl
 
     def get_x(self):
         return self._z[self.nu :]
@@ -145,53 +142,70 @@ class BicycleModel2ndOrder(DynamicsModel):
     def __init__(self):
         super().__init__()
         self.nu = 3
-        self.nx = 6
+        self.nx = 7
 
-        self.states = ["x", "y", "psi", "v", "delta", "spline"]
-        self.inputs = ["a", "w", "slack"]
+        self.states = ["x", "y", "theta", "vx", "vy" "w", "s"]
+        self.inputs = ["throttle", "delta", "slack"]
 
-        # Prius limits: https://github.com/oscardegroot/lmpcc/blob/prius/lmpcc_solver/scripts/systems.py
-        # w [-0.2, 0.2] | a [-1.0 1.0]
-        # w was 0.5
-        # delta was 0.45
+        self.lower_bound = []
+        self.upper_bound = []
 
-        # NOTE: the angle of the vehicle should not be limited to -pi, pi, as the solution will not shift when it is at the border!
-        # a was 3.0
-        self.lower_bound = [-3.0, -1.5, 0.0, -1.0e6, -1.0e6, -np.pi * 4, -0.01, -0.55, -1.0]
-        self.upper_bound = [3.0, 1.5, 1.0e2, 1.0e6, 1.0e6, np.pi * 4, 5.0, 0.55, 5000.0]
-
-    def motor_force(th,v):
+    def motor_force(throttle,v):
         a =  28.887779235839844
         b =  5.986172199249268
         c =  -0.15045104920864105
-        w = 0.5 * (np.tanh(100*(th+c))+1)
-        Fm =  (a - v * b) * w * (th+c)
+        w = 0.5 * (cd.tanh(100*(throttle+c))+1)
+        Fm =  (a - v * b) * w * (throttle+c)
         return Fm
 
     def friction(v):
         a =  1.7194761037826538
         b =  13.312559127807617
         c =  0.289848655462265
-        Ff = - a * np.tanh(b  * v) - v * c
+        Ff = - a * cd.tanh(b  * v) - v * c
         return Ff
+    
+    def steering_angle(steer_command):
+        a = -1.2053807
+        b = 0.38302866
+        c = 0.08739186
+        steer_angle = b * cd.tanh(a * (steer_command-c))
+        return steer_angle
     
     def continuous_model(self, x, u):
         
         th = u[2]
         st = u[1]
-        yaw = x[2]
+        theta = x[2]
         vx = x[3]
+
+        # Define constants for Jetracer
+        m = 1.6759806
+        l = 0.175
+        l_r = 0.54*l
 
         Fx_wheels = self.motor_force(th,vx) + self.friction(vx)
 
-        acc_x =  Fx_wheels / self.m_self # evaluate to acceleration
+        # Evaluate to acceleration TODO: Obtain mass parameter from somewhere
+        acc_x =  Fx_wheels / m
+        
+        # convert steering command to steering angle
+        steering_angle = self.steering_angle(st)
 
-        # convert steering to steering angle
-        steering_angle = self.steering_2_steering_angle(st,self.a_s_self,self.b_s_self,self.c_s_self,self.d_s_self,self.e_s_self)
         # evaluate lateral velocity and yaw rate
-        w = vx * np.tan(steering_angle) / (self.lr_self + self.lf_self) # angular velocity
-        vy = self.l_COM_self * w
+        w = vx * cd.tan(steering_angle) / l # angular velocity
+        vy = l_r * w
 
-        # assemble derivatives
-        xdot = self.produce_xdot(yaw,vx,vy,w,acc_x,0,0) # vy, acc y and acc w are 0 in this case
-        return xdot
+        xdot1 = vx * np.cos(theta) - vy * np.sin(theta)
+        xdot2 = vx * np.sin(theta) + vy * np.cos(theta)
+        xdot3 = w
+        xdot4 = acc_x  
+        xdot5 = 0 # vy dot is not used
+        xdot6 = 0 # w dot is not used
+
+        xdot = [xdot1,xdot2,xdot3,xdot4,xdot5,xdot6]
+
+        # v Simple s_dot approx taken from standard MPCC formulation
+        s_dot = vx
+
+        return cd.vertcat([*xdot, s_dot])
