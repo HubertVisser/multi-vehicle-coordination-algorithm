@@ -1,28 +1,21 @@
-cmake_minimum_required(VERSION 3.0.2)
-project(mpc_planner_py)
+cmake_minimum_required(VERSION 3.8)
+project(dmpc_planner)
 
-find_package(catkin REQUIRED COMPONENTS
-  rospy
-  guidance_planner
+# Use ament_python to manage Python-based packages
+find_package(ament_cmake REQUIRED)
+find_package(rclpy REQUIRED)  # Required to use rclpy (Python client library for ROS 2)
+
+# Install Python modules
+ament_python_install_package(${PROJECT_NAME})
+
+# Install Python scripts (nodes)
+install(PROGRAMS
+  src/dmpc_planner/jackalsimulator_mpc.py
+  DESTINATION lib/${PROJECT_NAME}
 )
 
-catkin_python_setup()
+# Export dependencies
+ament_export_dependencies(rclpy)
 
-catkin_package(
-)
-
-include_directories(
-
-  # include
-  ${catkin_INCLUDE_DIRS}
-)
-
-catkin_install_python(PROGRAMS
-  scripts/jackalsimulator_mpc.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-catkin_install_python(PROGRAMS
-  scripts/jackalsimulator_guidance_mpc.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+# Register package
+ament_package()

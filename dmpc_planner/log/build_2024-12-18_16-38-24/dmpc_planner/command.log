@@ -1,0 +1,2 @@
+Invoking command in '/home/hubert/dmpc_planner/dmpc_planner/build/dmpc_planner': /usr/bin/cmake /home/hubert/dmpc_planner/dmpc_planner -DCATKIN_INSTALL_INTO_PREFIX_ROOT=0 -DCATKIN_SYMLINK_INSTALL=ON -DCMAKE_INSTALL_PREFIX=/home/hubert/dmpc_planner/dmpc_planner/install/dmpc_planner
+Invoked command in '/home/hubert/dmpc_planner/dmpc_planner/build/dmpc_planner' returned '1': /usr/bin/cmake /home/hubert/dmpc_planner/dmpc_planner -DCATKIN_INSTALL_INTO_PREFIX_ROOT=0 -DCATKIN_SYMLINK_INSTALL=ON -DCMAKE_INSTALL_PREFIX=/home/hubert/dmpc_planner/dmpc_planner/install/dmpc_planner

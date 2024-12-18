@@ -1,0 +1,42 @@
+[0.000000] (-) TimerEvent: {}
+[0.000092] (dmpc_planner) JobQueued: {'identifier': 'dmpc_planner', 'dependencies': OrderedDict()}
+[0.000115] (dmpc_planner) JobStarted: {'identifier': 'dmpc_planner'}
+[0.004713] (dmpc_planner) JobProgress: {'identifier': 'dmpc_planner', 'progress': 'cmake'}
+[0.005202] (dmpc_planner) Command: {'cmd': ['/usr/bin/cmake', '/home/hubert/dmpc_planner/dmpc_planner', '-DCATKIN_INSTALL_INTO_PREFIX_ROOT=0', '-DCATKIN_SYMLINK_INSTALL=ON', '-DCMAKE_INSTALL_PREFIX=/home/hubert/dmpc_planner/dmpc_planner/install/dmpc_planner'], 'cwd': '/home/hubert/dmpc_planner/dmpc_planner/build/dmpc_planner', 'env': OrderedDict([('LANGUAGE', 'en_ZA:en'), ('USER', 'hubert'), ('XDG_SESSION_TYPE', 'wayland'), ('SHLVL', '1'), ('LD_LIBRARY_PATH', ':~/acados/lib'), ('ACADOS_SOURCE_DIR', '~/acados/'), ('HOME', '/home/hubert'), ('OLDPWD', '/home/hubert/dmpc_planner'), ('DESKTOP_SESSION', 'ubuntu'), ('PYENV_SHELL', 'bash'), ('GNOME_SHELL_SESSION_MODE', 'ubuntu'), ('GTK_MODULES', 'gail:atk-bridge'), ('SYSTEMD_EXEC_PID', '1125'), ('DBUS_SESSION_BUS_ADDRESS', 'unix:path=/run/user/1000/bus'), ('COLORTERM', 'truecolor'), ('IM_CONFIG_PHASE', '1'), ('WAYLAND_DISPLAY', 'wayland-0'), ('LOGNAME', 'hubert'), ('_', '/usr/bin/colcon'), ('XDG_SESSION_CLASS', 'user'), ('USERNAME', 'hubert'), ('TERM', 'xterm-256color'), ('GNOME_DESKTOP_SESSION_ID', 'this-is-deprecated'), ('PATH', '/home/hubert/.pyenv/shims:/home/hubert/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin'), ('SESSION_MANAGER', 'local/hubert-MacBookPro:@/tmp/.ICE-unix/1094,unix/hubert-MacBookPro:/tmp/.ICE-unix/1094'), ('XDG_MENU_PREFIX', 'gnome-'), ('GNOME_TERMINAL_SCREEN', '/org/gnome/Terminal/screen/0b490a29_877b_45d7_adf8_a17abc8090ee'), ('GNOME_SETUP_DISPLAY', ':1'), ('XDG_RUNTIME_DIR', '/run/user/1000'), ('DISPLAY', ':0'), ('LANG', 'en_US.UTF-8'), ('XDG_CURRENT_DESKTOP', 'ubuntu:GNOME'), ('XMODIFIERS', '@im=ibus'), ('XDG_SESSION_DESKTOP', 'ubuntu'), ('XAUTHORITY', '/run/user/1000/.mutter-Xwaylandauth.KZ96Y2'), ('GNOME_TERMINAL_SERVICE', ':1.697'), ('SSH_AGENT_LAUNCHER', 'gnome-keyring'), ('SSH_AUTH_SOCK', '/run/user/1000/keyring/ssh'), ('SHELL', '/bin/bash'), ('QT_ACCESSIBILITY', '1'), ('GDMSESSION', 'ubuntu'), ('QT_IM_MODULE', 'ibus'), ('PWD', '/home/hubert/dmpc_planner/dmpc_planner/build/dmpc_planner'), ('QT_QPA_PLATFORM', 'xcb'), ('LC_ALL', 'en_US.UTF-8'), ('XDG_CONFIG_DIRS', '/etc/xdg/xdg-ubuntu:/etc/xdg'), ('PYENV_ROOT', '/home/hubert/.pyenv'), ('XDG_DATA_DIRS', '/usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop'), ('COLCON', '1'), ('VTE_VERSION', '6800')]), 'shell': False}
+[0.050970] (dmpc_planner) StdoutLine: {'line': b'-- The C compiler identification is GNU 11.4.0\n'}
+[0.099374] (-) TimerEvent: {}
+[0.099883] (dmpc_planner) StdoutLine: {'line': b'-- The CXX compiler identification is GNU 11.4.0\n'}
+[0.106577] (dmpc_planner) StdoutLine: {'line': b'-- Detecting C compiler ABI info\n'}
+[0.166740] (dmpc_planner) StdoutLine: {'line': b'-- Detecting C compiler ABI info - done\n'}
+[0.174086] (dmpc_planner) StdoutLine: {'line': b'-- Check for working C compiler: /usr/bin/cc - skipped\n'}
+[0.174304] (dmpc_planner) StdoutLine: {'line': b'-- Detecting C compile features\n'}
+[0.174685] (dmpc_planner) StdoutLine: {'line': b'-- Detecting C compile features - done\n'}
+[0.177524] (dmpc_planner) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info\n'}
+[0.199470] (-) TimerEvent: {}
+[0.256831] (dmpc_planner) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info - done\n'}
+[0.263641] (dmpc_planner) StdoutLine: {'line': b'-- Check for working CXX compiler: /usr/bin/c++ - skipped\n'}
+[0.263881] (dmpc_planner) StdoutLine: {'line': b'-- Detecting CXX compile features\n'}
+[0.264299] (dmpc_planner) StdoutLine: {'line': b'-- Detecting CXX compile features - done\n'}
+[0.272989] (dmpc_planner) StderrLine: {'line': b'\x1b[31mCMake Error at CMakeLists.txt:5 (find_package):\n'}
+[0.273127] (dmpc_planner) StderrLine: {'line': b'  By not providing "Findament_cmake.cmake" in CMAKE_MODULE_PATH this project\n'}
+[0.273222] (dmpc_planner) StderrLine: {'line': b'  has asked CMake to find a package configuration file provided by\n'}
+[0.273303] (dmpc_planner) StderrLine: {'line': b'  "ament_cmake", but CMake did not find one.\n'}
+[0.273386] (dmpc_planner) StderrLine: {'line': b'\n'}
+[0.273466] (dmpc_planner) StderrLine: {'line': b'  Could not find a package configuration file provided by "ament_cmake" with\n'}
+[0.273549] (dmpc_planner) StderrLine: {'line': b'  any of the following names:\n'}
+[0.273631] (dmpc_planner) StderrLine: {'line': b'\n'}
+[0.273687] (dmpc_planner) StderrLine: {'line': b'    ament_cmakeConfig.cmake\n'}
+[0.273737] (dmpc_planner) StderrLine: {'line': b'    ament_cmake-config.cmake\n'}
+[0.273785] (dmpc_planner) StderrLine: {'line': b'\n'}
+[0.273833] (dmpc_planner) StderrLine: {'line': b'  Add the installation prefix of "ament_cmake" to CMAKE_PREFIX_PATH or set\n'}
+[0.273881] (dmpc_planner) StderrLine: {'line': b'  "ament_cmake_DIR" to a directory containing one of the above files.  If\n'}
+[0.273928] (dmpc_planner) StderrLine: {'line': b'  "ament_cmake" provides a separate development package or SDK, be sure it\n'}
+[0.273976] (dmpc_planner) StderrLine: {'line': b'  has been installed.\n'}
+[0.274068] (dmpc_planner) StderrLine: {'line': b'\n'}
+[0.274135] (dmpc_planner) StderrLine: {'line': b'\x1b[0m\n'}
+[0.274259] (dmpc_planner) StdoutLine: {'line': b'-- Configuring incomplete, errors occurred!\n'}
+[0.274349] (dmpc_planner) StdoutLine: {'line': b'See also "/home/hubert/dmpc_planner/dmpc_planner/build/dmpc_planner/CMakeFiles/CMakeOutput.log".\n'}
+[0.276103] (dmpc_planner) CommandEnded: {'returncode': 1}
+[0.293002] (dmpc_planner) JobEnded: {'identifier': 'dmpc_planner', 'rc': 1}
+[0.299586] (-) TimerEvent: {}
+[0.303463] (-) EventReactorShutdown: {}
