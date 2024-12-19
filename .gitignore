@@ -1,1 +1,18 @@
 /.DS_Store
+
+# ROS build files
+build/
+devel/
+install/
+log/
+
+# Python-specific files
+*.pyc
+__pycache__/
+
+# poetry files
+poetry.lock
+
+# Virtual environment
+.venv/
+venv/

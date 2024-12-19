@@ -1,0 +1,23 @@
+num parameters: 22
+spline_v0_a: 2
+spline_v0_b: 3
+spline_v0_c: 4
+spline_v0_d: 5
+spline_v1_a: 6
+spline_v1_b: 7
+spline_v1_c: 8
+spline_v1_d: 9
+spline_v2_a: 10
+spline_v2_b: 11
+spline_v2_c: 12
+spline_v2_d: 13
+spline_v3_a: 14
+spline_v3_b: 15
+spline_v3_c: 16
+spline_v3_d: 17
+spline_v4_a: 18
+spline_v4_b: 19
+spline_v4_c: 20
+spline_v4_d: 21
+steering: 1
+throttle: 0
