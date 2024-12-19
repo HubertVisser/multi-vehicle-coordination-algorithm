@@ -2,31 +2,26 @@
 
 import os, sys
 import pathlib
-
 import threading
 
 from helpers import get_solver_import_paths
 get_solver_import_paths()
 
-import rospy
-import numpy as np
-from copy import deepcopy
-import math
-
+import rclpy
+from rclpy.node import Node
 from std_msgs.msg import Int32, Float32, Empty
-import std_srvs.srv
 from nav_msgs.msg import Odometry, Path
-from geometry_msgs.msg import PoseStamped, Pose
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import PoseStamped, Pose, Twist
 from sensor_msgs.msg import Joy
-
 from robot_localization.srv import SetPose
+import std_srvs.srv
 
 from mpc_planner_msgs.msg import ObstacleArray
 from mpc_planner_msgs.msg import WeightArray
 
-import importlib
-import llm_generated
+import numpy as np
+from copy import deepcopy
+import math
 
 from solver_generator.util.files import load_settings
 from solver_generator.util.realtime_parameters import RealTimeParameters
@@ -40,8 +35,9 @@ from mpc_controller import MPCPlanner
 from ros_visuals import ROSMarkerPublisher
 from project_trajectory import project_trajectory_to_safety
 
-class ROSMPCPlanner:
+class ROSMPCPlanner(Node):
     def __init__(self):
+        super().__init__('dmpc_planner_node')
         self._settings = load_settings(package="mpc_planner_py")
         self._N = self._settings["N"]
         self._integrator_step = self._settings["integrator_step"]
