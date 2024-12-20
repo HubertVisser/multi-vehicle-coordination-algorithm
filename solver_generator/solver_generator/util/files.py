@@ -14,7 +14,7 @@ def get_current_package():
 
 
 def get_package_path(package_name):
-    return os.path.join(os.path.dirname(__file__), f"../../{package_name}")
+    return os.path.join(os.path.dirname(__file__), f"../../../{package_name}")
 
 
 def get_solver_package_path():
@@ -39,7 +39,7 @@ def load_settings(setting_file_name="settings", package=None):
     if package is None:
         path = load_settings_path(setting_file_name)
     else:
-        path = os.path.normpath(os.path.join(get_package_path(package), "../../../config", f"{setting_file_name}.yaml"))
+        path = os.path.normpath(os.path.join(get_package_path(package), "config", f"{setting_file_name}.yaml"))
     print(path)
     print_path("Settings", path, end="")
     with open(path, "r") as stream:

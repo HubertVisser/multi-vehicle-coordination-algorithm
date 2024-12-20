@@ -1,0 +1,8 @@
+# Clone the DMPC_planner repository
+RUN mkdir -p /home/dock_user/catkin_ws/src && \
+    cd /home/dock_user/catkin_ws/src && \
+    apt-get update && \
+    apt-get install -y git && \
+    git clone https://${GITHUB_TOKEN}@github.com/HubertVisser/DMPC_planner.git && \
+    cd DMPC_planner && \
+    pip install --no-cache-dir -r requirements.txt 

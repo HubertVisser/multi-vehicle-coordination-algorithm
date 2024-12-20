@@ -14,5 +14,8 @@ __pycache__/
 poetry.lock
 
 # Virtual environment
-.venv/
-venv/
+.dmpc-venv/
+dmpc-venv/
+
+# Solver files
+mpc_planner_solver/

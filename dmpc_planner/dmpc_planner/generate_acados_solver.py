@@ -1,6 +1,7 @@
 import os, sys
 import numpy as np
 
+
 from solver_generator.util.files import load_settings, get_current_package
 from solver_generator.control_modules import ModuleManager
 from solver_generator.generate_solver import generate_solver
