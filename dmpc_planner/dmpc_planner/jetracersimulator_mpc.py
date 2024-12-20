@@ -5,6 +5,7 @@ import pathlib
 import threading
 
 from helpers import get_solver_import_paths
+
 get_solver_import_paths()
 
 import rclpy
@@ -35,9 +36,10 @@ from mpc_controller import MPCPlanner
 from ros_visuals import ROSMarkerPublisher
 from project_trajectory import project_trajectory_to_safety
 
+
 class ROSMPCPlanner(Node):
     def __init__(self):
-        super().__init__('dmpc_planner_node')
+        super().__init__("dmpc_planner_node")
         self._settings = load_settings(package="mpc_planner_py")
         self._N = self._settings["N"]
         self._integrator_step = self._settings["integrator_step"]
@@ -50,17 +52,23 @@ class ROSMPCPlanner(Node):
         self._debug_visuals = self._settings["debug_visuals"]
 
         self._planner = MPCPlanner(self._settings)
-        self._planner.set_projection(lambda trajectory: self.project_to_safety(trajectory))
+        self._planner.set_projection(
+            lambda trajectory: self.project_to_safety(trajectory)
+        )
 
         self._spline_fitter = SplineFitter(self._settings)
         self._decomp_constraints = StaticConstraints(self._settings)
 
-        self._solver_settings = load_settings("solver_settings", package="mpc_planner_solver")
+        self._solver_settings = load_settings(
+            "solver_settings", package="mpc_planner_solver"
+        )
 
         # Tied to the solver
-        self._params = RealTimeParameters(self._settings, package="mpc_planner_solver")  # This maps to parameters used in the solver by name
+        self._params = RealTimeParameters(
+            self._settings, package="mpc_planner_solver"
+        )  # This maps to parameters used in the solver by name
         self._weights = llm_generated.get_weights()
-        n_states = self._solver_settings['nx']
+        n_states = self._solver_settings["nx"]
         self._state = np.zeros((n_states,))
 
         self._visuals = ROSMarkerPublisher("mpc_visuals", 100)
@@ -74,52 +82,92 @@ class ROSMPCPlanner(Node):
         self._obstacle_msg = None
         self._obst_lock = threading.Lock()
 
-        self._goal_x = 0.
-        self._goal_y = 0.
+        self._goal_x = 0.0
+        self._goal_y = 0.0
 
         self._enable_output = False
         self._mpc_feasible = False
 
-        self._timer = rospy.Timer(rospy.Duration(1. / self._settings["control_frequency"]), self.run)
-        
+        self._timer = rospy.Timer(
+            rospy.Duration(1.0 / self._settings["control_frequency"]), self.run
+        )
+
         self._callbacks_enabled = False
         self.initialize_publishers_and_subscribers()
         self._callbacks_enabled = True
 
         self.start_environment()
 
-
     def initialize_publishers_and_subscribers(self):
 
         # Sub
-        self._state_sub = rospy.Subscriber("robot_state", PoseStamped, self.state_pose_callback, queue_size=1)
-        self._obs_sub = rospy.Subscriber("/pedestrian_simulator/trajectory_predictions", ObstacleArray, self.obstacle_callback, queue_size=1)
-        self._goal_sub = rospy.Subscriber("/move_base_simple/goal", PoseStamped, lambda msg: self.goal_callback(msg), queue_size=1)
-        self._path_sub =  rospy.Subscriber("roadmap/reference", Path, lambda msg: self.path_callback(msg), queue_size=1)
-        
-        self._weight_sub = rospy.Subscriber("hey_robot/weights", WeightArray, lambda msg: self.weight_callback(msg), queue_size=1)
-        self._reload_solver_sub = rospy.Subscriber("/mpc/reload_solver", Empty, lambda msg: self.reload_solver_callback(msg), queue_size=1)
+        self._state_sub = rospy.Subscriber(
+            "robot_state", PoseStamped, self.state_pose_callback, queue_size=1
+        )
+        self._obs_sub = rospy.Subscriber(
+            "/pedestrian_simulator/trajectory_predictions",
+            ObstacleArray,
+            self.obstacle_callback,
+            queue_size=1,
+        )
+        self._goal_sub = rospy.Subscriber(
+            "/move_base_simple/goal",
+            PoseStamped,
+            lambda msg: self.goal_callback(msg),
+            queue_size=1,
+        )
+        self._path_sub = rospy.Subscriber(
+            "roadmap/reference", Path, lambda msg: self.path_callback(msg), queue_size=1
+        )
 
-        self._reset_sub = rospy.Subscriber("/jackal_socialsim/reset", Empty, lambda msg: self.reset(), queue_size=1)
+        self._weight_sub = rospy.Subscriber(
+            "hey_robot/weights",
+            WeightArray,
+            lambda msg: self.weight_callback(msg),
+            queue_size=1,
+        )
+        self._reload_solver_sub = rospy.Subscriber(
+            "/mpc/reload_solver",
+            Empty,
+            lambda msg: self.reload_solver_callback(msg),
+            queue_size=1,
+        )
+
+        self._reset_sub = rospy.Subscriber(
+            "/jackal_socialsim/reset", Empty, lambda msg: self.reset(), queue_size=1
+        )
 
         # Pub
         self._act_pub = rospy.Publisher("cmd_vel", Twist, queue_size=1)
-        self._ped_robot_state_pub = rospy.Publisher("/pedestrian_simulator/robot_state", PoseStamped, queue_size=1)
-        
+        self._ped_robot_state_pub = rospy.Publisher(
+            "/pedestrian_simulator/robot_state", PoseStamped, queue_size=1
+        )
+
         # Services
-        self._ped_horizon_pub = rospy.Publisher("/pedestrian_simulator/horizon", Int32, queue_size=1)
-        self._ped_integrator_step_pub = rospy.Publisher("/pedestrian_simulator/integrator_step", Float32, queue_size=1)
-        self._ped_clock_frequency_pub = rospy.Publisher("/pedestrian_simulator/clock_frequency", Float32, queue_size=1)
+        self._ped_horizon_pub = rospy.Publisher(
+            "/pedestrian_simulator/horizon", Int32, queue_size=1
+        )
+        self._ped_integrator_step_pub = rospy.Publisher(
+            "/pedestrian_simulator/integrator_step", Float32, queue_size=1
+        )
+        self._ped_clock_frequency_pub = rospy.Publisher(
+            "/pedestrian_simulator/clock_frequency", Float32, queue_size=1
+        )
 
-        self._reset_simulation_pub = rospy.Publisher("/lmpcc/reset_environment", Empty, queue_size=5)
-        self._reset_simulation_client = rospy.ServiceProxy('/gazebo/reset_world', std_srvs.srv.Empty)
-        self._reset_ekf_client = rospy.ServiceProxy('/set_pose', SetPose)
-
+        self._reset_simulation_pub = rospy.Publisher(
+            "/lmpcc/reset_environment", Empty, queue_size=5
+        )
+        self._reset_simulation_client = rospy.ServiceProxy(
+            "/gazebo/reset_world", std_srvs.srv.Empty
+        )
+        self._reset_ekf_client = rospy.ServiceProxy("/set_pose", SetPose)
 
     def start_environment(self):
         rospy.loginfo("Starting pedestrian simulator")
-        rospy.wait_for_service('/pedestrian_simulator/start')
-        self._ped_start_client = rospy.ServiceProxy('/pedestrian_simulator/start', std_srvs.srv.Empty)
+        rospy.wait_for_service("/pedestrian_simulator/start")
+        self._ped_start_client = rospy.ServiceProxy(
+            "/pedestrian_simulator/start", std_srvs.srv.Empty
+        )
 
         for i in range(20):
             horizon_msg = Int32()
@@ -162,7 +210,9 @@ class ROSMPCPlanner(Node):
         # self._params.check_for_nan()
 
         mpc_timer = Timer("MPC")
-        output, self._mpc_feasible, self._trajectory = self._planner.solve(self._state, self._params.get_solver_params())
+        output, self._mpc_feasible, self._trajectory = self._planner.solve(
+            self._state, self._params.get_solver_params()
+        )
         del mpc_timer
 
         if self._verbose:
@@ -175,11 +225,17 @@ class ROSMPCPlanner(Node):
     def set_parameters(self):
         splines = None
         if self._path_msg is not None and self._spline_fitter.ready():
-            splines = self._spline_fitter.get_active_splines(np.array([self._state[0], self._state[1]]))
-            self._state[-1] = self._spline_fitter.find_closest_s(np.array([self._state[0], self._state[1]]))
+            splines = self._spline_fitter.get_active_splines(
+                np.array([self._state[0], self._state[1]])
+            )
+            self._state[-1] = self._spline_fitter.find_closest_s(
+                np.array([self._state[0], self._state[1]])
+            )
 
-        self._decomp_constraints.call(self._state, self._planner.get_model(), self._params, self._mpc_feasible)
-    
+        self._decomp_constraints.call(
+            self._state, self._planner.get_model(), self._params, self._mpc_feasible
+        )
+
         # Set parameters for all k
         for k in range(self._N + 1):
 
@@ -219,19 +275,25 @@ class ROSMPCPlanner(Node):
                 for j in range(min(self._max_obstacles, num_obs)):
                     obs = obstacles[j]
 
-                    if k == 0: #or k == self._N:
-                        self._params.set(k, f"ellipsoid_obst_{j}_x", self._state[0] + 100.)
-                        self._params.set(k, f"ellipsoid_obst_{j}_y", self._state[1] + 100.)
+                    if k == 0:  # or k == self._N:
+                        self._params.set(
+                            k, f"ellipsoid_obst_{j}_x", self._state[0] + 100.0
+                        )
+                        self._params.set(
+                            k, f"ellipsoid_obst_{j}_y", self._state[1] + 100.0
+                        )
                         self._params.set(k, f"ellipsoid_obst_{j}_chi", 1.0)
-                        self._params.set(k, f"ellipsoid_obst_{j}_psi", 0.)
+                        self._params.set(k, f"ellipsoid_obst_{j}_psi", 0.0)
                         self._params.set(k, f"ellipsoid_obst_{j}_r", 0.1)
                         self._params.set(k, f"ellipsoid_obst_{j}_major", 0.0)
                         self._params.set(k, f"ellipsoid_obst_{j}_minor", 0.0)
                         continue
 
                     # Constant velocity prediction
-                    predicted_pose = obs.gaussians[0].mean.poses[k-1].pose
-                    obs_predicted_pos = np.array([predicted_pose.position.x, predicted_pose.position.y])
+                    predicted_pose = obs.gaussians[0].mean.poses[k - 1].pose
+                    obs_predicted_pos = np.array(
+                        [predicted_pose.position.x, predicted_pose.position.y]
+                    )
 
                     yaw = quaternion_to_yaw(predicted_pose.orientation)
 
@@ -242,13 +304,13 @@ class ROSMPCPlanner(Node):
                     self._params.set(k, f"ellipsoid_obst_{j}_major", 0.0)
                     self._params.set(k, f"ellipsoid_obst_{j}_minor", 0.0)
                     self._params.set(k, f"ellipsoid_obst_{j}_r", self._obstacle_radius)
-            
+
                 # Dummies
                 for j in range(num_obs, self._max_obstacles):
-                    self._params.set(k, f"ellipsoid_obst_{j}_x", self._state[0] + 100.)
-                    self._params.set(k, f"ellipsoid_obst_{j}_y", self._state[1] + 100.)
+                    self._params.set(k, f"ellipsoid_obst_{j}_x", self._state[0] + 100.0)
+                    self._params.set(k, f"ellipsoid_obst_{j}_y", self._state[1] + 100.0)
                     self._params.set(k, f"ellipsoid_obst_{j}_chi", 1.0)
-                    self._params.set(k, f"ellipsoid_obst_{j}_psi", 0.)
+                    self._params.set(k, f"ellipsoid_obst_{j}_psi", 0.0)
                     self._params.set(k, f"ellipsoid_obst_{j}_r", 0.1)
                     self._params.set(k, f"ellipsoid_obst_{j}_major", 0.0)
                     self._params.set(k, f"ellipsoid_obst_{j}_minor", 0.0)
@@ -257,29 +319,31 @@ class ROSMPCPlanner(Node):
         # Projects a trajectory to safety from the obstacles using Douglas Rachford projection
         # Trajectory is assumed to be nx x N
         N = trajectory.shape[1]
-        
+
         if self._obstacle_msg is None:
             return trajectory
-        
+
         for k in range(N):
             start_pose = deepcopy(trajectory[:2, k])
             for idx, obs in enumerate(self._obstacle_msg.obstacles):
-                predicted_pose = obs.gaussians[0].mean.poses[k-1].pose
-                obs_predicted_pos = np.array([predicted_pose.position.x, predicted_pose.position.y])
-            
+                predicted_pose = obs.gaussians[0].mean.poses[k - 1].pose
+                obs_predicted_pos = np.array(
+                    [predicted_pose.position.x, predicted_pose.position.y]
+                )
+
                 if idx == 0:
                     anchor = obs_predicted_pos
-                    continue # We do not need to project for this obstacle
+                    continue  # We do not need to project for this obstacle
 
                 project_trajectory_to_safety(
-                    trajectory[:2, k], 
-                    obs_predicted_pos, 
-                    anchor, 
-                    self._obstacle_radius + self._robot_radius + 0.1, 
-                    start_pose)
-        
-        return trajectory
+                    trajectory[:2, k],
+                    obs_predicted_pos,
+                    anchor,
+                    self._obstacle_radius + self._robot_radius + 0.1,
+                    start_pose,
+                )
 
+        return trajectory
 
     def publish_action(self, output, exit_flag):
         sent_cmd = Twist()
@@ -287,14 +351,17 @@ class ROSMPCPlanner(Node):
         if not self._mpc_feasible or not self._enable_output:
             if not self._mpc_feasible:
                 rospy.logwarn_throttle(1, "Infeasible MPC. Braking!")
-                sent_cmd.linear.x = max(0., self._state[3] - self._braking_acceleration * self._integrator_step)
+                sent_cmd.linear.x = max(
+                    0.0,
+                    self._state[3] - self._braking_acceleration * self._integrator_step,
+                )
             else:
                 rospy.logwarn_throttle(1, "Output is disabled. Sending zero velocity!")
-                sent_cmd.linear.x = 0.
-            sent_cmd.angular.z = 0.
+                sent_cmd.linear.x = 0.0
+            sent_cmd.angular.z = 0.0
         else:
-            sent_cmd.linear.x = output['v']
-            sent_cmd.angular.z = output['w']
+            sent_cmd.linear.x = output["v"]
+            sent_cmd.angular.z = output["w"]
             rospy.loginfo_throttle(1000, "MPC is driving")
         self._act_pub.publish(sent_cmd)
 
@@ -313,13 +380,19 @@ class ROSMPCPlanner(Node):
         self._timer.shutdown()
         self._planner.init_solver()
 
-        self._solver_settings = load_settings("solver_settings", package="mpc_planner_solver")
-        self._params = RealTimeParameters(self._settings, package="mpc_planner_solver")  # This maps to parameters used in the solver by name
-        n_states = self._solver_settings['nx']
+        self._solver_settings = load_settings(
+            "solver_settings", package="mpc_planner_solver"
+        )
+        self._params = RealTimeParameters(
+            self._settings, package="mpc_planner_solver"
+        )  # This maps to parameters used in the solver by name
+        n_states = self._solver_settings["nx"]
         self._state = np.zeros((n_states,))
         self._trajectory = None
 
-        self._timer = rospy.Timer(rospy.Duration(1. / self._settings["control_frequency"]), self.run)
+        self._timer = rospy.Timer(
+            rospy.Duration(1.0 / self._settings["control_frequency"]), self.run
+        )
         self._callbacks_enabled = True
 
     def weight_callback(self, msg):
@@ -354,16 +427,24 @@ class ROSMPCPlanner(Node):
             obs_timer = Timer("obstacle callback")
 
             self._obstacle_msg = msg
-            sorted_obstacles = sorted(self._obstacle_msg.obstacles, 
-                                    key=lambda obs: np.linalg.norm(
-                                        np.array([obs.pose.position.x, obs.pose.position.y]) -\
-                                        np.array([self._state[0], self._state[1]])))
+            sorted_obstacles = sorted(
+                self._obstacle_msg.obstacles,
+                key=lambda obs: np.linalg.norm(
+                    np.array([obs.pose.position.x, obs.pose.position.y])
+                    - np.array([self._state[0], self._state[1]])
+                ),
+            )
 
             self._obstacle_msg.obstacles = sorted_obstacles
 
-
     def goal_callback(self, msg):
-        if np.linalg.norm(np.array([msg.pose.position.x, msg.pose.position.y]) - np.array([self._goal_x, self._goal_y])) > 0.01:
+        if (
+            np.linalg.norm(
+                np.array([msg.pose.position.x, msg.pose.position.y])
+                - np.array([self._goal_x, self._goal_y])
+            )
+            > 0.01
+        ):
             print(f"New Goal Received ({msg.pose.position.x}, {msg.pose.position.y})")
         self._goal_msg = msg.pose
         self._goal_x = self._goal_msg.position.x
@@ -378,7 +459,6 @@ class ROSMPCPlanner(Node):
         self._path_msg = msg
         self._spline_fitter.fit_path(msg)
         self.plot_path()
-
 
     def visualize(self):
         if self._state_msg is not None:
@@ -412,7 +492,7 @@ class ROSMPCPlanner(Node):
                 pose.position.y = self._planner.get_model().get(k, "y")
                 cylinder.add_marker(deepcopy(pose))
 
-        plot_obstacles = False # Slows down the MPC!
+        plot_obstacles = False  # Slows down the MPC!
         if self._obstacle_msg is not None and plot_obstacles:
             line = self._visuals.get_line()
             line.set_scale(0.1)
@@ -424,8 +504,10 @@ class ROSMPCPlanner(Node):
                 except:
                     break
                 for k in range(0, self._N - 1, 5):
-                    line.add_line_from_poses(obs.gaussians[0].mean.poses[k].pose,
-                                            obs.gaussians[0].mean.poses[k+1].pose)
+                    line.add_line_from_poses(
+                        obs.gaussians[0].mean.poses[k].pose,
+                        obs.gaussians[0].mean.poses[k + 1].pose,
+                    )
         self._visuals.publish()
 
         if self._debug_visuals:
@@ -440,7 +522,6 @@ class ROSMPCPlanner(Node):
 
             self.plot_warmstart()
             self._debug_visuals.publish()
-
 
     # For debugging purposes
     def plot_warmstart(self):
@@ -457,16 +538,16 @@ class ROSMPCPlanner(Node):
             cylinder.add_marker(deepcopy(pose))
 
     def plot_path(self):
-        dist = 2.
+        dist = 2.0
         if self._path_msg is not None:
             line = self._path_visual.get_line()
             line.set_scale(0.1)
             line.set_color(1, alpha=1.0)
-            
+
             points = self._path_visual.get_cube()
             points.set_color(3)
             points.set_scale(0.3, 0.3, 0.3)
-            s = 0.
+            s = 0.0
             for i in range(50):
                 a = self._spline_fitter.evaluate(s)
                 b = self._spline_fitter.evaluate(s + dist)
@@ -477,10 +558,9 @@ class ROSMPCPlanner(Node):
                 pose_b = Pose()
                 pose_b.position.x = b[0]
                 pose_b.position.y = b[1]
-                s += dist 
+                s += dist
                 line.add_line_from_poses(pose_a, pose_b)
         self._path_visual.publish()
-
 
     def print_stats(self):
         self._planner.print_stats()
@@ -488,7 +568,7 @@ class ROSMPCPlanner(Node):
 
 
 if __name__ == "__main__":
-    rospy.loginfo('Initializing MPC')
+    rospy.loginfo("Initializing MPC")
     rospy.init_node("jackalsimulator_planner", anonymous=False)
 
     mpc = ROSMPCPlanner()

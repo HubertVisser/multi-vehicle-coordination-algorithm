@@ -8,6 +8,7 @@ from solver_generator.generate_solver import generate_solver
 
 # Import modules here from mpc_planner_modules
 from mpc_planner_modules.mpc_base import MPCBaseModule
+
 # from contouring import ContouringModule
 # from goal_module import GoalModule
 from mpc_planner_modules.path_reference_velocity import PathReferenceVelocityModule
@@ -27,10 +28,14 @@ def configuration_basic(settings):
 
     # modules.add_module(GoalModule(settings))
     # modules.add_module(ContouringModule(settings, num_segments=settings["contouring"]["num_segments"]))
-    modules.add_module(PathReferenceVelocityModule(settings, num_segments=settings["contouring"]["num_segments"]))
-
+    modules.add_module(
+        PathReferenceVelocityModule(
+            settings, num_segments=settings["contouring"]["num_segments"]
+        )
+    )
 
     return model, modules
+
 
 def generate():
     settings = load_settings(package="dmpc_planner")
@@ -40,5 +45,6 @@ def generate():
 
     solver, simulator = generate_solver(modules, model, settings)
     return solver, simulator
+
 
 generate()

@@ -1,7 +1,7 @@
 {
     "acados_include_path": "/home/hubert/acados/include",
     "acados_lib_path": "/home/hubert/acados/lib",
-    "code_export_directory": "/home/hubert/ros2_ws/src/dmpc_planner/solver_generator/acados/Solver",
+    "code_export_directory": "/home/dock_user/catkin_ws/src/DMPC_planner/solver_generator/acados/Solver",
     "constraints": {
         "C": [],
         "C_e": [],
@@ -181,8 +181,8 @@
         "zu_e": []
     },
     "cython_include_dirs": [
-        "/home/hubert/ros2_ws/src/dmpc_planner/dmpc-venv/lib/python3.8/site-packages/numpy/core/include",
-        "/home/hubert/.pyenv/versions/3.8.10/include/python3.8"
+        "/home/dock_user/.local/lib/python3.8/site-packages/numpy/core/include",
+        "/usr/include/python3.8"
     ],
     "dims": {
         "N": 20,
@@ -241,7 +241,7 @@
         "Solver_cost/Solver_cost_ext_cost_fun_jac_hess.c",
         "Solver_cost/Solver_cost_ext_cost_fun_jac.c"
     ],
-    "json_file": "/home/hubert/ros2_ws/src/dmpc_planner/solver_generator/solver_generator/acados/Solver/Solver.json",
+    "json_file": "/home/dock_user/catkin_ws/src/DMPC_planner/solver_generator/solver_generator/acados/Solver/Solver.json",
     "model": {
         "con_h_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "con_h_expr_0": [],
