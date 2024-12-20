@@ -1,8 +1,10 @@
 # Use the official ROS Noetic base image
 FROM ros:noetic-robot
 
-# Create a new user
-RUN useradd -ms /bin/bash dock_user
+# Create a new user and give sudo permissions
+RUN useradd -ms /bin/bash dock_user && \
+    usermod -aG sudo dock_user && \
+    echo "dock_user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Set the user to the newly created user
 USER root
@@ -45,3 +47,4 @@ RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
 RUN echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/home/hubert/acados/lib" >> ~/.bashrc && \
     echo "export ACADOS_SOURCE_DIR=/home/hubert/acados/" >> ~/.bashrc
 
+ENTRYPOINT [ "/bin/bash" ]
