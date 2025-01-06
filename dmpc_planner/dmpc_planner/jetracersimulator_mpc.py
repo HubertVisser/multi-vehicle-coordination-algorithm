@@ -8,8 +8,7 @@ from helpers import get_solver_import_paths
 
 get_solver_import_paths()
 
-import rclpy
-from rclpy.node import Node
+import rospy
 from std_msgs.msg import Int32, Float32, Empty
 from nav_msgs.msg import Odometry, Path
 from geometry_msgs.msg import PoseStamped, Pose, Twist
@@ -27,7 +26,7 @@ import math
 from solver_generator.util.files import load_settings
 from solver_generator.util.realtime_parameters import RealTimeParameters
 from solver_generator.util.convertion import quaternion_to_yaw
-from solver_generator.util.logging import print_value
+from solver_generator.util.logging import print_value 
 from .timer import Timer
 
 from contouring import SplineFitter
@@ -37,7 +36,7 @@ from ros_visuals import ROSMarkerPublisher
 from project_trajectory import project_trajectory_to_safety
 
 
-class ROSMPCPlanner(Node):
+class ROSMPCPlanner:
     def __init__(self):
         super().__init__("dmpc_planner_node")
         self._settings = load_settings(package="mpc_planner_py")

@@ -16,6 +16,8 @@ poetry.lock
 # Virtual environment
 .dmpc-venv/
 dmpc-venv/
+.venv/
+venv/
 
 # Solver files
 mpc_planner_solver/
