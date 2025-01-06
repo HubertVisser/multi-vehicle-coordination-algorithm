@@ -14,7 +14,7 @@ def get_current_package():
 
 
 def get_package_path(package_name):
-    return os.path.join(os.path.dirname(__file__), f"../../../{package_name}")
+    return os.path.join(os.getcwd(), f"{package_name}")
 
 
 def get_solver_package_path():
@@ -28,7 +28,7 @@ def save_config_path():
 
 
 def load_config_path():
-    return os.path.join(get_base_path(), "../../../config")
+    return os.path.join(get_base_path(), "../config")
 
 
 def load_settings_path(setting_file_name="settings"):
@@ -49,7 +49,7 @@ def load_settings(setting_file_name="settings", package=None):
 
 
 def load_test_settings(setting_file_name="settings"):
-    path = f"{get_package_path('mpc_planner_jackalsimulator')}/config/{setting_file_name}.yaml"
+    path = f"{get_package_path('dmpc_planner')}/config/{setting_file_name}.yaml"
     print_path("Settings", path, end="")
     with open(path, "r") as stream:
         settings = yaml.safe_load(stream)

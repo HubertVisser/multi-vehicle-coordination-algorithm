@@ -39,7 +39,7 @@ from project_trajectory import project_trajectory_to_safety
 class ROSMPCPlanner:
     def __init__(self):
         super().__init__("dmpc_planner_node")
-        self._settings = load_settings(package="mpc_planner_py")
+        self._settings = load_settings(package="dmpc_planner")
         self._N = self._settings["N"]
         self._integrator_step = self._settings["integrator_step"]
         self._max_obstacles = self._settings["max_obstacles"]
