@@ -20,7 +20,7 @@ def create_acados_model(settings, model, modules):
     # Create an acados ocp model
     acados_model = AcadosModel()
     acados_model.name = solver_name(settings)
-
+    
     # Dynamics
     z = model.acados_symbolics()
     dyn_f_expl = model.get_acados_dynamics()
