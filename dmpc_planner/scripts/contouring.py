@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# import rclpy
+import rospy
 from nav_msgs.msg import Path
 from scipy.interpolate import CubicSpline
 import numpy as np
@@ -10,15 +10,13 @@ class SplineFitter:
         self._splines = []
         self._num_segments = settings["contouring"]["num_segments"]
         self._closest_s = None
-        # rclpy.init_node('spline_fitter', anonymous=True)
-        # rclpy.Subscriber('/reference_path', Path, self.path_callback)
-        # rclpy.spin()
-        self.logger = rclpy.logging.get_logger('global_logger')
+        # rospy.init_node('spline_fitter', anonymous=True)
+        # rospy.Subscriber('/reference_path', Path, self.path_callback)
+        # rospy.spin()
 
     def fit_path(self, path_msg):
         if not path_msg.poses:
-            print("Received empty path")
-            # self.logger.warn("Received empty path")
+            rospy.logwarn("Received empty path")
             return
 
         x = []
@@ -28,8 +26,7 @@ class SplineFitter:
             y.append(pose.pose.position.y)
 
         if len(x) < 2:
-            # self.logger.warn("Not enough points to fit splines")
-            print("Not enough points to fit splines")
+            rospy.logwarn("Not enough points to fit splines")
             return
 
         self.fit_splines(x, y)
@@ -74,7 +71,7 @@ class SplineFitter:
 
     def log_splines(self):
         for i, spline in enumerate(self._splines):
-            rclpy.loginfo("Spline %d: s = %.2f, a_x = %.2f, b_x = %.2f, c_x = %.2f, d_x = %.2f, a_y = %.2f, b_y = %.2f, c_y = %.2f, d_y = %.2f" % (
+            rospy.loginfo("Spline %d: s = %.2f, a_x = %.2f, b_x = %.2f, c_x = %.2f, d_x = %.2f, a_y = %.2f, b_y = %.2f, c_y = %.2f, d_y = %.2f" % (
                 i, spline['s'], spline['a_x'], spline['b_x'], spline['c_x'], spline['d_x'], spline['a_y'], spline['b_y'], spline['c_y'], spline['d_y']))
             
 
@@ -99,8 +96,7 @@ class SplineFitter:
 
     def evaluate_and_get_spline_index(self, s):
         if not self._splines:
-            # self.logger.warn("Splines have not been computed yet")
-            print("Splines have not been computed yet")
+            rospy.logwarn("Splines have not been computed yet")
             return None, None, None
 
         # Find the correct spline segment for the given s
@@ -129,8 +125,7 @@ class SplineFitter:
 
     def find_closest_s(self, point, tol=1e-5):
         if not self._splines:
-            # self.logger.warn("Splines have not been computed yet")
-            print("Splines have not been computed yet")
+            rospy.logwarn("Splines have not been computed yet")
             return None
 
         # Total path length

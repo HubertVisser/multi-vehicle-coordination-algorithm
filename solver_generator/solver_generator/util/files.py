@@ -66,7 +66,7 @@ def solver_path(settings):
 
 
 def default_acados_solver_path(settings):
-    return os.path.join(get_package_path("solver_generator"), f"acados")
+    return os.path.join(os.getcwd(), f"acados")
 
 
 def acados_solver_path(settings):

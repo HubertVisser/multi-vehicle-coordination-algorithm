@@ -1,9 +1,15 @@
 import os, sys
 
+import pathlib
+path = pathlib.Path(__file__).parent.resolve()
+sys.path.append(os.path.join(path))
+
+acados_path = os.path.join(path, "..", "..", "mpc_planner_solver", "acados", "solver")
+
 import numpy as np
 import math
 
-import generate_system_solver
+import generate_jetracer_solver
 from acados_template import AcadosModel
 from acados_template import AcadosOcp, AcadosOcpSolver, AcadosSimSolver
 
@@ -11,7 +17,7 @@ from .timer import Timer
 from solver_generator.util.files import solver_path, load_settings
 
 from solver_generator.util.logging import print_warning, print_value, print_success, TimeTracker, print_header
-from solver_generator.util.realtime_parameters import ForcesRealTimeModel, AcadosRealTimeModel
+from solver_generator.util.realtime_parameters import AcadosRealTimeModel
 
 
 class MPCPlanner:
@@ -24,36 +30,12 @@ class MPCPlanner:
 
         self._projection_func = lambda trajectory: trajectory # No projection
 
-        self.init_solver()
+        self.init_acados_solver()
     
         self._mpc_feasible = False
         self.time_tracker = TimeTracker(self._settings["solver_settings"]["solver"])
 
         print_header("Starting MPC")
-
-    def init_solver(self):
-        if self._settings["solver_settings"]["solver"] == "forces":
-            self.init_forces_solver()
-        elif self._settings["solver_settings"]["solver"] == "acados":
-            self.init_acados_solver()
-        else:
-            raise IOError("Unknown solver specified in settings.yaml (should be 'acados' or 'forces')")
-
-    def init_forces_solver(self):
-        import forcespro.nlp
-
-        solver_file = solver_path(self._settings)
-        if not os.path.isdir(solver_file):
-            raise IOError(f"Solver {solver_file} does not exist")
-        try:
-            print("Loading solver %s" % solver_file)
-            self._solver = forcespro.nlp.Solver.from_directory(solver_file)
-            self._simulator = self._solver.dynamics
-        except Exception as e:
-            print("FAILED TO LOAD SOLVER")
-            raise e
-
-        self._model = ForcesRealTimeModel(self._settings, self._solver_settings)
 
     def init_acados_solver(self):
         # The generation software
@@ -62,7 +44,7 @@ class MPCPlanner:
         # if hasattr(self, "_mpc_x_plan"):
             # del self._mpc_x_plan, self._mpc_u_plan
 
-        self._solver, self._simulator = generate_system_solver.generate()
+        self._solver, self._simulator = generate_jetracer_solver.generate()
         self._solver_settings = load_settings("solver_settings", package="mpc_planner_solver")
 
         # acados_ocp = AcadosOcp(acados_path=acados_path)
@@ -115,10 +97,8 @@ class MPCPlanner:
             self._solver.reset(reset_qp_solver_mem=1)
             self._solver.options_set('warm_start_first_qp', False)
 
-        if self._settings["solver_settings"]["solver"] == "forces":
-            return self.solve_forces(xinit, p)
-        if self._settings["solver_settings"]["solver"] == "acados":
-            return self.solve_acados(xinit, p)
+   
+        return self.solve_acados(xinit, p)
 
     def solve_acados(self, xinit, p):
         try:
@@ -168,42 +148,6 @@ class MPCPlanner:
 
     def get_cost_acados(self):
         return self._solver.get_cost()
-
-    def solve_forces(self, xinit, p):
-        """
-        FORCES
-        """
-        # set initial condition
-        # x0 = np.transpose(np.tile(x0i, (1, self._N)))
-        # x0i = np.zeros((self._solver_settings["nvar"],))
-
-        x0 = np.concatenate([self._u_traj_init, self._x_traj_init])
-
-        problem = {"x0": x0, "xinit": xinit, "all_parameters": p}
-
-        # Time to solve the NLP!
-        forces_output, exitflag, info = self._solver.solve(problem)
-
-        # Make sure the solver has exited properly.
-        output = dict()
-        if exitflag != 1:
-            print_warning(f"Optimization was infeasible (exitflag = {exitflag})")
-            self.set_infeasible(output)
-            return output, False, []
-
-        self._mpc_feasible = True
-        self._model.load(forces_output)
-
-        output["v"] = self._model.get(1, "v")
-        output["a"] = self._model.get(0, "a")
-        output["w"] = self._model.get(0, "w")
-
-        # Save the trajectory
-        self._prev_trajectory = self._model.get_trajectory(forces_output, self._mpc_x_plan, self._mpc_u_plan)
-
-        self.time_tracker.add(info.solvetime*1000.)
-
-        return output, exitflag, self._prev_trajectory
 
     def set_infeasible(self, output):
         self._mpc_feasible = False

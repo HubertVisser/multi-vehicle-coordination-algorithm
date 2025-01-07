@@ -177,11 +177,13 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver.warm_start_first_qp = 0
 
     # code generation options
-    ocp.code_export_directory = f"{os.path.dirname(os.path.abspath(__file__))}/../acados/{model_acados.name}"
+    # ocp.code_export_directory = f"{os.path.dirname(os.path.abspath(__file__))}/../acados/{model_acados.name}"
+    ocp.code_export_directory = os.path.join(os.getcwd(), "acados", model_acados.name)
     ocp.solver_options.print_level = 0
 
     # Generate the solver
-    json_file_dir = f"{os.path.dirname(os.path.abspath(__file__))}/acados/{model_acados.name}/"
+    json_file_dir = os.path.join(os.getcwd(), "acados", model_acados.name)
+    print(json_file_dir)
     json_file_name = json_file_dir + f"{model_acados.name}.json"
     os.makedirs(json_file_dir, exist_ok=True)
 
