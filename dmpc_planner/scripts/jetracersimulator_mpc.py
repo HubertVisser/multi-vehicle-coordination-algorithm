@@ -55,7 +55,7 @@ class ROSMPCPlanner:
         )
 
         self._spline_fitter = SplineFitter(self._settings)
-        self._decomp_constraints = StaticConstraints(self._settings)
+        # self._decomp_constraints = StaticConstraints(self._settings)
 
         self._solver_settings = load_settings(
             "solver_settings", package="mpc_planner_solver"
@@ -65,7 +65,7 @@ class ROSMPCPlanner:
         self._params = RealTimeParameters(
             self._settings, package="mpc_planner_solver"
         )  # This maps to parameters used in the solver by name
-        self._weights = llm_generated.get_weights()
+        self._weights = self._settings["weights"]
         n_states = self._solver_settings["nx"]
         self._state = np.zeros((n_states,))
 
@@ -230,9 +230,9 @@ class ROSMPCPlanner:
                 np.array([self._state[0], self._state[1]])
             )
 
-        self._decomp_constraints.call(
-            self._state, self._planner.get_model(), self._params, self._mpc_feasible
-        )
+        # self._decomp_constraints.call(
+        #     self._state, self._planner.get_model(), self._params, self._mpc_feasible
+        # )
 
         # Set parameters for all k
         for k in range(self._N + 1):
@@ -562,7 +562,7 @@ class ROSMPCPlanner:
 
     def print_stats(self):
         self._planner.print_stats()
-        self._decomp_constraints.print_stats()
+        # self._decomp_constraints.print_stats()
 
 
 if __name__ == "__main__":
