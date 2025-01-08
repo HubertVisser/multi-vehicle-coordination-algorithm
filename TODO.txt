@@ -1,9 +1,5 @@
 TODO:
-- [ ] Implement path planning algorithm
-- [ ] Test the planner with different scenarios
-- [ ] Optimize the performance of the planner
-- [ ] Write documentation for the planner
-- [ ] Create unit tests for the planner
+- [ ] Implement the car_number in the settings file
 
 --DART:--
 rospy.Subscriber('steering_' + str(car_number), Float32, self.callback_steering)

@@ -24,7 +24,7 @@ decomp:
 
 weights:
   goal: 5.
-  velocity: 0.02
+  velocity: 1
   throttle: 0.1
   steering: 2. #0.05
 

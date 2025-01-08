@@ -100,65 +100,66 @@ class ROSMPCPlanner:
 
         # Sub
         self._state_sub = rospy.Subscriber(
-            "robot_state", PoseStamped, self.state_pose_callback, queue_size=1
+            "vicon/jetracer1", PoseStamped, self.state_pose_callback, queue_size=1
         )
-        self._obs_sub = rospy.Subscriber(
-            "/pedestrian_simulator/trajectory_predictions",
-            ObstacleArray,
-            self.obstacle_callback,
-            queue_size=1,
-        )
-        self._goal_sub = rospy.Subscriber(
-            "/move_base_simple/goal",
-            PoseStamped,
-            lambda msg: self.goal_callback(msg),
-            queue_size=1,
-        )
-        self._path_sub = rospy.Subscriber(
-            "roadmap/reference", Path, lambda msg: self.path_callback(msg), queue_size=1
-        )
+        # self._obs_sub = rospy.Subscriber(
+        #     "/pedestrian_simulator/trajectory_predictions",
+        #     ObstacleArray,
+        #     self.obstacle_callback,
+        #     queue_size=1,
+        # )
+        # self._goal_sub = rospy.Subscriber(
+        #     "/move_base_simple/goal",
+        #     PoseStamped,
+        #     lambda msg: self.goal_callback(msg),
+        #     queue_size=1,
+        # )
+        # self._path_sub = rospy.Subscriber(
+        #     "roadmap/reference", Path, lambda msg: self.path_callback(msg), queue_size=1
+        # )
 
-        self._weight_sub = rospy.Subscriber(
-            "hey_robot/weights",
-            WeightArray,
-            lambda msg: self.weight_callback(msg),
-            queue_size=1,
-        )
-        self._reload_solver_sub = rospy.Subscriber(
-            "/mpc/reload_solver",
-            Empty,
-            lambda msg: self.reload_solver_callback(msg),
-            queue_size=1,
-        )
+        # self._weight_sub = rospy.Subscriber(
+        #     "hey_robot/weights",
+        #     WeightArray,
+        #     lambda msg: self.weight_callback(msg),
+        #     queue_size=1,
+        # )
+        # self._reload_solver_sub = rospy.Subscriber(
+        #     "/mpc/reload_solver",
+        #     Empty,
+        #     lambda msg: self.reload_solver_callback(msg),
+        #     queue_size=1,
+        # )
 
-        self._reset_sub = rospy.Subscriber(
-            "/jackal_socialsim/reset", Empty, lambda msg: self.reset(), queue_size=1
-        )
+        # self._reset_sub = rospy.Subscriber(
+        #     "/jackal_socialsim/reset", Empty, lambda msg: self.reset(), queue_size=1
+        # )
 
         # Pub
-        self._act_pub = rospy.Publisher("cmd_vel", Twist, queue_size=1)
-        self._ped_robot_state_pub = rospy.Publisher(
-            "/pedestrian_simulator/robot_state", PoseStamped, queue_size=1
-        )
+        self._th_pub = rospy.Publisher("throttle_1", Float32, queue_size=1) # Throttle publisher
+        self._st_pub = rospy.Publisher("steering_1", Float32, queue_size=1) # Steering publisher
+        # self._ped_robot_state_pub = rospy.Publisher(
+        #     "/pedestrian_simulator/robot_state", PoseStamped, queue_size=1
+        # )
 
-        # Services
-        self._ped_horizon_pub = rospy.Publisher(
-            "/pedestrian_simulator/horizon", Int32, queue_size=1
-        )
-        self._ped_integrator_step_pub = rospy.Publisher(
-            "/pedestrian_simulator/integrator_step", Float32, queue_size=1
-        )
-        self._ped_clock_frequency_pub = rospy.Publisher(
-            "/pedestrian_simulator/clock_frequency", Float32, queue_size=1
-        )
+        # # Services
+        # self._ped_horizon_pub = rospy.Publisher(
+        #     "/pedestrian_simulator/horizon", Int32, queue_size=1
+        # )
+        # self._ped_integrator_step_pub = rospy.Publisher(
+        #     "/pedestrian_simulator/integrator_step", Float32, queue_size=1
+        # )
+        # self._ped_clock_frequency_pub = rospy.Publisher(
+        #     "/pedestrian_simulator/clock_frequency", Float32, queue_size=1
+        # )
 
-        self._reset_simulation_pub = rospy.Publisher(
-            "/lmpcc/reset_environment", Empty, queue_size=5
-        )
-        self._reset_simulation_client = rospy.ServiceProxy(
-            "/gazebo/reset_world", std_srvs.srv.Empty
-        )
-        self._reset_ekf_client = rospy.ServiceProxy("/set_pose", SetPose)
+        # self._reset_simulation_pub = rospy.Publisher(
+        #     "/lmpcc/reset_environment", Empty, queue_size=5
+        # )
+        # self._reset_simulation_client = rospy.ServiceProxy(
+        #     "/gazebo/reset_world", std_srvs.srv.Empty
+        # )
+        # self._reset_ekf_client = rospy.ServiceProxy("/set_pose", SetPose)
 
     def start_environment(self):
         rospy.loginfo("Starting pedestrian simulator")
@@ -343,25 +344,32 @@ class ROSMPCPlanner:
 
         return trajectory
 
-    def publish_action(self, output, exit_flag):
-        sent_cmd = Twist()
+    def publish_throttle(self, output, exit_flag):
+        throttle = Float32()
         # print(f"v = {output['v']}, w = {output['w']}")
         if not self._mpc_feasible or not self._enable_output:
             if not self._mpc_feasible:
                 rospy.logwarn_throttle(1, "Infeasible MPC. Braking!")
-                sent_cmd.linear.x = max(
+                throttle.data = max(
                     0.0,
                     self._state[3] - self._braking_acceleration * self._integrator_step,
                 )
             else:
                 rospy.logwarn_throttle(1, "Output is disabled. Sending zero velocity!")
-                sent_cmd.linear.x = 0.0
-            sent_cmd.angular.z = 0.0
+                throttle.data = 0.0
         else:
-            sent_cmd.linear.x = output["v"]
-            sent_cmd.angular.z = output["w"]
+            throttle.data = output["throttle"]
             rospy.loginfo_throttle(1000, "MPC is driving")
-        self._act_pub.publish(sent_cmd)
+        self._th_pub.publish(throttle)
+    
+    def publish_steering(self, output, exit_flag):
+        steering = Float32()
+        # print(f"v = {output['v']}, w = {output['w']}")
+        if not self._mpc_feasible or not self._enable_output:
+            steering.data = 0.0
+        else:
+            steering.data = output["steering"]
+        self._st_pub.publish(steering)
 
     def publish_robot_state(self):
         pose = PoseStamped()

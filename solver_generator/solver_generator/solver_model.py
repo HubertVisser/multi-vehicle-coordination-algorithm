@@ -43,8 +43,8 @@ class DynamicsModel:
         return range(self.nu, self.get_nvar())
 
     def acados_symbolics(self):
-        x = cd.SX.sym("x", self.nx)  # [px, py, vx, vy]
-        u = cd.SX.sym("u", self.nu)  # [ax, ay]
+        x = cd.SX.sym("x", self.nx)  # [x, y, omega, vx, vy, w]
+        u = cd.SX.sym("u", self.nu)  # [th, delta]
         z = cd.vertcat(u, x)
         self.load(z)
         return z
@@ -145,7 +145,7 @@ class BicycleModel2ndOrder(DynamicsModel):
         self.nx = 7
 
         self.states = ["x", "y", "theta", "vx", "vy" "w", "s"]
-        self.inputs = ["throttle", "delta", "slack"]
+        self.inputs = ["throttle", "steering", "slack"]
 
         self.lower_bound = [-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]
         self.upper_bound = [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]

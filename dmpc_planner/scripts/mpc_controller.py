@@ -130,9 +130,9 @@ class MPCPlanner:
             self._model.load(self._solver)
 
             output = dict()
-            output["v"] = self._model.get(1, "v")
-            output["a"] = self._model.get(0, "a")
-            output["w"] = self._model.get(0, "w")
+            output["vx"] = self._model.get(1, "vx")
+            output["throttle"] = self._model.get(0, "throttle")
+            output["steering"] = self._model.get(0, "steering")
 
             self.time_tracker.add(solve_time)
             # print_value("action",f"{output['a']}, {output['w']}")
@@ -151,9 +151,9 @@ class MPCPlanner:
 
     def set_infeasible(self, output):
         self._mpc_feasible = False
-        output["v"] = 0.
-        output["a"] = 0.
-        output["w"] = 0.
+        output["vx"] = 0.
+        output["throttle"] = 0.
+        output["steering"] = 0.
 
     def get_braking_trajectory(self, state):
         x = state[0]
