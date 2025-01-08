@@ -567,7 +567,7 @@ class ROSMPCPlanner:
 
 if __name__ == "__main__":
     rospy.loginfo("Initializing MPC")
-    rospy.init_node("jackalsimulator_planner", anonymous=False)
+    rospy.init_node("dmpc_planner", anonymous=False)
 
     mpc = ROSMPCPlanner()
 
