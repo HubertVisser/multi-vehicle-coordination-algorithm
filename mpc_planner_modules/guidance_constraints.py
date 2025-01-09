@@ -9,13 +9,14 @@ import numpy as np
 import sys
 import os
 
+sys.path.append(os.path.join(sys.path[0], "..", "solver_generator"))
 
-from solver_generator.util.math import rotation_matrix
-from solver_generator.util.code_generation import add_definition
-from solver_generator.control_modules import ConstraintModule
+from util.math import rotation_matrix
+from util.code_generation import add_definition
+from control_modules import ConstraintModule
 
-from solver_generator.ellipsoid_constraints import EllipsoidConstraint
-from solver_generator.ellipsoid_constraints import EllipsoidConstraintModule
+from ellipsoid_constraints import EllipsoidConstraint
+from ellipsoid_constraints import EllipsoidConstraintModule
 
 
 class GuidanceConstraintModule(ConstraintModule):

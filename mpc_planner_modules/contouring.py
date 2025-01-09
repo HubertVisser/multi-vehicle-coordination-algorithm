@@ -1,14 +1,15 @@
 import sys, os
 
+sys.path.append(os.path.join(sys.path[0], "..", "solver_generator"))
 
 import copy
 import casadi as cd
 import numpy as np
 
-from solver_generator.control_modules import ObjectiveModule, Objective
+from control_modules import ObjectiveModule, Objective
 
-from solver_generator.spline import Spline, Spline2D
-from solver_generator.util.math import haar_difference_without_abs, huber_loss
+from spline import Spline, Spline2D
+from util.math import haar_difference_without_abs, huber_loss
 
 class ContouringObjective:
 

@@ -1,12 +1,14 @@
 import os
 import sys
 
+sys.path.append(os.path.join(sys.path[0], "..", "solver_generator"))
+
 import casadi as cd
 import numpy as np
 
-from solver_generator.util.math import rotation_matrix
+from util.math import rotation_matrix
 
-from solver_generator.control_modules import ConstraintModule
+from control_modules import ConstraintModule
 
 
 

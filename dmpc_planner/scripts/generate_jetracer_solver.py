@@ -1,19 +1,22 @@
 import os, sys
+sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
+sys.path.append(os.path.join(sys.path[0], "..", "..", "mpc_planner_modules"))
+
 import numpy as np
 
-from solver_generator.util.files import load_settings, get_current_package
-from solver_generator.control_modules import ModuleManager
-from solver_generator.generate_solver import generate_solver
+from util.files import load_settings, get_current_package
+from control_modules import ModuleManager
+from generate_solver import generate_solver
 
 # Import modules here from mpc_planner_modules
-from mpc_planner_modules.mpc_base import MPCBaseModule
+from mpc_base import MPCBaseModule
 
-# from mpc_planner_modules.contouring import ContouringModule
+# from contouring import ContouringModule
 # from goal_module import GoalModule
-from mpc_planner_modules.path_reference_velocity import PathReferenceVelocityModule
+from path_reference_velocity import PathReferenceVelocityModule
 
 # Import solver models that you want to use
-from solver_generator.solver_model import BicycleModel2ndOrder
+from solver_model import BicycleModel2ndOrder
 
 
 def configuration_basic(settings):

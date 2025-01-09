@@ -2,6 +2,11 @@
 
 import os, sys
 import pathlib
+path = pathlib.Path(__file__).parent.resolve()
+sys.path.append(os.path.join(path))
+sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
+sys.path.append(os.path.join(sys.path[0], "..", "..", "mpc_planner_modules"))
+
 import threading
 
 from helpers import get_solver_import_paths
@@ -23,10 +28,10 @@ import numpy as np
 from copy import deepcopy
 import math
 
-from solver_generator.util.files import load_settings
-from solver_generator.util.realtime_parameters import RealTimeParameters
-from solver_generator.util.convertion import quaternion_to_yaw
-from solver_generator.util.logging import print_value 
+from util.files import load_settings
+from util.realtime_parameters import RealTimeParameters
+from util.convertion import quaternion_to_yaw
+from util.logging import print_value 
 from timer import Timer
 
 from contouring import SplineFitter
@@ -94,7 +99,7 @@ class ROSMPCPlanner:
         self.initialize_publishers_and_subscribers()
         self._callbacks_enabled = True
 
-        self.start_environment()
+        # self.start_environment()
 
     def initialize_publishers_and_subscribers(self):
 
@@ -217,9 +222,10 @@ class ROSMPCPlanner:
         if self._verbose:
             time = timer.stop_and_print()
 
-        self.publish_action(output, self._mpc_feasible)
+        self.publish_throttle(output, self._mpc_feasible)
+        self.publish_steering(output, self._mpc_feasible)
         self.publish_robot_state()
-        self.visualize()
+        # self.visualize()
 
     def set_parameters(self):
         splines = None
@@ -379,7 +385,7 @@ class ROSMPCPlanner:
         pose.pose.position.x = self._state[0]
         pose.pose.position.y = self._state[1]
         pose.pose.position.z = self._state[3]
-        self._ped_robot_state_pub.publish(pose)
+        # self._ped_robot_state_pub.publish(pose)
 
     def reload_solver_callback(self, msg):
         self._callbacks_enabled = False

@@ -4,7 +4,7 @@ For python real-time implementation of the controller (TODO)
 """
 import numpy as np
 
-from solver_generator.util.files import load_settings
+from util.files import load_settings
 
 # Python real-time
 class RealTimeParameters:

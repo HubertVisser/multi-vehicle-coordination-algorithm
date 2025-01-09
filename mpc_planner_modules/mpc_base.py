@@ -1,7 +1,8 @@
 import sys, os
 
+sys.path.append(os.path.join(sys.path[0], "..", "solver_generator"))
 
-from solver_generator.control_modules import ObjectiveModule, Objective
+from control_modules import ObjectiveModule, Objective
 
 """
 Weight optimization variables

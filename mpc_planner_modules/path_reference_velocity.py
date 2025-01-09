@@ -1,11 +1,12 @@
 import sys, os
 
+sys.path.append(os.path.join(sys.path[0], "..", "solver_generator"))
 
 import casadi as cd
 import numpy as np
 
-from solver_generator.control_modules import ObjectiveModule, Objective
-from solver_generator.spline import Spline, Spline2D
+from control_modules import ObjectiveModule, Objective
+from spline import Spline, Spline2D
 
 
 class PathReferenceVelocityObjective:

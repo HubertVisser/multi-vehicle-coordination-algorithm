@@ -6,13 +6,13 @@ import casadi as cd
 from acados_template import AcadosModel
 from acados_template import AcadosOcp, AcadosOcpSolver, AcadosSimSolver
 
-from solver_generator.util.files import load_settings, write_to_yaml
-from solver_generator.util.files import solver_name, solver_path, solver_settings_path, default_solver_path, default_acados_solver_path, acados_solver_path
-from solver_generator.util.logging import print_value, print_success, print_header, print_warning, print_path
-from solver_generator.util.parameters import Parameters, AcadosParameters
+from util.files import load_settings, write_to_yaml
+from util.files import solver_name, solver_path, solver_settings_path, default_solver_path, default_acados_solver_path, acados_solver_path
+from util.logging import print_value, print_success, print_header, print_warning, print_path
+from util.parameters import Parameters, AcadosParameters
 
-from solver_generator.solver_definition import define_parameters, objective, constraints, constraint_lower_bounds, constraint_upper_bounds
-import solver_generator.solver_model
+from solver_definition import define_parameters, objective, constraints, constraint_lower_bounds, constraint_upper_bounds
+import solver_model
 
 
 
@@ -177,13 +177,11 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver.warm_start_first_qp = 0
 
     # code generation options
-    # ocp.code_export_directory = f"{os.path.dirname(os.path.abspath(__file__))}/../acados/{model_acados.name}"
-    ocp.code_export_directory = os.path.join(os.getcwd(), "acados", model_acados.name)
+    ocp.code_export_directory = f"{os.path.dirname(os.path.abspath(__file__))}/../acados/{model_acados.name}"
     ocp.solver_options.print_level = 0
 
     # Generate the solver
-    json_file_dir = os.path.join(os.getcwd(), "acados", model_acados.name)
-    print(json_file_dir)
+    json_file_dir = f"{os.path.dirname(os.path.abspath(__file__))}/acados/{model_acados.name}/"
     json_file_name = json_file_dir + f"{model_acados.name}.json"
     os.makedirs(json_file_dir, exist_ok=True)
 

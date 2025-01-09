@@ -1,4 +1,6 @@
-from solver_generator.util.logging import print_value, print_header
+
+
+from util.logging import print_value, print_header
 
 
 class ModuleManager:

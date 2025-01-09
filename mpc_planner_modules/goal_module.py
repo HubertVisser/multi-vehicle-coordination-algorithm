@@ -1,9 +1,9 @@
 import sys, os
 
-from solver_generator.util.math import huber_loss
+sys.path.append(os.path.join(sys.path[0], "..", "solver_generator"))
 
-
-from solver_generator.control_modules import ObjectiveModule, Objective
+from util.math import huber_loss
+from control_modules import ObjectiveModule, Objective
 
 class GoalObjective(Objective):
 

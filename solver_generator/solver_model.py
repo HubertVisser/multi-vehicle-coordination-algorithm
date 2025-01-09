@@ -1,9 +1,9 @@
 import casadi as cd
 import numpy as np
 
-from solver_generator.util.files import model_map_path, write_to_yaml
+from util.files import model_map_path, write_to_yaml
 
-from solver_generator.spline import Spline2D
+from spline import Spline2D
 
 
 class DynamicsModel:

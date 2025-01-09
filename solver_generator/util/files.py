@@ -1,8 +1,8 @@
 import os, sys
 import yaml
 
-from solver_generator.util.logging import print_success, print_value, print_path
 
+from util.logging import print_success, print_value, print_path
 
 def get_base_path():
     return os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -14,7 +14,6 @@ def get_current_package():
 
 
 def get_package_path(package_name):
-    return os.path.join(os.getcwd(), f"{package_name}")
     return os.path.join(os.path.dirname(__file__), f"../../{package_name}")
 
 
@@ -67,7 +66,7 @@ def solver_path(settings):
 
 
 def default_acados_solver_path(settings):
-    return os.path.join(os.getcwd(), f"acados")
+    return os.path.join(get_package_path("solver_generator"), f"acados")
 
 
 def acados_solver_path(settings):
@@ -91,7 +90,7 @@ def generated_src_file(settings):
 
 
 def planner_path():
-    return get_package_path("mpc_planner")
+    return get_package_path("dmpc_planner")
 
 
 def generated_include_file(settings):

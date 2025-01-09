@@ -3,6 +3,7 @@ import os, sys
 import pathlib
 path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(os.path.join(path))
+sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
 
 acados_path = os.path.join(path, "..", "..", "mpc_planner_solver", "acados", "solver")
 
@@ -13,11 +14,11 @@ import generate_jetracer_solver
 from acados_template import AcadosModel
 from acados_template import AcadosOcp, AcadosOcpSolver, AcadosSimSolver
 
-from .timer import Timer
-from solver_generator.util.files import solver_path, load_settings
+from timer import Timer
+from util.files import solver_path, load_settings
 
-from solver_generator.util.logging import print_warning, print_value, print_success, TimeTracker, print_header
-from solver_generator.util.realtime_parameters import AcadosRealTimeModel
+from util.logging import print_warning, print_value, print_success, TimeTracker, print_header
+from util.realtime_parameters import AcadosRealTimeModel
 
 
 class MPCPlanner:
@@ -33,7 +34,7 @@ class MPCPlanner:
         self.init_acados_solver()
     
         self._mpc_feasible = False
-        self.time_tracker = TimeTracker(self._settings["solver_settings"]["solver"])
+        self.time_tracker = TimeTracker(self._settings["solver_settings"])
 
         print_header("Starting MPC")
 
@@ -87,11 +88,11 @@ class MPCPlanner:
             self._u_traj_init = self._mpc_u_plan
         else:
             # Brake (model specific)
-            self._x_traj_init = self.get_braking_trajectory(xinit)
-            self._x_traj_init = self._projection_func(self._x_traj_init)
+            # self._x_traj_init = self.get_braking_trajectory(xinit)
+            # self._x_traj_init = self._projection_func(self._x_traj_init)
 
             # Xinit everywhere (could be infeasible)
-            # self._x_traj_init = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
+            self._x_traj_init = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
 
             self._u_traj_init = np.zeros((self._nu, self._N))
             self._solver.reset(reset_qp_solver_mem=1)

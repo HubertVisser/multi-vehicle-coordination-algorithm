@@ -8,10 +8,10 @@ import casadi as cd
 import sys
 import os
 
+sys.path.append(os.path.join(sys.path[0], "..", "solver_generator"))
 
-
-from solver_generator.util.math import rotation_matrix
-from solver_generator.control_modules import ConstraintModule
+from util.math import rotation_matrix
+from control_modules import ConstraintModule
 
 
 class LinearizedConstraintModule(ConstraintModule):

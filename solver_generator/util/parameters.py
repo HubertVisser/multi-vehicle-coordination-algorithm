@@ -3,8 +3,8 @@ import numpy as np
 
 import casadi as cd  # Acados
 
-from solver_generator.util.files import write_to_yaml, parameter_map_path, load_settings
-from solver_generator.util.logging import print_value, print_header
+from util.files import write_to_yaml, parameter_map_path, load_settings
+from util.logging import print_value, print_header
 
 
 class Parameters:
