@@ -136,8 +136,8 @@ class MPCPlanner:
             output["steering"] = self._model.get(0, "steering")
 
             self.time_tracker.add(solve_time)
-            # print_value("action",f"{output['a']}, {output['w']}")
-
+            print_value("Throttle and vx",f"{output['throttle']}, {output['vx']}")
+            print_value("Current cost", f"{self.get_cost_acados():.2f}")
             self._prev_trajectory = self._model.get_trajectory(self._solver, self._mpc_x_plan, self._mpc_u_plan)
         except AttributeError:
             output = dict()
