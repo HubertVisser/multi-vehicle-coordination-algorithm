@@ -27,10 +27,10 @@ from solver_generator.util.files import load_settings
 from solver_generator.util.realtime_parameters import RealTimeParameters
 from solver_generator.util.convertion import quaternion_to_yaw
 from solver_generator.util.logging import print_value 
-from .timer import Timer
+from timer import Timer
 
 from contouring import SplineFitter
-from static_constraints import StaticConstraints
+# from static_constraints import StaticConstraints
 from mpc_controller import MPCPlanner
 from ros_visuals import ROSMarkerPublisher
 from project_trajectory import project_trajectory_to_safety

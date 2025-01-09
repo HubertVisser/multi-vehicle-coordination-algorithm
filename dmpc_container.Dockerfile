@@ -45,6 +45,6 @@ RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
 # Set the entrypoint
 # Add environment variables to ~/.bashrc
 RUN echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$HOME/acados/lib" >> ~/.bashrc && \
-    echo "export ACADOS_SOURCE_DIR=$HOME~/acados/" >> ~/.bashrc
+    echo "export ACADOS_SOURCE_DIR=$HOME/acados/" >> ~/.bashrc
 
 ENTRYPOINT [ "/bin/bash" ]

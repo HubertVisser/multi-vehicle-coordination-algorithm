@@ -15,6 +15,7 @@ def get_current_package():
 
 def get_package_path(package_name):
     return os.path.join(os.getcwd(), f"{package_name}")
+    return os.path.join(os.path.dirname(__file__), f"../../{package_name}")
 
 
 def get_solver_package_path():

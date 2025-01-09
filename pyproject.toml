@@ -15,11 +15,13 @@ pyyaml = "^6.0.1"
 matplotlib = "3.6"
 pytest-cov = "^4.1.0"
 black = "^24.2.0"
+rospkg = "^1.5.1"
 
 # Local packages
-mpc_planner_modules = { path = "../mpc_planner_modules" }
-solver_generator = { path = "../solver_generator" }
-acados_template = { path = "../../../acados/interfaces/acados_template" }
+mpc_planner_modules = { path = "mpc_planner_modules" }
+solver_generator = { path = "solver_generator" }
+acados_template = { path = "/home/dock_user/acados/interfaces/acados_template/" }
+docutils = "0.20"
 
 [build-system]
 requires = ["poetry-core"]

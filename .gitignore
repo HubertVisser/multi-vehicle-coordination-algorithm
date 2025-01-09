@@ -22,3 +22,4 @@ venv/
 
 # Solver files
 mpc_planner_solver/
+acados/
