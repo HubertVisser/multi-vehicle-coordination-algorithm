@@ -93,7 +93,6 @@ class MPCPlanner:
 
             # Xinit everywhere (could be infeasible)
             self._x_traj_init = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
-
             self._u_traj_init = np.zeros((self._nu, self._N))
             self._solver.reset(reset_qp_solver_mem=1)
             self._solver.options_set('warm_start_first_qp', False)
@@ -192,3 +191,5 @@ class MPCPlanner:
 
     def print_stats(self):
         self.time_tracker.print_stats()
+
+    
