@@ -157,12 +157,12 @@ def generate_solver(modules, model, settings=None):
         ocp.solver_options.nlp_solver_max_iter = settings["solver_settings"]["iterations"]
     ocp.solver_options.hessian_approx = "EXACT"
     # ocp.solver_options.levenberg_marquardt = 1e-3  # Helps to resolve min step errors
-    ocp.solver_options.regularize_method = "MIRROR"
+    # ocp.solver_options.regularize_method = "MIRROR"
     # ocp.solver_options.globalization = "MERIT_BACKTRACKING"
     ocp.solver_options.globalization = "FIXED_STEP"
     # ocp.solver_options.eps_sufficient_descent = 1e-1
     # ocp.solver_options.qp_tol = 1e-6  # Important! (1e-3)
-    ocp.solver_options.qp_tol = 1e-8 # Important! (1e-3)
+    ocp.solver_options.qp_tol = 1e-3 # Important! (1e-3)
 
     # qp solver options
     # Full Condensing: Suitable for small to medium-sized systems, leading to a dense QP with only control inputs as decision variables.
@@ -173,7 +173,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" # (QP fails!)
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
     ocp.solver_options.qp_solver_iter_max = 50  # default = 50
-    ocp.solver_options.qp_solver_warm_start = 2  # cold start / 1 = warm, 2 = warm primal and dual
+    ocp.solver_options.qp_solver_warm_start = 0  # cold start / 1 = warm, 2 = warm primal and dual
     # ocp.solver_options.qp_solver.warm_start_first_qp = 0
 
     # code generation options

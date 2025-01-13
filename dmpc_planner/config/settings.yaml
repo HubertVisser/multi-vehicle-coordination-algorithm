@@ -1,5 +1,5 @@
 name: "Jetracer"
-N: 20
+N: 15
 integrator_step: 0.1
 n_discs: 0
 
@@ -27,7 +27,7 @@ weights:
   velocity: 1.
   throttle: 0.1
   steering: 2. #0.05
-  reference_velocity: 5
+  reference_velocity: 0.5
 
 
 

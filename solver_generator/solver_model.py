@@ -141,11 +141,11 @@ class BicycleModel2ndOrder(DynamicsModel):
 
     def __init__(self):
         super().__init__()
-        self.nu = 3
+        self.nu = 2
         self.nx = 7
 
         self.states = ["x", "y", "theta", "vx", "vy", "w", "s"]
-        self.inputs = ["throttle", "steering", "slack"]
+        self.inputs = ["throttle", "steering"] #, "slack"]
 
         self.lower_bound = [-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]
         self.upper_bound = [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
@@ -173,8 +173,8 @@ class BicycleModel2ndOrder(DynamicsModel):
         return steer_angle
     
     def continuous_model(self, x, u):
-        
-        th = u[2]
+
+        th = 1 #u[0]
         st = u[1]
         theta = x[2]
         vx = x[3]
@@ -200,12 +200,12 @@ class BicycleModel2ndOrder(DynamicsModel):
         xdot2 = vx * np.sin(theta) + vy * np.cos(theta)
         xdot3 = w
         xdot4 = acc_x  
-        xdot5 = 0 # vy dot is not used
+        xdot5 = vy # vy dot is not used
         xdot6 = 0 # w dot is not used
 
         xdot = [xdot1,xdot2,xdot3,xdot4,xdot5,xdot6]
 
         # v Simple s_dot approx taken from standard MPCC formulation
         s_dot = vx
-
+        # print("xdot_", *xdot)
         return cd.vertcat(*xdot, s_dot)
