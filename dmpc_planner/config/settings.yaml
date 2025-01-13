@@ -27,7 +27,7 @@ weights:
   velocity: 1.
   throttle: 0.1
   steering: 2. #0.05
-  reference_velocity: 0.5
+  reference_velocity: 1.
 
 
 

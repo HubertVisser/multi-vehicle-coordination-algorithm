@@ -174,7 +174,7 @@ class BicycleModel2ndOrder(DynamicsModel):
     
     def continuous_model(self, x, u):
 
-        th = 1 #u[0]
+        th = u[0]
         st = u[1]
         theta = x[2]
         vx = x[3]
@@ -200,7 +200,7 @@ class BicycleModel2ndOrder(DynamicsModel):
         xdot2 = vx * np.sin(theta) + vy * np.cos(theta)
         xdot3 = w
         xdot4 = acc_x  
-        xdot5 = vy # vy dot is not used
+        xdot5 = 0 # vy dot is not used
         xdot6 = 0 # w dot is not used
 
         xdot = [xdot1,xdot2,xdot3,xdot4,xdot5,xdot6]
