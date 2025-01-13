@@ -68,7 +68,7 @@ class RealTimeModel:
 
     def get(self, k, var_name):
         map_value = self._map[var_name]
-        # print(f"{var_name} at {k}: map = {map_value}, value = {self._vars[k, map_value[1]]}")
+        # print(f"{var_name} at {k}: map = {map_value}, value = {self._vars[k, map_value[1]]:.2f}")
         return self._vars[k, map_value[1]]
 
 

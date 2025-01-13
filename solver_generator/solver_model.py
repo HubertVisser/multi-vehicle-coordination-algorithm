@@ -144,7 +144,7 @@ class BicycleModel2ndOrder(DynamicsModel):
         self.nu = 3
         self.nx = 7
 
-        self.states = ["x", "y", "theta", "vx", "vy" "w", "s"]
+        self.states = ["x", "y", "theta", "vx", "vy", "w", "s"]
         self.inputs = ["throttle", "steering", "slack"]
 
         self.lower_bound = [-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]

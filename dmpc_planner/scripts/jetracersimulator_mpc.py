@@ -425,11 +425,11 @@ class ROSMPCPlanner:
         # Velocity is in the local frame, x is the forward velocity
         self._state[3] = msg.pose.position.z
 
-        # print("-------- State ----------")
-        # print(f"x = {self._state[0]}")
-        # print(f"y = {self._state[1]}")
-        # print(f"psi = {self._state[2]}")
-        # print(f"v = {self._state[3]}")
+        print("-------- State ----------")
+        print(f"x = {self._state[0]:.2f}")
+        print(f"y = {self._state[1]:.2f}")
+        print(f"psi = {self._state[2]:.2f}")
+        print(f"v = {self._state[3]:.2f}")
 
     def obstacle_callback(self, msg):
         if self._state is None or not self._callbacks_enabled:
