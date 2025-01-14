@@ -149,22 +149,39 @@ class BicycleModel2ndOrder(DynamicsModel):
 
         self.lower_bound = [-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]
         self.upper_bound = [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
-
-    def motor_force(self, throttle, v):
-        a =  28.887779235839844
-        b =  5.986172199249268
-        c =  -0.15045104920864105
-        w = 0.5 * (cd.tanh(100*(throttle+c))+1)
-        Fm =  (a - v * b) * w * (throttle+c)
-        return Fm
-
-    def friction(self, v):
-        a =  1.7194761037826538
-        b =  13.312559127807617
-        c =  0.289848655462265
-        Ff = - a * cd.tanh(b  * v) - v * c
-        return Ff
     
+    def evaluate_Fx_2(self, vx, th):
+        #define parameters
+
+        #fitted from same data as GP for ICRA 2024
+        v_friction = 1.0683593
+        v_friction_static = 1.1530068
+        v_friction_static_tanh_mult = 23.637709
+        v_friction_quad = 0.09363517
+
+        tau_offset = 0.16150239
+        tau_offset_reverse = 0.16150239
+        tau_steepness = 10.7796755
+        tau_steepness_reverse = 90
+        tau_sat_high = 2.496312
+        tau_sat_high_reverse = 5.0
+
+        #friction model
+        static_friction = np.tanh(v_friction_static_tanh_mult  * vx) * v_friction_static
+        v_contribution = - static_friction - vx * v_friction - np.sign(vx) * vx ** 2 * v_friction_quad 
+
+        #for positive throttle
+        th_activation1 = (np.tanh((th - tau_offset) * tau_steepness) + 1) * tau_sat_high
+        #for negative throttle
+        th_activation2 = (np.tanh((th + tau_offset_reverse) * tau_steepness_reverse)-1) * tau_sat_high_reverse
+
+        throttle_contribution = (th_activation1 + th_activation2) 
+
+        # --------
+
+        Fx = throttle_contribution + v_contribution
+        return Fx
+
     def steering_angle(self, steer_command):
         a = -1.2053807
         b = 0.38302866
@@ -182,22 +199,27 @@ class BicycleModel2ndOrder(DynamicsModel):
         # Define constants for Jetracer
         m = 1.6759806
         l = 0.175
-        l_r = 0.54*l
+        # l_r = 0.54*l
 
-        Fx_wheels = self.motor_force(th, vx) + self.friction(vx)
+        Fx_wheels = self.evaluate_Fx_2(vx, th)
 
-        # Evaluate to acceleration TODO: Obtain mass parameter from somewhere
-        acc_x =  Fx_wheels / m
-        
         # convert steering command to steering angle
         steering_angle = self.steering_angle(st)
 
+        # Evaluate to acceleration
+        acc_x =  Fx_wheels / m #* cd.cos(steering_angle)) / m
+
         # evaluate lateral velocity and yaw rate
         w = vx * cd.tan(steering_angle) / l # angular velocity
-        vy = l_r * w
 
-        xdot1 = vx * np.cos(theta) - vy * np.sin(theta)
-        xdot2 = vx * np.sin(theta) + vy * np.cos(theta)
+        R = l / cd.tan(steering_angle)
+        beta = cd.atan2(l/2*cd.tan(steering_angle),l)
+        R_star =  R / cd.cos(beta)
+
+        vy = w * R_star * cd.sin(beta)
+
+        xdot1 = vx * cd.cos(theta) - vy * cd.sin(theta)
+        xdot2 = vx * cd.sin(theta) + vy * cd.cos(theta)
         xdot3 = w
         xdot4 = acc_x  
         xdot5 = 0 # vy dot is not used
@@ -215,5 +237,18 @@ if __name__ == "__main__":
     model = BicycleModel2ndOrder()
     th = 1.0
     vx = -2.0
-    Fx_wheels =model.motor_force(th, vx) + model.friction(vx)
+    Fx_wheels = model.motor_force(th, vx) + model.friction(vx)
     print(Fx_wheels)
+
+    tau_offset = 0.16150239
+    tau_steepness = 10.7796755
+    tau_sat_high = 2.496312
+    v_friction = 1.0683593
+    v_friction_static = 1.1530068
+    v_friction_static_tanh_mult = 23.637709
+    v_friction_quad = 0.09363517
+
+    th_activation1 = (np.tanh((th - tau_offset) * tau_steepness) + 1) * tau_sat_high
+    static_friction = np.tanh(v_friction_static_tanh_mult  * vx) * v_friction_static
+    v_contribution = - static_friction - vx * v_friction - np.sign(vx) * vx ** 2 * v_friction_quad 
+    print(th_activation1 + v_contribution)

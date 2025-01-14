@@ -8,7 +8,7 @@ debug_visuals: false
 
 solver_settings:
   iterations: 6 #2 # 1
-  solver_type: SQP_RTI # SQP_RTI (default) or SQP
+  solver_type: SQP # SQP_RTI (default) or SQP
 
 control_frequency: 10
 max_obstacles: 8

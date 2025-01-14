@@ -56,7 +56,7 @@ class WeightsObjective(Objective):
             # print("Variable: ", variable, "Weights: ", weights)
 
             # Add to the cost
-            cost = cost_function(variable, weights)
+            cost += cost_function(variable, weights)
         return cost
 
     def get_weights(self) -> list:
