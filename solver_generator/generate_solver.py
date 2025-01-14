@@ -86,7 +86,7 @@ def generate_solver(modules, model, settings=None):
 
     # Set cost types
     ocp.cost.cost_type = "EXTERNAL"
-    # ocp.cost.cost_type_e = "EXTERNAL"
+    ocp.cost.cost_type_e = "EXTERNAL"
 
     # Set initial constraint
     ocp.constraints.x0 = np.zeros(model.nx)
@@ -94,9 +94,9 @@ def generate_solver(modules, model, settings=None):
     # Set state bound
     nx = model.nx
     nu = model.nu
-    ocp.constraints.lbx = np.array([model.lower_bound[nu : model.get_nvar()]]).flatten()
-    ocp.constraints.ubx = np.array([model.upper_bound[nu : model.get_nvar()]]).flatten()
-    ocp.constraints.idxbx = np.array(range(model.nx))
+    # ocp.constraints.lbx = np.array([model.lower_bound[nu : model.get_nvar()]]).flatten()
+    # ocp.constraints.ubx = np.array([model.upper_bound[nu : model.get_nvar()]]).flatten()
+    # ocp.constraints.idxbx = np.array(range(model.nx))
 
     # Set control input bound
     ocp.constraints.lbu = np.array([model.lower_bound[:nu]]).flatten()
@@ -105,8 +105,8 @@ def generate_solver(modules, model, settings=None):
 
     # Set path constraints bound
     nc = ocp.model.con_h_expr.shape[0]
-    ocp.constraints.lh = np.array(constraint_lower_bounds(modules))
-    ocp.constraints.uh = np.array(constraint_upper_bounds(modules))
+    # ocp.constraints.lh = np.array(constraint_lower_bounds(modules))
+    # ocp.constraints.uh = np.array(constraint_upper_bounds(modules))
 
     # Slack for constraints
     add_slack = False

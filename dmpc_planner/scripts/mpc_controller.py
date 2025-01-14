@@ -42,8 +42,8 @@ class MPCPlanner:
         # The generation software
         if hasattr(self, "_solver"):
             del self._solver, self._simulator, self._solver_settings
-        # if hasattr(self, "_mpc_x_plan"):
-            # del self._mpc_x_plan, self._mpc_u_plan
+        if hasattr(self, "_mpc_x_plan"):
+            del self._mpc_x_plan, self._mpc_u_plan
 
         self._solver, self._simulator = generate_jetracer_solver.generate()
         self._solver_settings = load_settings("solver_settings", package="mpc_planner_solver")
@@ -118,7 +118,7 @@ class MPCPlanner:
             for it in range(self._settings["solver_settings"]["iterations"]):
                 status = self._solver.solve()
                 solve_time += float(self._solver.get_stats('time_tot')) * 1000.
-
+           
             output = dict()
             if status != 0: #and status != 2: # infeasible
                 print_warning(f"Optimization was infeasible (exitflag = {status})")
@@ -131,6 +131,7 @@ class MPCPlanner:
 
             output = dict()
             output["vx"] = self._model.get(1, "vx")
+            output["theta"] = self._model.get(1, "theta")
             output["throttle"] = self._model.get(0, "throttle")
             output["steering"] = self._model.get(0, "steering")
 

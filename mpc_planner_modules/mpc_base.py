@@ -54,9 +54,9 @@ class WeightsObjective(Objective):
             variable = model.get(self._variables_per_function[idx])  # Retrieve the state / input to be weighted
             # _, _, var_range = model.get_bounds(self._variables_per_function[idx])
             # print("Variable: ", variable, "Weights: ", weights)
+
             # Add to the cost
-            cost += cost_function(variable, weights)
-            print("Cost: ", cost)
+            cost = cost_function(variable, weights)
         return cost
 
     def get_weights(self) -> list:

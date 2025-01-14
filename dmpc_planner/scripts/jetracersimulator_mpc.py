@@ -34,7 +34,7 @@ from util.convertion import quaternion_to_yaw
 from util.logging import print_value 
 from timer import Timer
 
-from contouring import SplineFitter
+from contouring_spline import SplineFitter
 # from static_constraints import StaticConstraints
 from mpc_controller import MPCPlanner
 from ros_visuals import ROSMarkerPublisher
@@ -224,7 +224,7 @@ class ROSMPCPlanner:
 
         self.publish_throttle(output, self._mpc_feasible)
         self.publish_steering(output, self._mpc_feasible)
-        self.publish_robot_state()
+        # self.publish_robot_state()
         # self.visualize()
 
     def set_parameters(self):
@@ -425,11 +425,11 @@ class ROSMPCPlanner:
         # Velocity is in the local frame, x is the forward velocity
         self._state[3] = msg.pose.position.z
 
-        print("-------- State ----------")
-        print(f"x = {self._state[0]:.2f}")
-        print(f"y = {self._state[1]:.2f}")
-        print(f"psi = {self._state[2]:.2f}")
-        print(f"v = {self._state[3]:.2f}")
+        # print("-------- State ----------")
+        # print(f"x = {self._state[0]:.2f}")
+        # print(f"y = {self._state[1]:.2f}")
+        # print(f"psi = {self._state[2]:.2f}")
+        # print(f"v = {self._state[3]:.2f}")
 
     def obstacle_callback(self, msg):
         if self._state is None or not self._callbacks_enabled:

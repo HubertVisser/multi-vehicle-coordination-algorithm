@@ -12,7 +12,7 @@ from generate_solver import generate_solver
 from mpc_base import MPCBaseModule
 
 # from contouring import ContouringModule
-# from goal_module import GoalModule
+from goal_module import GoalModule
 from path_reference_velocity import PathReferenceVelocityModule
 
 # Import solver models that you want to use
@@ -26,12 +26,12 @@ def configuration_basic(settings):
     # Penalize ||steering||_2^2
     base_module = modules.add_module(MPCBaseModule(settings))
     # base_module.weigh_variable(
-    #     var_name="steering", 
-    #     weight_names="steering",
+    #     var_name="throttle", 
+    #     weight_names="throttle",
     # )
     # Penalize ||v - v_ref||_2^2
     base_module.weigh_variable(
-        var_name="theta",
+        var_name="vx",
         weight_names=["velocity", "reference_velocity"],
         cost_function=lambda x, w: w[0] * (x - w[1]) ** 2,
     )

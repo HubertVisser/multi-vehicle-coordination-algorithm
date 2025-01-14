@@ -142,9 +142,9 @@ class BicycleModel2ndOrder(DynamicsModel):
     def __init__(self):
         super().__init__()
         self.nu = 2
-        self.nx = 7
+        self.nx = 6
 
-        self.states = ["x", "y", "theta", "vx", "vy", "w", "s"]
+        self.states = ["x", "y", "theta", "vx", "vy", "w"]
         self.inputs = ["throttle", "steering"] #, "slack"]
 
         self.lower_bound = [-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]
@@ -208,4 +208,12 @@ class BicycleModel2ndOrder(DynamicsModel):
         # v Simple s_dot approx taken from standard MPCC formulation
         s_dot = vx
         # print("xdot_", *xdot)
-        return cd.vertcat(*xdot, s_dot)
+        return cd.vertcat(*xdot)
+
+if __name__ == "__main__":
+
+    model = BicycleModel2ndOrder()
+    th = 1.0
+    vx = -2.0
+    Fx_wheels =model.motor_force(th, vx) + model.friction(vx)
+    print(Fx_wheels)
