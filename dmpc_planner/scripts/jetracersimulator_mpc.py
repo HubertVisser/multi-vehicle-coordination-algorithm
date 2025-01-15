@@ -223,7 +223,7 @@ class ROSMPCPlanner:
             time = timer.stop_and_print()
 
         self.publish_throttle(output, self._mpc_feasible)
-        self.publish_steering(output, self._mpc_feasible)
+        # self.publish_steering(output, self._mpc_feasible)
         # self.publish_robot_state()
         # self.visualize()
         # self._state[0] = output["x"]
@@ -235,7 +235,7 @@ class ROSMPCPlanner:
         # # Velocity is in the local frame, x is the forward velocity
         # self._state[3] = output["vx"]
         # self._state[4] = output["vy"]
-        # self._state[5] = output["omega"]
+        # self._state[5] = output["w"]
 
     def set_parameters(self):
         splines = None
@@ -368,7 +368,7 @@ class ROSMPCPlanner:
                 rospy.logwarn_throttle(1, "Infeasible MPC. Braking!")
                 throttle.data = max(
                     0.0,
-                    self._state[3] - self._braking_acceleration * self._integrator_step,
+                    self._state[1] - self._braking_acceleration * self._integrator_step,
                 )
             else:
                 rospy.logwarn_throttle(1, "Output is disabled. Sending zero velocity!")
@@ -427,19 +427,19 @@ class ROSMPCPlanner:
     def state_pose_callback(self, msg):
         self._state_msg = msg
         self._state[0] = msg.pose.position.x
-        self._state[1] = msg.pose.position.y
+        # self._state[1] = msg.pose.position.y
 
         # Extract yaw angle (rotation around the Z-axis)
-        self._state[2] = msg.pose.orientation.z
+        # self._state[2] = msg.pose.orientation.z
 
         # Velocity is in the local frame, x is the forward velocity
-        self._state[3] = msg.pose.position.z
+        self._state[1] = msg.pose.position.z
 
         # print("-------- State ----------")
         # print(f"x = {self._state[0]:.2f}")
         # print(f"y = {self._state[1]:.2f}")
         # print(f"theta = {self._state[2]:.2f}")
-        # print(f"vx = {self._state[3]:.2f}")
+        # print(f"vx = {self._state[1]:.2f}")
 
     def obstacle_callback(self, msg):
         if self._state is None or not self._callbacks_enabled:

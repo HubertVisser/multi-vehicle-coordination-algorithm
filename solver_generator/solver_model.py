@@ -141,14 +141,14 @@ class BicycleModel2ndOrder(DynamicsModel):
 
     def __init__(self):
         super().__init__()
-        self.nu = 2
-        self.nx = 7
+        self.nu = 1
+        self.nx = 3
 
-        self.states = ["x", "y", "theta", "vx", "vy", "w", "s"]
-        self.inputs = ["throttle", "steering"] #, "slack"]
+        self.states = ["x", "vx", "s"] #["x", "y", "theta", "vx", "vy", "w", "s"]
+        self.inputs = ["throttle"]#, "steering"] #, "slack"]
 
-        self.lower_bound = [-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]
-        self.upper_bound = [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
+        self.lower_bound = [-2.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]
+        self.upper_bound = [2.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
     
     def evaluate_Fx_2(self, vx, th):
         #fitted from same data as GP for ICRA 2024
@@ -223,7 +223,7 @@ class BicycleModel2ndOrder(DynamicsModel):
         Ff = - a * cd.tanh(b  * vx) - vx * c
         return Ff
 
-    def continuous_model(self, x, u):
+    # def continuous_model(self, x, u):
 
         th = u[0]
         st = u[1]
@@ -258,6 +258,29 @@ class BicycleModel2ndOrder(DynamicsModel):
         # v Simple s_dot approx taken from standard MPCC formulation
         s_dot = vx
         return cd.vertcat(*xdot, s_dot)
+
+    def continuous_model(self, x, u):
+        """Dynamics model with only x, vx and throttle """
+
+        th = u[0]
+        vx = x[1]
+
+        # Define constants for Jetracer
+        m = 1.6759806
+        l = 0.175
+
+ 
+        Fx_wheels = self.motor_force_dart(vx, th) + self.friction_dart(vx)
+
+        # Evaluate to acceleration
+        acc_x = Fx_wheels / m
+
+        xdot1 = vx
+        xdot2 = acc_x
+        sdot = vx
+        xdot = [xdot1,xdot2]
+
+        return cd.vertcat(*xdot, sdot)
 
 if __name__ == "__main__":
 

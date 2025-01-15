@@ -94,9 +94,9 @@ def generate_solver(modules, model, settings=None):
     # Set state bound
     nx = model.nx
     nu = model.nu
-    # ocp.constraints.lbx = np.array([model.lower_bound[nu : model.get_nvar()]]).flatten()
-    # ocp.constraints.ubx = np.array([model.upper_bound[nu : model.get_nvar()]]).flatten()
-    # ocp.constraints.idxbx = np.array(range(model.nx))
+    ocp.constraints.lbx = np.array([model.lower_bound[nu : model.get_nvar()]]).flatten()
+    ocp.constraints.ubx = np.array([model.upper_bound[nu : model.get_nvar()]]).flatten()
+    ocp.constraints.idxbx = np.array(range(model.nx))
 
     # Set control input bound
     ocp.constraints.lbu = np.array([model.lower_bound[:nu]]).flatten()
@@ -155,7 +155,8 @@ def generate_solver(modules, model, settings=None):
     ocp.solver_options.nlp_solver_type = settings["solver_settings"]["solver_type"]
     if ocp.solver_options.nlp_solver_type == "SQP":
         ocp.solver_options.nlp_solver_max_iter = settings["solver_settings"]["iterations"]
-    ocp.solver_options.hessian_approx = "EXACT"
+    ocp.solver_options.hessian_approx = "GAUSS_NEWTON"
+    # ocp.solver_options.hessian_approx = "EXACT"
     # ocp.solver_options.levenberg_marquardt = 1e-3  # Helps to resolve min step errors
     # ocp.solver_options.regularize_method = "MIRROR"
     # ocp.solver_options.globalization = "MERIT_BACKTRACKING"
@@ -170,10 +171,10 @@ def generate_solver(modules, model, settings=None):
     # Partial Condensing: Suitable for larger systems, providing a balance between problem size and computational complexity.
     # It allows for controlled reduction in problem size, making it more scalable and flexible but potentially more complex to implement.
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
-    # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" # (QP fails!)
-    ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
+    ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" # (QP fails!)
+    # ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
     ocp.solver_options.qp_solver_iter_max = 50  # default = 50
-    ocp.solver_options.qp_solver_warm_start = 2  # cold start / 1 = warm, 2 = warm primal and dual
+    ocp.solver_options.qp_solver_warm_start = 0  # cold start / 1 = warm, 2 = warm primal and dual
     # ocp.solver_options.qp_solver.warm_start_first_qp = 0
 
     # code generation options

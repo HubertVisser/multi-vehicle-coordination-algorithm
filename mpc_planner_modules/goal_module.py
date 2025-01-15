@@ -24,7 +24,7 @@ class GoalObjective(Objective):
 
         # if stage_idx == settings["N"] - 1:
         pos_x = model.get("x")
-        pos_y = model.get("y")
+        # pos_y = model.get("y")
         s = model.get("s")
 
         goal_weight = params.get("goal")
@@ -34,7 +34,8 @@ class GoalObjective(Objective):
         goal_x = s
         goal_y = 0
 
-        cost += goal_weight * ((pos_x - goal_x) ** 2 + (pos_y - goal_y) ** 2) / (goal_x**2 + goal_y**2 + 0.01)
+        # cost += goal_weight * ((pos_x - goal_x) ** 2 + (pos_y - goal_y) ** 2) / (goal_x**2 + goal_y**2 + 0.01)
+        cost += goal_weight * ((pos_x - goal_x) ** 2 ) / (goal_x**2 + 0.01)
         # dist_to_goal = (pos_x - goal_x) ** 2 + (pos_y - goal_y) ** 2
         # normalized_dist = dist_to_goal / (20.0)
         # cost += goal_weight * huber_loss(normalized_dist, quadratic_from=0.05)
