@@ -9,9 +9,9 @@ sys.path.append(os.path.join(sys.path[0], "..", "..", "mpc_planner_modules"))
 
 import threading
 
-from helpers import get_solver_import_paths
+# from helpers import get_solver_import_paths
 
-get_solver_import_paths()
+# get_solver_import_paths()
 
 import rospy
 from std_msgs.msg import Int32, Float32, Empty
@@ -226,6 +226,16 @@ class ROSMPCPlanner:
         self.publish_steering(output, self._mpc_feasible)
         # self.publish_robot_state()
         # self.visualize()
+        # self._state[0] = output["x"]
+        # self._state[1] = output["y"]
+
+        # # Extract yaw angle (rotation around the Z-axis)
+        # self._state[2] = output["theta"]
+
+        # # Velocity is in the local frame, x is the forward velocity
+        # self._state[3] = output["vx"]
+        # self._state[4] = output["vy"]
+        # self._state[5] = output["omega"]
 
     def set_parameters(self):
         splines = None
@@ -428,8 +438,8 @@ class ROSMPCPlanner:
         # print("-------- State ----------")
         # print(f"x = {self._state[0]:.2f}")
         # print(f"y = {self._state[1]:.2f}")
-        # print(f"psi = {self._state[2]:.2f}")
-        # print(f"v = {self._state[3]:.2f}")
+        # print(f"theta = {self._state[2]:.2f}")
+        # print(f"vx = {self._state[3]:.2f}")
 
     def obstacle_callback(self, msg):
         if self._state is None or not self._callbacks_enabled:

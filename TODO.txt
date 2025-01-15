@@ -1,5 +1,7 @@
 TODO:
 - [ ] Implement the car_number in the settings file
+- [ ] Fix the reset for rqt reconfigure
+- [ ] Fix the tests
 
 --DART:--
 rospy.Subscriber('steering_' + str(car_number), Float32, self.callback_steering)

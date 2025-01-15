@@ -86,7 +86,7 @@ def generate_solver(modules, model, settings=None):
 
     # Set cost types
     ocp.cost.cost_type = "EXTERNAL"
-    ocp.cost.cost_type_e = "EXTERNAL"
+    # ocp.cost.cost_type_e = "EXTERNAL"
 
     # Set initial constraint
     ocp.constraints.x0 = np.zeros(model.nx)
@@ -173,7 +173,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" # (QP fails!)
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
     ocp.solver_options.qp_solver_iter_max = 50  # default = 50
-    ocp.solver_options.qp_solver_warm_start = 0  # cold start / 1 = warm, 2 = warm primal and dual
+    ocp.solver_options.qp_solver_warm_start = 2  # cold start / 1 = warm, 2 = warm primal and dual
     # ocp.solver_options.qp_solver.warm_start_first_qp = 0
 
     # code generation options

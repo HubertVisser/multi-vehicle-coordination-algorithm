@@ -32,7 +32,7 @@ class MPCPlanner:
         self._projection_func = lambda trajectory: trajectory # No projection
 
         self.init_acados_solver()
-    
+
         self._mpc_feasible = False
         self.time_tracker = TimeTracker(self._settings["solver_settings"])
 
@@ -130,10 +130,16 @@ class MPCPlanner:
             self._model.load(self._solver)
 
             output = dict()
-            output["vx"] = self._model.get(1, "vx")
-            output["theta"] = self._model.get(1, "theta")
             output["throttle"] = self._model.get(0, "throttle")
             output["steering"] = self._model.get(0, "steering")
+            output["x"] = self._model.get(1, "x")
+            output["y"] = self._model.get(1, "y")
+            output["theta"] = self._model.get(1, "theta")
+            output["vx"] = self._model.get(1, "vx")
+            output["vy"] = self._model.get(1, "vy")
+            output["omega"] = self._model.get(1, "omega")
+            
+            
 
             self.time_tracker.add(solve_time)
             print_value("Throttle and vx",f"{output['throttle']:.2f}, {output['vx']:.2f}")
