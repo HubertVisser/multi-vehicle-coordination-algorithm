@@ -2,7 +2,6 @@ import casadi as cd
 import numpy as np
 
 from util.files import model_map_path, write_to_yaml
-from DART_dynamic_models.dart_dynamic_models import model_functions
 from spline import Spline2D
 
 
@@ -151,18 +150,17 @@ class BicycleModel2ndOrder(DynamicsModel):
         self.upper_bound = [2.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
     
     def motor_force(self,throttle_filtered,v,a_m,b_m,c_m):
-        w_m = 0.5 * (np.tanh(100*(throttle_filtered+c_m))+1)
+        w_m = 0.5 * (cd.tanh(100*(throttle_filtered+c_m))+1)
         Fx =  (a_m - b_m * v) * w_m * (throttle_filtered+c_m)
         return Fx
     
     def rolling_friction(self,vx,a_f,b_f,c_f,d_f):
 
-        F_rolling = - ( a_f * np.tanh(b_f  * vx) + c_f * vx + d_f * vx**2 )
+        F_rolling = - ( a_f * cd.tanh(b_f  * vx) + c_f * vx + d_f * vx**2 )
         return F_rolling
     
     def model_parameters(self):
         lr_reference = 0.115  #0.11650    # (measureing it wit a tape measure it's 0.1150) reference point location taken by the vicon system measured from the rear wheel
-        l_lateral_shift_reference = -0.01 # the reference point is shifted laterally by this amount 
         #COM_positon = 0.084 #0.09375 #centre of mass position measured from the rear wheel
 
         # car parameters
@@ -170,7 +168,6 @@ class BicycleModel2ndOrder(DynamicsModel):
         m = 1.580 # mass [kg]
         m_front_wheel = 0.847 #[kg] mass pushing down on the front wheel
         m_rear_wheel = 0.733 #[kg] mass pushing down on the rear wheel
-
 
         COM_positon = l / (1+m_rear_wheel/m_front_wheel)
         lr = COM_positon
@@ -187,7 +184,7 @@ class BicycleModel2ndOrder(DynamicsModel):
         return steering_angle
     
 
-    # def continuous_model(self, x, u):
+    #def continuous_model(self, x, u):
 
         th = u[0]
         st = u[1]
@@ -207,8 +204,16 @@ class BicycleModel2ndOrder(DynamicsModel):
         c_f =  0.7393041849136353
         d_f =  -0.11231517791748047
 
+        # steering angle curve --from fitting on vicon data
+        a_s =  1.392930030822754
+        b_s =  0.36576229333877563
+        c_s =  0.0029959678649902344 - 0.03 # littel adjustment to allign the tire curves
+        d_s =  0.5147881507873535
+        e_s =  1.0230425596237183
+
+
         # convert steering command to steering angle
-        steering_angle = self.steering_2_steering_angle(st)
+        steering_angle = self.steering_2_steering_angle(st, a_s, b_s, c_s, d_s, e_s)
         
         Fx_wheels = self.motor_force(th, vx, a_m, b_m, c_m)\
                 + self.rolling_friction(vx, a_f, b_f, c_f, d_f)
@@ -216,8 +221,8 @@ class BicycleModel2ndOrder(DynamicsModel):
         # Evaluate to acceleration
         acc_x = Fx_wheels / m
         
-        w = vx * cd.tan(steering_angle) / (lr+ lf)# angular velocity
-        vy = l_COM* w
+        w = vx * cd.tan(steering_angle) / (lr + lf)# angular velocity
+        vy = l_COM * w
 
         xdot1 = vx * cd.cos(theta) - vy * cd.sin(theta)
         xdot2 = vx * cd.sin(theta) + vy * cd.cos(theta)
@@ -280,7 +285,7 @@ if __name__ == "__main__":
     v_friction_static_tanh_mult = 23.637709
     v_friction_quad = 0.09363517
 
-    th_activation1 = cd.tanh((th - tau_offset) * tau_steepness) + 1) * tau_sat_high
+    th_activation1 = (cd.tanh((th - tau_offset) * tau_steepness) + 1) * tau_sat_high
     static_friction = np.tanh(v_friction_static_tanh_mult  * vx) * v_friction_static
     v_contribution = - static_friction - vx * v_friction - np.sign(vx) * vx ** 2 * v_friction_quad 
     print(th_activation1 + v_contribution)
