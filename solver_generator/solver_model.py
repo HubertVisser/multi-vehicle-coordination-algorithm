@@ -146,8 +146,8 @@ class BicycleModel2ndOrder(DynamicsModel):
         self.states = ["x", "vx", "s"] #["x", "y", "theta", "vx", "vy", "w", "s"]
         self.inputs = ["throttle"]#, "steering"] #, "slack"]
 
-        self.lower_bound = [-2.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]
-        self.upper_bound = [2.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
+        self.lower_bound = [-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]
+        self.upper_bound = [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
     
     def motor_force(self,throttle_filtered,v,a_m,b_m,c_m):
         w_m = 0.5 * (cd.tanh(100*(throttle_filtered+c_m))+1)
@@ -273,19 +273,5 @@ if __name__ == "__main__":
 
     model = BicycleModel2ndOrder()
     th = 1.0
-    vx = -2.0
-    Fx_wheels = model.motor_force(th, vx) + model.friction(vx)
-    print(Fx_wheels)
-
-    tau_offset = 0.16150239
-    tau_steepness = 10.7796755
-    tau_sat_high = 2.496312
-    v_friction = 1.0683593
-    v_friction_static = 1.1530068
-    v_friction_static_tanh_mult = 23.637709
-    v_friction_quad = 0.09363517
-
-    th_activation1 = (cd.tanh((th - tau_offset) * tau_steepness) + 1) * tau_sat_high
-    static_friction = np.tanh(v_friction_static_tanh_mult  * vx) * v_friction_static
-    v_contribution = - static_friction - vx * v_friction - np.sign(vx) * vx ** 2 * v_friction_quad 
-    print(th_activation1 + v_contribution)
+    vx = 0.0
+    model.continuous_model([0, vx, 0], [th])

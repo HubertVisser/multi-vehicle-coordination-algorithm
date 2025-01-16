@@ -19,7 +19,7 @@ class RealTimeParameters:
     def set(self, k, parameter, value):
         if parameter in self._map.keys():
             self._params[k, self._map[parameter]] = value
-            # print(f"{parameter} set to {value} | map value: {self._map[parameter]} check: {self._params[self._map[parameter]]}")
+            print(f"{parameter} set to {value} | map value: {self._map[parameter]} check: {self._params[self._map[parameter]]}")
 
     def get(self, k, parameter):
         return self._params[k, self._map[parameter]]
@@ -38,6 +38,8 @@ class RealTimeParameters:
         return out
 
     def get_num_par(self):
+        print(f"{parameter} set to {value} | map value: {self._map[parameter]} check: {self._params[self._map[parameter]]}")
+
         return self._num_p
     
     def print(self):
@@ -68,7 +70,6 @@ class RealTimeModel:
 
     def get(self, k, var_name):
         map_value = self._map[var_name]
-        # print(f"{var_name} at {k}: map = {map_value}, value = {self._vars[k, map_value[1]]:.2f}")
         return self._vars[k, map_value[1]]
 
 

@@ -1,5 +1,5 @@
 name: "Jetracer"
-N: 15
+N: 7
 integrator_step: 0.1
 n_discs: 0
 
@@ -7,8 +7,8 @@ verbose: false
 debug_visuals: false
 
 solver_settings:
-  iterations: 6 #2 # 1
-  solver_type: SQP # SQP_RTI (default) or SQP
+  iterations: 2 #2 # 1
+  solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 20
 max_obstacles: 8
@@ -27,7 +27,7 @@ weights:
   throttle: .05
   steering: 1.
   velocity: 1.
-  reference_velocity: 4.
+  reference_velocity: 3.
 
 
 

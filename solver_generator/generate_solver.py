@@ -171,8 +171,8 @@ def generate_solver(modules, model, settings=None):
     # Partial Condensing: Suitable for larger systems, providing a balance between problem size and computational complexity.
     # It allows for controlled reduction in problem size, making it more scalable and flexible but potentially more complex to implement.
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
-    ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" # (QP fails!)
-    # ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
+    # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" # (QP fails!)
+    ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
     ocp.solver_options.qp_solver_iter_max = 50  # default = 50
     ocp.solver_options.qp_solver_warm_start = 0  # cold start / 1 = warm, 2 = warm primal and dual
     # ocp.solver_options.qp_solver.warm_start_first_qp = 0
