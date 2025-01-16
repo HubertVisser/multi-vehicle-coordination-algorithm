@@ -2,7 +2,7 @@ import casadi as cd
 import numpy as np
 
 from util.files import model_map_path, write_to_yaml
-
+from DART_dynamic_models.dart_dynamic_models import model_functions
 from spline import Spline2D
 
 
@@ -150,78 +150,42 @@ class BicycleModel2ndOrder(DynamicsModel):
         self.lower_bound = [-2.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]
         self.upper_bound = [2.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
     
-    def evaluate_Fx_2(self, vx, th):
-        #fitted from same data as GP for ICRA 2024
-        v_friction = 1.0683593
-        v_friction_static = 1.1530068
-        v_friction_static_tanh_mult = 23.637709
-        v_friction_quad = 0.09363517
-
-        tau_offset = 0.16150239
-        tau_offset_reverse = 0.16150239
-        tau_steepness = 10.7796755
-        tau_steepness_reverse = 90
-        tau_sat_high = 2.496312
-        tau_sat_high_reverse = 5.0
-
-        #friction model
-        static_friction = cd.tanh(v_friction_static_tanh_mult  * vx) * v_friction_static
-        v_contribution = - static_friction - vx * v_friction - cd.sign(vx) * vx ** 2 * v_friction_quad 
-
-        #for positive throttle
-        th_activation1 = (cd.tanh((th - tau_offset) * tau_steepness) + 1) * tau_sat_high
-        #for negative throttle
-        th_activation2 = (cd.tanh((th + tau_offset_reverse) * tau_steepness_reverse)-1) * tau_sat_high_reverse
-
-        throttle_contribution = (th_activation1 + th_activation2) 
-
-        # --------
-
-        Fx = throttle_contribution + v_contribution
-        Fx_r = Fx * 0.5
-        Fx_f = Fx * 0.5
-        return Fx_r, Fx_f
+    def motor_force(self,throttle_filtered,v,a_m,b_m,c_m):
+        w_m = 0.5 * (np.tanh(100*(throttle_filtered+c_m))+1)
+        Fx =  (a_m - b_m * v) * w_m * (throttle_filtered+c_m)
+        return Fx
     
-    def evaluate_vy_w_kin_bike(self, steering_angle,vx,L):
-        
-        w = vx * cd.tan(steering_angle) / L
+    def rolling_friction(self,vx,a_f,b_f,c_f,d_f):
 
-        # lateral velocity of centre of mass
-        R = L / cd.tan(steering_angle)
-        beta = cd.atan2(L/2*cd.tan(steering_angle),L)
-        R_star =  R / cd.cos(beta)
-        vy = w * R_star * cd.sin(beta)
+        F_rolling = - ( a_f * np.tanh(b_f  * vx) + c_f * vx + d_f * vx**2 )
+        return F_rolling
+    
+    def model_parameters(self):
+        lr_reference = 0.115  #0.11650    # (measureing it wit a tape measure it's 0.1150) reference point location taken by the vicon system measured from the rear wheel
+        l_lateral_shift_reference = -0.01 # the reference point is shifted laterally by this amount 
+        #COM_positon = 0.084 #0.09375 #centre of mass position measured from the rear wheel
 
-        return vy, w
+        # car parameters
+        l = 0.1735 # [m]length of the car (from wheel to wheel)
+        m = 1.580 # mass [kg]
+        m_front_wheel = 0.847 #[kg] mass pushing down on the front wheel
+        m_rear_wheel = 0.733 #[kg] mass pushing down on the rear wheel
 
-    def steering_angle(self, steering_command):
-        a =  1.6379064321517944
-        b =  0.3301370143890381
-        c =  0.019644200801849365
-        d =  0.37879398465156555
-        e =  1.6578725576400757
 
-        w = 0.5 * (cd.tanh(30*(steering_command+c))+1)
-        steering_angle1 = b * cd.tanh(a * (steering_command + c)) 
-        steering_angle2 = d * cd.tanh(e * (steering_command + c))
-        steering_angle = (w)*steering_angle1+(1-w)*steering_angle2 
-
+        COM_positon = l / (1+m_rear_wheel/m_front_wheel)
+        lr = COM_positon
+        lf = l-lr
+        # Automatically adjust following parameters according to tweaked values
+        l_COM = lr_reference - COM_positon
+        return l, m, lr, lf, l_COM
+    
+    def steering_2_steering_angle(self,steering_command,a_s,b_s,c_s,d_s,e_s):
+        w_s = 0.5 * (cd.tanh(30*(steering_command+c_s))+1)
+        steering_angle1 = b_s * cd.tanh(a_s * (steering_command + c_s))
+        steering_angle2 = d_s * cd.tanh(e_s * (steering_command + c_s))
+        steering_angle = (w_s)*steering_angle1+(1-w_s)*steering_angle2
         return steering_angle
     
-    def motor_force_dart(self, vx, th):
-        a =  28.887779235839844
-        b =  5.986172199249268
-        c =  -0.15045104920864105
-        w = 0.5 * (cd.tanh(100*(th+c))+1)
-        Fm =  (a - vx * b) * w * (th+c)
-        return Fm
-
-    def friction_dart(self, vx):
-        a =  1.7194761037826538
-        b =  13.312559127807617
-        c =  0.289848655462265
-        Ff = - a * cd.tanh(b  * vx) - vx * c
-        return Ff
 
     # def continuous_model(self, x, u):
 
@@ -230,21 +194,30 @@ class BicycleModel2ndOrder(DynamicsModel):
         theta = x[2]
         vx = x[3]
 
-        # Define constants for Jetracer
-        m = 1.6759806
-        l = 0.175
+        # Define model parameters
+        l, m, lr, lf, l_COM = self.model_parameters()
 
-        #------- Kinematic Bike - Jetracer repo -------
+        # motor parameters
+        a_m =  25.35849952697754    
+        b_m =  4.815326690673828    
+        c_m =  -0.16377617418766022 
+
+        a_f =  1.2659882307052612
+        b_f =  7.666370391845703
+        c_f =  0.7393041849136353
+        d_f =  -0.11231517791748047
 
         # convert steering command to steering angle
-        steering_angle = self.steering_angle(st)
+        steering_angle = self.steering_2_steering_angle(st)
         
-        Fx_r, Fx_f = self.evaluate_Fx_2(vx, th)
-
+        Fx_wheels = self.motor_force(th, vx, a_m, b_m, c_m)\
+                + self.rolling_friction(vx, a_f, b_f, c_f, d_f)
+        
         # Evaluate to acceleration
-        acc_x = (Fx_r + Fx_f * cd.cos(steering_angle)) / m
+        acc_x = Fx_wheels / m
         
-        vy, w = self.evaluate_vy_w_kin_bike(steering_angle, vx, l)
+        w = vx * cd.tan(steering_angle) / (lr+ lf)# angular velocity
+        vy = l_COM* w
 
         xdot1 = vx * cd.cos(theta) - vy * cd.sin(theta)
         xdot2 = vx * cd.sin(theta) + vy * cd.cos(theta)
@@ -265,12 +238,21 @@ class BicycleModel2ndOrder(DynamicsModel):
         th = u[0]
         vx = x[1]
 
-        # Define constants for Jetracer
-        m = 1.6759806
-        l = 0.175
+        # Define model parameters
+        l, m, lr, lf, l_COM_self = self.model_parameters()
 
- 
-        Fx_wheels = self.motor_force_dart(vx, th) + self.friction_dart(vx)
+        # motor parameters
+        a_m =  25.35849952697754    
+        b_m =  4.815326690673828    
+        c_m =  -0.16377617418766022 
+
+        a_f =  1.2659882307052612
+        b_f =  7.666370391845703
+        c_f =  0.7393041849136353
+        d_f =  -0.11231517791748047
+
+        Fx_wheels = self.motor_force(th, vx, a_m, b_m, c_m)\
+                + self.rolling_friction(vx, a_f, b_f, c_f, d_f)
 
         # Evaluate to acceleration
         acc_x = Fx_wheels / m
@@ -298,7 +280,7 @@ if __name__ == "__main__":
     v_friction_static_tanh_mult = 23.637709
     v_friction_quad = 0.09363517
 
-    th_activation1 = (np.tanh((th - tau_offset) * tau_steepness) + 1) * tau_sat_high
+    th_activation1 = cd.tanh((th - tau_offset) * tau_steepness) + 1) * tau_sat_high
     static_friction = np.tanh(v_friction_static_tanh_mult  * vx) * v_friction_static
     v_contribution = - static_friction - vx * v_friction - np.sign(vx) * vx ** 2 * v_friction_quad 
     print(th_activation1 + v_contribution)

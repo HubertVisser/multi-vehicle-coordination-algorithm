@@ -29,7 +29,7 @@ def configuration_basic(settings):
     base_module.weigh_variable(var_name="throttle", weight_names="throttle")
     
 
-    modules.add_module(GoalModule(settings))
+    # modules.add_module(GoalModule(settings))
     # modules.add_module(ContouringModule(settings, num_segments=settings["contouring"]["num_segments"]))
     # Penalize ||v - v_ref||_2^2
     modules.add_module(PathReferenceVelocityModule(settings, num_segments=settings["contouring"]["num_segments"]))
