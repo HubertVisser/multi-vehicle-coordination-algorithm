@@ -140,13 +140,13 @@ class BicycleModel2ndOrder(DynamicsModel):
 
     def __init__(self):
         super().__init__()
-        self.nu = 1
-        self.nx = 6
+        self.nu = 2
+        self.nx = 7
 
-        self.states = ["x", "y", "theta", "vx", "vy", "w"]
-        self.inputs = ["steering"]#, "steering"] #, "slack"]
+        self.states = ["x", "y", "theta", "vx", "vy", "w", "s"]
+        self.inputs = ["throttle", "steering"] #, "slack"]
 
-        self.lower_bound = [-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]
+        self.lower_bound = [0.2, -1000.0, 0.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]
         self.upper_bound = [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
     
     def motor_force(self,throttle_filtered,v,a_m,b_m,c_m):
@@ -184,7 +184,7 @@ class BicycleModel2ndOrder(DynamicsModel):
         return steering_angle
     
 
-    #def continuous_model(self, x, u):
+    def continuous_model(self, x, u): 
 
         th = u[0]
         st = u[1]
@@ -238,7 +238,7 @@ class BicycleModel2ndOrder(DynamicsModel):
         return cd.vertcat(*xdot, s_dot)
 
     #def continuous_model(self, x, u):
-        """Dynamics model with only x, vx and throttle """
+        """Dynamics model with states: x, vx and input: throttle """
 
         th = u[0]
         vx = x[1]
@@ -269,8 +269,8 @@ class BicycleModel2ndOrder(DynamicsModel):
 
         return cd.vertcat(*xdot, sdot)
     
-    def continuous_model(self, x, u):
-        """Dynamics model with only x, vx and throttle """
+    #def continuous_model(self, x, u):
+        """Dynamics model with only input: steering """
 
         st = u[0]
         theta = x[2]

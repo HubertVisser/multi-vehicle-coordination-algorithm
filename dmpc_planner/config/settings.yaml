@@ -7,7 +7,7 @@ verbose: false
 debug_visuals: false
 
 solver_settings:
-  iterations: 1 #2 # 1
+  iterations: 6 #2 # 1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 20
@@ -26,7 +26,7 @@ weights:
   goal: 5.
   throttle: .05
   steering: 1.
-  velocity: 1.
+  velocity: 3.
   reference_velocity: 3.
   reference_steering: 1
 
