@@ -28,6 +28,7 @@ weights:
   steering: 1.
   velocity: 1.
   reference_velocity: 3.
+  reference_steering: 1
 
 
 

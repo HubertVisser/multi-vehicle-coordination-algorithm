@@ -39,6 +39,7 @@ from contouring_spline import SplineFitter
 from mpc_controller import MPCPlanner
 from ros_visuals import ROSMarkerPublisher
 from project_trajectory import project_trajectory_to_safety
+from pyplot import plot_x_traj_init
 
 
 class ROSMPCPlanner:
@@ -73,6 +74,7 @@ class ROSMPCPlanner:
         self._weights = self._settings["weights"]
         n_states = self._solver_settings["nx"]
         self._state = np.zeros((n_states,))
+        self._state[3] = 1 # Set initial velocity to 1 m/s
 
         self._visuals = ROSMarkerPublisher("mpc_visuals", 100)
         self._path_visual = ROSMarkerPublisher("reference_path", 10)
@@ -224,8 +226,11 @@ class ROSMPCPlanner:
         if self._verbose:
             time = timer.stop_and_print()
 
-        self.publish_throttle(output, self._mpc_feasible)
-        # self.publish_steering(output, self._mpc_feasible)
+
+        plot_x_traj_init(self._trajectory, self._N, self._integrator_step)
+
+        # self.publish_throttle(output, self._mpc_feasible)
+        self.publish_steering(output, self._mpc_feasible)
         # self.publish_robot_state()
         # self.visualize()
         # self._state[0] = output["x"]
@@ -376,7 +381,7 @@ class ROSMPCPlanner:
                 rospy.logwarn_throttle(1, "Output is disabled. Sending zero velocity!")
                 throttle.data = 0.0
         else:
-            throttle.data = output["throttle"]
+            throttle.data = 0.0 #output["throttle"]
             rospy.loginfo_throttle(1000, "MPC is driving")
         self._th_pub.publish(throttle)
     
