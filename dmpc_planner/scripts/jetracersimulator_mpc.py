@@ -88,7 +88,7 @@ class ROSMPCPlanner:
         self._goal_x = 0.0
         self._goal_y = 0.0
 
-        self._enable_output = True
+        self._enable_output = False
         self._mpc_feasible = False
 
         self._timer = rospy.Timer(
@@ -100,6 +100,8 @@ class ROSMPCPlanner:
         self._callbacks_enabled = True
 
         # self.start_environment()
+        self._enable_output = True
+        
 
     def initialize_publishers_and_subscribers(self):
 

@@ -146,7 +146,7 @@ class BicycleModel2ndOrder(DynamicsModel):
         self.states = ["x", "vx", "s"] #["x", "y", "theta", "vx", "vy", "w", "s"]
         self.inputs = ["throttle"]#, "steering"] #, "slack"]
 
-        self.lower_bound = [-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]
+        self.lower_bound = [0.0, 0.0, 0.0, 0.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]
         self.upper_bound = [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
     
     def motor_force(self,throttle_filtered,v,a_m,b_m,c_m):
@@ -237,7 +237,7 @@ class BicycleModel2ndOrder(DynamicsModel):
         s_dot = vx
         return cd.vertcat(*xdot, s_dot)
 
-    def continuous_model(self, x, u):
+    #def continuous_model(self, x, u):
         """Dynamics model with only x, vx and throttle """
 
         th = u[0]
@@ -268,6 +268,36 @@ class BicycleModel2ndOrder(DynamicsModel):
         xdot = [xdot1,xdot2]
 
         return cd.vertcat(*xdot, sdot)
+    
+    def continuous_model(self, x, u):
+        """Dynamics model with only x, vx and throttle """
+
+        st = u[0]
+        x = x[0]
+        y = x[1]
+        theta = x[2]
+        vx = 1
+
+        # Define model parameters
+        l, m, lr, lf, l_COM_self = self.model_parameters()
+
+         # steering angle curve --from fitting on vicon data
+        a_s =  1.392930030822754
+        b_s =  0.36576229333877563
+        c_s =  0.0029959678649902344 - 0.03 # littel adjustment to allign the tire curves
+        d_s =  0.5147881507873535
+        e_s =  1.0230425596237183
+
+
+        # convert steering command to steering angle
+        steering_angle = self.steering_2_steering_angle(st, a_s, b_s, c_s, d_s, e_s)
+
+        xdot1 = vx * cd.cos(theta) - vy * cd.sin(theta)
+        xdot2 = vx * cd.sin(theta) + vy * cd.cos(theta)
+        xdot3 = w
+        xdot = [xdot1,xdot2,xdot3]
+
+        return cd.vertcat(*xdot)
 
 if __name__ == "__main__":
 

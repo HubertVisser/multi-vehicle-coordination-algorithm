@@ -21,15 +21,18 @@ class PathReferenceVelocityObjective:
         params.add("velocity", add_to_rqt_reconfigure=True)
 
         params.add("reference_velocity", add_to_rqt_reconfigure=True)
-        for i in range(self.num_segments):
-            params.add(f"spline_v{i}_a", bundle_name="spline_v_a")
-            params.add(f"spline_v{i}_b", bundle_name="spline_v_b")
-            params.add(f"spline_v{i}_c", bundle_name="spline_v_c")
-            params.add(f"spline_v{i}_d", bundle_name="spline_v_d")
+        # for i in range(self.num_segments):
+        #     params.add(f"spline_v{i}_a", bundle_name="spline_v_a")
+        #     params.add(f"spline_v{i}_b", bundle_name="spline_v_b")
+        #     params.add(f"spline_v{i}_c", bundle_name="spline_v_c")
+        #     params.add(f"spline_v{i}_d", bundle_name="spline_v_d")
 
-        return params
+        # return params
 
     def get_value(self, model, params, settings, stage_idx):
+        
+        if stage_idx == settings["N"]-1:
+            return 0.0
         # # The cost is computed in the contouring cost when using CA-MPC
         # return 0.0
         # psi = model.get("psi")

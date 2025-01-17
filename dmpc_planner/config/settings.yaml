@@ -1,5 +1,5 @@
 name: "Jetracer"
-N: 7
+N: 5
 integrator_step: 0.1
 n_discs: 0
 
@@ -7,7 +7,7 @@ verbose: false
 debug_visuals: false
 
 solver_settings:
-  iterations: 2 #2 # 1
+  iterations: 1 #2 # 1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 20
