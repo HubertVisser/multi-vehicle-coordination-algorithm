@@ -39,7 +39,7 @@ from contouring_spline import SplineFitter
 from mpc_controller import MPCPlanner
 from ros_visuals import ROSMarkerPublisher
 from project_trajectory import project_trajectory_to_safety
-from pyplot import plot_x_traj_init
+from pyplot import plot_x_traj
 
 
 class ROSMPCPlanner:
@@ -72,7 +72,7 @@ class ROSMPCPlanner:
         self._weights = self._settings["weights"]
         n_states = self._solver_settings["nx"]
         self._state = np.zeros((n_states,))
-        
+
         self._visuals = ROSMarkerPublisher("mpc_visuals", 100)
         self._path_visual = ROSMarkerPublisher("reference_path", 10)
         self._debug_visuals = ROSMarkerPublisher("mpc_planner_py/debug", 10)
@@ -144,6 +144,12 @@ class ROSMPCPlanner:
         # Pub
         self._th_pub = rospy.Publisher("throttle_1", Float32, queue_size=1) # Throttle publisher
         self._st_pub = rospy.Publisher("steering_1", Float32, queue_size=1) # Steering publisher
+
+        ## Debug closed loop state publisher
+        # self._state_pub = rospy.Publisher(
+            # "vicon/jetracer1", PoseStamped, queue_size=1
+        # )
+
         # self._ped_robot_state_pub = rospy.Publisher(
         #     "/pedestrian_simulator/robot_state", PoseStamped, queue_size=1
         # )
@@ -224,7 +230,7 @@ class ROSMPCPlanner:
             time = timer.stop_and_print()
 
 
-        # plot_x_traj_init(self._trajectory, self._N, self._integrator_step)
+        plot_x_traj(self._trajectory, self._N, self._integrator_step)
 
         self.publish_throttle(output, self._mpc_feasible)
         self.publish_steering(output, self._mpc_feasible)
@@ -399,7 +405,7 @@ class ROSMPCPlanner:
         pose.pose.position.x = self._state[0]
         pose.pose.position.y = self._state[1]
         pose.pose.position.z = self._state[3]
-        # self._ped_robot_state_pub.publish(pose)
+        # self._state_debug_pub.publish(pose)
 
     def reload_solver_callback(self, msg):
         self._callbacks_enabled = False

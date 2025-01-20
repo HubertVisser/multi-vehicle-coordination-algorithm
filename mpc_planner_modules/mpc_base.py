@@ -46,8 +46,6 @@ class WeightsObjective(Objective):
 
     def get_value(self, model, params, settings, stage_idx):
         cost = 0.0
-        if stage_idx == settings["N"]-1:
-            return cost
         for idx, cost_function in enumerate(self._cost_functions):
             weights = []
             for cost_weight in self._weights_per_function[idx]:  # Retrieve the weight parameters for this cost function!
@@ -55,7 +53,7 @@ class WeightsObjective(Objective):
 
             variable = model.get(self._variables_per_function[idx])  # Retrieve the state / input to be weighted
             # _, _, var_range = model.get_bounds(self._variables_per_function[idx])
-            # print("Variable: ", variable, "Weights: ", weights)
+            print("Variable: ", variable, "Weights: ", weights)
 
             # Add to the cost
             cost += cost_function(variable, weights)

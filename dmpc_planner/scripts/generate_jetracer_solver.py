@@ -25,7 +25,7 @@ def configuration_basic(settings):
 
     # Penalize ||steering||_2^2
     base_module = modules.add_module(MPCBaseModule(settings))
-    base_module.weigh_variable(var_name="steering", weight_names="steering")
+    # base_module.weigh_variable(var_name="steering", weight_names="steering")
     # base_module.weigh_variable(var_name="throttle", weight_names="throttle")
     # base_module.weigh_variable(
     #     var_name="y", 
@@ -33,10 +33,10 @@ def configuration_basic(settings):
     #     cost_function=lambda y, w: w[0] * (y - w[1]) ** 2,
     # )
 
-    
 
-    modules.add_module(GoalModule(settings))
+    # modules.add_module(GoalModule(settings))
     # modules.add_module(ContouringModule(settings, num_segments=settings["contouring"]["num_segments"]))
+   
     # Penalize ||v - v_ref||_2^2
     base_module.weigh_variable(
     var_name="vx",

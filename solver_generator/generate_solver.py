@@ -94,14 +94,14 @@ def generate_solver(modules, model, settings=None):
     # Set state bound
     nx = model.nx
     nu = model.nu
-    ocp.constraints.lbx = np.array([model.lower_bound[nu : model.get_nvar()]]).flatten()
-    ocp.constraints.ubx = np.array([model.upper_bound[nu : model.get_nvar()]]).flatten()
-    ocp.constraints.idxbx = np.array(range(model.nx))
+    # ocp.constraints.lbx = np.array([model.lower_bound[nu : model.get_nvar()]]).flatten()
+    # ocp.constraints.ubx = np.array([model.upper_bound[nu : model.get_nvar()]]).flatten()
+    # ocp.constraints.idxbx = np.array(range(model.nx))
 
     # Set control input bound
-    ocp.constraints.lbu = np.array([model.lower_bound[:nu]]).flatten()
-    ocp.constraints.ubu = np.array([model.upper_bound[:nu]]).flatten()
-    ocp.constraints.idxbu = np.array(range(nu))
+    # ocp.constraints.lbu = np.array([model.lower_bound[:nu]]).flatten()
+    # ocp.constraints.ubu = np.array([model.upper_bound[:nu]]).flatten()
+    # ocp.constraints.idxbu = np.array(range(nu))
 
     # Set path constraints bound
     nc = ocp.model.con_h_expr.shape[0]

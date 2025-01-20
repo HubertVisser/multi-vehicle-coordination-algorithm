@@ -1,11 +1,17 @@
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import numpy as np
 
-def plot_x_traj_init(trajectory, N, dt):
+def plot_x_traj(trajectory, N, dt):
         # Create a time array based on the number of steps and the time step
-        time = np.arange(0, N * dt, dt)
+        time = np.linspace(0, (N-1) * dt, N)
 
         x_traj = trajectory
+        # Plot the trajectory
+
+        # Clear the previous plot
+        plt.close()
+
         # Plot the trajectory
         plt.figure()
         for i in range(x_traj.shape[0]):

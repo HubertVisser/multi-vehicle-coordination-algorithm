@@ -25,7 +25,7 @@ class GoalObjective(Objective):
         # if stage_idx == settings["N"] - 1:
         pos_x = model.get("x")
         pos_y = model.get("y")
-        # s = model.get("s")
+        s = model.get("s")
 
         goal_weight = params.get("goal")
 

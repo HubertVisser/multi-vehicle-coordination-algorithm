@@ -135,14 +135,14 @@ class MPCPlanner:
             # output["x"] = self._model.get(1, "x")
             # output["y"] = self._model.get(1, "y")
             # output["theta"] = self._model.get(1, "theta")
-            output["vx"] = self._model.get(1, "vx")
+            # output["vx"] = self._model.get(1, "vx")
             # output["vy"] = self._model.get(1, "vy")
             # output["w"] = self._model.get(1, "w")
             
             
 
             self.time_tracker.add(solve_time)
-            print_value("Throttle and vx",f"{output['throttle']:.2f}, {output['vx']:.2f}")
+            # print_value("Throttle and vx",f"{output['throttle']:.2f}, {output['vx']:.2f}")
             # print_value("Steering and theta",f"{output['steering']:.2f}, {output['theta']:.2f}")
             # print_value("Steering and theta",f"{output['steering']:.2f}, {output['theta']:.2f}")
 
