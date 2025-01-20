@@ -88,7 +88,7 @@ class ROSMPCPlanner:
         self._goal_y = 0.0
 
         self._enable_output = False
-        self._mpc_feasible = False
+        self._mpc_feasible = True
 
         self._timer = rospy.Timer(
             rospy.Duration(1.0 / self._settings["control_frequency"]), self.run

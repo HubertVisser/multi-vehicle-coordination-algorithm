@@ -94,3 +94,4 @@ class AcadosRealTimeModel(RealTimeModel):
             mpc_u_plan[:, k] = solver.get(k, 'u')
 
         return np.concatenate([mpc_u_plan, mpc_x_plan])
+  

@@ -99,9 +99,9 @@ def generate_solver(modules, model, settings=None):
     # ocp.constraints.idxbx = np.array(range(model.nx))
 
     # Set control input bound
-    # ocp.constraints.lbu = np.array([model.lower_bound[:nu]]).flatten()
-    # ocp.constraints.ubu = np.array([model.upper_bound[:nu]]).flatten()
-    # ocp.constraints.idxbu = np.array(range(nu))
+    ocp.constraints.lbu = np.array([model.lower_bound[:nu]]).flatten()
+    ocp.constraints.ubu = np.array([model.upper_bound[:nu]]).flatten()
+    ocp.constraints.idxbu = np.array(range(nu))
 
     # Set path constraints bound
     nc = ocp.model.con_h_expr.shape[0]
@@ -155,6 +155,7 @@ def generate_solver(modules, model, settings=None):
     ocp.solver_options.nlp_solver_type = settings["solver_settings"]["solver_type"]
     if ocp.solver_options.nlp_solver_type == "SQP":
         ocp.solver_options.nlp_solver_max_iter = settings["solver_settings"]["iterations"]
+    # ocp.solver_options.nlp_solver_warm_start_first_qp = 1
     # ocp.solver_options.hessian_approx = "GAUSS_NEWTON"
     ocp.solver_options.hessian_approx = "EXACT"
     # ocp.solver_options.levenberg_marquardt = 1e-3  # Helps to resolve min step errors
@@ -174,8 +175,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
     ocp.solver_options.qp_solver_iter_max = 50  # default = 50
-    ocp.solver_options.qp_solver_warm_start = 0  # cold start / 1 = warm, 2 = warm primal and dual
-    # ocp.solver_options.qp_solver.warm_start_first_qp = 0
+    ocp.solver_options.qp_solver_warm_start = 1  # cold start / 1 = warm, 2 = warm primal and dual
 
     # code generation options
     ocp.code_export_directory = f"{os.path.dirname(os.path.abspath(__file__))}/../acados/{model_acados.name}"

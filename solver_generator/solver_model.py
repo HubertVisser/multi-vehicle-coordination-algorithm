@@ -147,17 +147,7 @@ class BicycleModel2ndOrder(DynamicsModel):
         self.inputs = ["throttle", "steering"] #, "slack"]
 
         self.lower_bound = [0.0, -1.0, 0.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]
-        self.upper_bound = [10.0, 1.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
-    
-    def motor_force(self,throttle_filtered,v,a_m,b_m,c_m):
-        w_m = 0.5 * (cd.tanh(100*(throttle_filtered+c_m))+1)
-        Fx =  (a_m - b_m * v) * w_m * (throttle_filtered+c_m)
-        return Fx
-    
-    def rolling_friction(self,vx,a_f,b_f,c_f,d_f):
-
-        F_rolling = - ( a_f * cd.tanh(b_f  * vx) + c_f * vx + d_f * vx**2 )
-        return F_rolling
+        self.upper_bound = [1.0, 1.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
     
     def model_parameters(self):
         lr_reference = 0.115  #0.11650    # (measureing it wit a tape measure it's 0.1150) reference point location taken by the vicon system measured from the rear wheel
@@ -176,15 +166,46 @@ class BicycleModel2ndOrder(DynamicsModel):
         l_COM = lr_reference - COM_positon
         return l, m, lr, lf, l_COM
     
-    def steering_2_steering_angle(self,steering_command,a_s,b_s,c_s,d_s,e_s):
-        w_s = 0.5 * (cd.tanh(30*(steering_command+c_s))+1)
-        steering_angle1 = b_s * cd.tanh(a_s * (steering_command + c_s))
-        steering_angle2 = d_s * cd.tanh(e_s * (steering_command + c_s))
+    def motor_force(self, throttle_cmd, vx):
+        # motor parameters
+        a_m =  25.35849952697754    
+        b_m =  4.815326690673828    
+        c_m =  -0.16377617418766022 
+
+        w_m = 0.5 * (cd.tanh(100*(throttle_cmd+c_m))+1)
+        motor_force =  (a_m - b_m * vx) * w_m * (throttle_cmd+c_m)
+        return motor_force
+    
+    def rolling_friction(self,vx):
+        # friction parameters
+        a_f =  1.2659882307052612
+        b_f =  7.666370391845703
+        c_f =  0.7393041849136353
+        d_f =  -0.11231517791748047
+
+        force_rolling_friction = - ( a_f * cd.tanh(b_f  * vx) + c_f * vx + d_f * vx**2 )
+        return force_rolling_friction
+    
+    def fx_wheels(self,throttle_cmd, vx):
+        fx_wheels = self.motor_force(throttle_cmd, vx) + self.rolling_friction(vx)
+        return fx_wheels
+    
+    def steering_2_steering_angle(self,steering_cmd):
+        # steering angle curve --from fitting on vicon data
+        a_s =  1.392930030822754
+        b_s =  0.36576229333877563
+        c_s =  0.0029959678649902344 - 0.03 # littel adjustment to allign the tire curves
+        d_s =  0.5147881507873535
+        e_s =  1.0230425596237183
+
+        w_s = 0.5 * (cd.tanh(30*(steering_cmd+c_s))+1)
+        steering_angle1 = b_s * cd.tanh(a_s * (steering_cmd + c_s))
+        steering_angle2 = d_s * cd.tanh(e_s * (steering_cmd + c_s))
         steering_angle = (w_s)*steering_angle1+(1-w_s)*steering_angle2
         return steering_angle
     
-
     def continuous_model(self, x, u): 
+
 
         th = u[0]
         st = u[1]
@@ -194,29 +215,11 @@ class BicycleModel2ndOrder(DynamicsModel):
         # Define model parameters
         l, m, lr, lf, l_COM = self.model_parameters()
 
-        # motor parameters
-        a_m =  25.35849952697754    
-        b_m =  4.815326690673828    
-        c_m =  -0.16377617418766022 
-
-        a_f =  1.2659882307052612
-        b_f =  7.666370391845703
-        c_f =  0.7393041849136353
-        d_f =  -0.11231517791748047
-
-        # steering angle curve --from fitting on vicon data
-        a_s =  1.392930030822754
-        b_s =  0.36576229333877563
-        c_s =  0.0029959678649902344 - 0.03 # littel adjustment to allign the tire curves
-        d_s =  0.5147881507873535
-        e_s =  1.0230425596237183
-
-
         # convert steering command to steering angle
-        steering_angle = self.steering_2_steering_angle(st, a_s, b_s, c_s, d_s, e_s)
+        steering_angle = self.steering_2_steering_angle(st)
         
-        Fx_wheels = self.motor_force(th, vx, a_m, b_m, c_m)\
-                + self.rolling_friction(vx, a_f, b_f, c_f, d_f)
+        # convert throttle to force on the wheels
+        Fx_wheels = self.fx_wheels(th, vx)
         
         # Evaluate to acceleration
         acc_x = Fx_wheels / m
@@ -236,6 +239,9 @@ class BicycleModel2ndOrder(DynamicsModel):
         # v Simple s_dot approx taken from standard MPCC formulation
         s_dot = vx
         return cd.vertcat(*xdot, s_dot)
+    
+    def get_mass(self):
+        return self.model_parameters()[1]
 
     #def continuous_model(self, x, u):
         """Dynamics model with states: x, vx and input: throttle """
