@@ -58,7 +58,7 @@ class ROSMPCPlanner:
         self._planner = MPCPlanner(self._settings)
         # self._planner.set_projection(lambda trajectory: self.project_to_safety(trajectory))
 
-        # self._spline_fitter = SplineFitter(self._settings)
+        self._spline_fitter = SplineFitter(self._settings)
         # self._decomp_constraints = StaticConstraints(self._settings)
 
         self._solver_settings = load_settings(
@@ -145,11 +145,6 @@ class ROSMPCPlanner:
         self._th_pub = rospy.Publisher("throttle_1", Float32, queue_size=1) # Throttle publisher
         self._st_pub = rospy.Publisher("steering_1", Float32, queue_size=1) # Steering publisher
 
-        ## Debug closed loop state publisher
-        # self._state_pub = rospy.Publisher(
-            # "vicon/jetracer1", PoseStamped, queue_size=1
-        # )
-
         # self._ped_robot_state_pub = rospy.Publisher(
         #     "/pedestrian_simulator/robot_state", PoseStamped, queue_size=1
         # )
@@ -229,13 +224,14 @@ class ROSMPCPlanner:
         if self._verbose:
             time = timer.stop_and_print()
 
-
-        plot_x_traj(self._trajectory, self._N, self._integrator_step)
+        if self._mpc_feasible:
+            plot_x_traj(self._trajectory, self._N, self._integrator_step)
 
         self.publish_throttle(output, self._mpc_feasible)
         self.publish_steering(output, self._mpc_feasible)
         # self.publish_robot_state()
-        # self.visualize()
+        self.visualize()
+
         # self._state[0] = output["x"]
         # self._state[1] = output["y"]
 
@@ -410,7 +406,7 @@ class ROSMPCPlanner:
     def reload_solver_callback(self, msg):
         self._callbacks_enabled = False
         self._timer.shutdown()
-        self._planner.init_solver()
+        self._planner.init_acados_solver()
 
         self._solver_settings = load_settings(
             "solver_settings", package="mpc_planner_solver"
@@ -437,19 +433,19 @@ class ROSMPCPlanner:
     def state_pose_callback(self, msg):
         self._state_msg = msg
         self._state[0] = msg.pose.position.x
-        # self._state[1] = msg.pose.position.y
+        self._state[1] = msg.pose.position.y
 
         # Extract yaw angle (rotation around the Z-axis)
-        # self._state[2] = msg.pose.orientation.z
+        self._state[2] = msg.pose.orientation.z
 
         # Velocity is in the local frame, x is the forward velocity
-        self._state[1] = msg.pose.position.z
+        self._state[3] = msg.pose.position.z
 
         # print("-------- State ----------")
         # print(f"x = {self._state[0]:.2f}")
         # print(f"y = {self._state[1]:.2f}")
         # print(f"theta = {self._state[2]:.2f}")
-        # print(f"vx = {self._state[1]:.2f}")
+        # print(f"vx = {self._state[3]:.2f}")
 
     def obstacle_callback(self, msg):
         if self._state is None or not self._callbacks_enabled:

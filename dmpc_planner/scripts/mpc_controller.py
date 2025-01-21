@@ -80,15 +80,18 @@ class MPCPlanner:
             self._mpc_u_plan = np.zeros((self._nu, self._N))
             self.set_initial_u_plan()
 
+        self._u_traj_init = self._mpc_u_plan
+        self._x_traj_init =  self._mpc_x_plan
+
         if self._mpc_feasible:
+            pass
             # Shifted
             # self._x_traj_init = np.concatenate((self._mpc_x_plan[:, 1:], self._mpc_x_plan[:, -1:]), axis=1)
             # self._u_traj_init = np.concatenate((self._mpc_u_plan[:, 1:], self._mpc_u_plan[:, -1:]), axis=1)            
 
             # Not shifted
-            self._x_traj_init =  self._mpc_x_plan
-            self._u_traj_init = self._mpc_u_plan
         else:
+            pass
             # Brake (model specific)
             # self._x_traj_init = self.get_braking_trajectory(xinit)
             # self._x_traj_init = self._projection_func(self._x_traj_init)

@@ -1,10 +1,10 @@
 name: "Jetracer"
-N: 6
+N: 20
 integrator_step: 0.1
 n_discs: 0
 
 verbose: false
-debug_visuals: false
+debug_visuals: true
 
 solver_settings:
   iterations: 6 #2 # 1

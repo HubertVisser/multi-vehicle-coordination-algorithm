@@ -31,7 +31,7 @@ class GoalObjective(Objective):
 
         # goal_x = params.get("goal_x")
         # goal_y = params.get("goal_y")
-        goal_x = 3
+        goal_x = s
         goal_y = 0
 
         cost += goal_weight * ((pos_x - goal_x) ** 2 + (pos_y - goal_y) ** 2) / (goal_x**2 + goal_y**2 + 0.01)
