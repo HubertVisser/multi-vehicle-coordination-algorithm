@@ -9,10 +9,6 @@ sys.path.append(os.path.join(sys.path[0], "..", "..", "mpc_planner_modules"))
 
 import threading
 
-# from helpers import get_solver_import_paths
-
-# get_solver_import_paths()
-
 import rospy
 from std_msgs.msg import Int32, Float32, Empty
 from nav_msgs.msg import Odometry, Path
@@ -40,6 +36,7 @@ from mpc_controller import MPCPlanner
 from ros_visuals import ROSMarkerPublisher
 from project_trajectory import project_trajectory_to_safety
 from pyplot import plot_x_traj
+from path_generator import generate_path_msg
 
 
 class ROSMPCPlanner:
@@ -87,6 +84,7 @@ class ROSMPCPlanner:
         self._goal_x = 0.0
         self._goal_y = 0.0
 
+        self._path_msg = generate_path_msg(self._settings)
         self._enable_output = False
         self._mpc_feasible = True
 
@@ -96,6 +94,7 @@ class ROSMPCPlanner:
 
         self._callbacks_enabled = False
         self.initialize_publishers_and_subscribers()
+        self.path_callback(self._path_msg)
         self._callbacks_enabled = True
 
         # self.start_environment()
@@ -145,9 +144,9 @@ class ROSMPCPlanner:
         self._th_pub = rospy.Publisher("throttle_1", Float32, queue_size=1) # Throttle publisher
         self._st_pub = rospy.Publisher("steering_1", Float32, queue_size=1) # Steering publisher
 
-        # self._ped_robot_state_pub = rospy.Publisher(
-        #     "/pedestrian_simulator/robot_state", PoseStamped, queue_size=1
-        # )
+        self._ped_robot_state_pub = rospy.Publisher(
+            "/pedestrian_simulator/robot_state", PoseStamped, queue_size=1
+        )
 
         # # Services
         # self._ped_horizon_pub = rospy.Publisher(
@@ -229,7 +228,7 @@ class ROSMPCPlanner:
 
         self.publish_throttle(output, self._mpc_feasible)
         self.publish_steering(output, self._mpc_feasible)
-        # self.publish_robot_state()
+        self.publish_robot_state()
         self.visualize()
 
         # self._state[0] = output["x"]
@@ -401,7 +400,7 @@ class ROSMPCPlanner:
         pose.pose.position.x = self._state[0]
         pose.pose.position.y = self._state[1]
         pose.pose.position.z = self._state[3]
-        # self._state_debug_pub.publish(pose)
+        self._ped_robot_state_pub.publish(pose)
 
     def reload_solver_callback(self, msg):
         self._callbacks_enabled = False
@@ -481,8 +480,8 @@ class ROSMPCPlanner:
     def path_callback(self, msg):
 
         # Filter equal paths
-        if self._path_msg is not None and len(self._path_msg.poses) == len(msg.poses):
-            return
+        # if self._path_msg is not None and len(self._path_msg.poses) == len(msg.poses):
+        #     return
 
         self._path_msg = msg
         self._spline_fitter.fit_path(msg)
