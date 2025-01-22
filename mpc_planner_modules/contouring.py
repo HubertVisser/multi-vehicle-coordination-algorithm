@@ -49,9 +49,9 @@ class ContouringObjective:
 
         pos_x = model.get("x")
         pos_y = model.get("y")
-        psi = model.get("psi")
-        v = model.get("v")
-        s = model.get("spline")
+        theta = model.get("theta")
+        # v = model.get("vx")
+        s = model.get("s")
 
         quadratic_from = 0.125
         if settings["contouring"]["use_huber"]:
@@ -85,7 +85,7 @@ class ContouringObjective:
 
             # Compute the angle w.r.t. the path
             path_angle = cd.atan2(path_dy_normalized, path_dx_normalized)
-            angle_error = haar_difference_without_abs(psi, path_angle)
+            angle_error = haar_difference_without_abs(theta, path_angle)
 
             # Penalize the angle error
             cost += terminal_angle_weight * (angle_error / np.pi)**2

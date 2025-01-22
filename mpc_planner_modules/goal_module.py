@@ -16,23 +16,22 @@ class GoalObjective(Objective):
 
     def define_parameters(self, params):
         params.add("goal", add_to_rqt_reconfigure=True, rqt_config_name=lambda p: f'["weights"]["goal"]')
-        # params.add("goal_x")
-        # params.add("goal_y")
+        params.add("goal_x")
+        params.add("goal_y")
 
     def get_value(self, model, params, settings, stage_idx):
-        cost = 0
+        cost = 0.0
 
-        # if stage_idx == settings["N"] - 1:
         pos_x = model.get("x")
         pos_y = model.get("y")
-        s = model.get("s")
+        # s = model.get("s")
+        # goal_x = s
+        # goal_y = 0
 
         goal_weight = params.get("goal")
-
-        # goal_x = params.get("goal_x")
-        # goal_y = params.get("goal_y")
-        goal_x = s
-        goal_y = 0
+        goal_x = params.get("goal_x")
+        goal_y = params.get("goal_y")
+        
 
         cost += goal_weight * ((pos_x - goal_x) ** 2 + (pos_y - goal_y) ** 2) / (goal_x**2 + goal_y**2 + 0.01)
         # cost += goal_weight * ((pos_x - goal_x) ** 2 ) / (goal_x**2 + 0.01)

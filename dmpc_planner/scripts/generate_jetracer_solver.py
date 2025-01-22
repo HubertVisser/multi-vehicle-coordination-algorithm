@@ -11,7 +11,7 @@ from generate_solver import generate_solver
 # Import modules here from mpc_planner_modules
 from mpc_base import MPCBaseModule
 
-# from contouring import ContouringModule
+from contouring import ContouringModule
 from goal_module import GoalModule
 from path_reference_velocity import PathReferenceVelocityModule
 
@@ -25,23 +25,21 @@ def configuration_basic(settings):
 
     # Penalize ||steering||_2^2
     base_module = modules.add_module(MPCBaseModule(settings))
-    base_module.weigh_variable(var_name="y", weight_names="steering")
+    # base_module.weigh_variable(var_name="y", weight_names="steering")
     base_module.weigh_variable(var_name="throttle", weight_names="throttle")
     
 
 
+    # modules.add_module(PathReferenceVelocityModule(settings, num_segments=settings["contouring"]["num_segments"]))
     # modules.add_module(GoalModule(settings))
-    # modules.add_module(ContouringModule(settings, num_segments=settings["contouring"]["num_segments"]))
-   
+    modules.add_module(ContouringModule(settings))
+    
     # Penalize ||v - v_ref||_2^2
-    # base_module.weigh_variable(
-    # var_name="vx",
-    # weight_names=["velocity", "reference_velocity"],
-    # cost_function=lambda x, w: w[0] * (x - w[1]) ** 2,
-    # )
-
-    modules.add_module(PathReferenceVelocityModule(settings, num_segments=settings["contouring"]["num_segments"]))
-
+    base_module.weigh_variable(
+    var_name="vx",
+    weight_names=["velocity", "reference_velocity"],
+    cost_function=lambda x, w: w[0] * (x - w[1]) ** 2,
+    )
     return model, modules
 
 

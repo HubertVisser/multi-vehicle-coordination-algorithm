@@ -27,12 +27,10 @@ class PathReferenceVelocityObjective:
         #     params.add(f"spline_v{i}_c", bundle_name="spline_v_c")
         #     params.add(f"spline_v{i}_d", bundle_name="spline_v_d")
 
-        # return params
+        return params
 
     def get_value(self, model, params, settings, stage_idx):
-        
-        if stage_idx == settings["N"]-1:
-            return 0.0
+
         # # The cost is computed in the contouring cost when using CA-MPC
         # return 0.0
         # psi = model.get("psi")

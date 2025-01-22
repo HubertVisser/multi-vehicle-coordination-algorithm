@@ -51,7 +51,7 @@ class ROSMarkerPublisher:
 
         # Publish
         # print(self.marker_list_.markers)
-        #print('Publishing {} markers'.format(len(self.marker_list_.markers)))
+        # print('Publishing {} markers'.format(len(self.marker_list_.markers)))
         self.pub_.publish(self.marker_list_)
 
         # Reset

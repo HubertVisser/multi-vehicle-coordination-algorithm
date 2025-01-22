@@ -34,8 +34,8 @@ class SplineFitter:
         # print(self.evaluate(4.))
         # print(self.evaluate(6.7))
         # print(self.find_closest_s(np.array([3., 0.])))
-        # splines = self.get_active_splines(np.array([3., 0.]))
-        # print(splines)
+        splines = self.get_active_splines(np.array([3., 0.]))
+        print(splines)
 
         # self.log_splines()
 

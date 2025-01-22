@@ -1,15 +1,18 @@
+#!/usr/bin/env python3
+
 import numpy as np
 import rospy
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
+import matplotlib.pyplot as plt
 
 def raw_track(choice='savoiardo'):
-    n_checkpoints = 100
+    n_checkpoints = 10
     # x_shift_vicon_lab = -3
     # y_shift_vicon_lab = -2.2 #-2.7
     if choice == 'savoiardo':
     
-        R = 0.8  # as a reference the max radius of curvature is  R = L/tan(delta) = 0.82
+        R = 2  # as a reference the max radius of curvature is  R = L/tan(delta) = 0.82
         theta_init2 = np.pi * -0.5
         theta_end2 = np.pi * 0.5
         theta_vec2 = np.linspace(theta_init2, theta_end2, n_checkpoints)
@@ -30,9 +33,19 @@ def raw_track(choice='savoiardo'):
         Checkpoints_y = [*Checkpoints_y2[0:n_checkpoints - 1],
                             *Checkpoints_y3[0:n_checkpoints - 1], *Checkpoints_y4[0:n_checkpoints -1], *Checkpoints_y1[0:n_checkpoints]]
         
+    elif choice == 'circle':
+
+        n_checkpoints = 4 * n_checkpoints
+        R = 0.3  # as a reference the max radius of curvature is  R = L/tan(delta) = 0.82
+        theta_init = np.pi * -0.5
+        theta_end = np.pi * 1.5
+        theta_vec = np.linspace(theta_init, theta_end, n_checkpoints)
+        Checkpoints_x = R * np.cos(theta_vec)
+        Checkpoints_y = R * np.sin(theta_vec)
+    
     return Checkpoints_x, Checkpoints_y
 
-def generate_path_msg(settings):
+def generate_path_msg(settings=None):
         # track_choice = settings["track_choice"]
         Checkpoints_x, Checkpoints_y = raw_track()
 
@@ -51,3 +64,18 @@ def generate_path_msg(settings):
             path.poses.append(pose)
 
         return path
+
+def publish_path(event):
+    path = generate_path_msg()
+    path_pub.publish(path)
+    rospy.loginfo("Published path")
+
+if __name__ == '__main__':
+    rospy.init_node('path_publisher')
+    path_pub = rospy.Publisher("roadmap/reference", Path, queue_size=1)
+    rospy.Timer(rospy.Duration(0.05), publish_path)  
+    rospy.spin()
+
+    # raw_track = raw_track()
+    # plt.plot(raw_track[0], raw_track[1])
+    # plt.show()

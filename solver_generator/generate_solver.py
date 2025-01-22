@@ -163,8 +163,8 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.globalization = "MERIT_BACKTRACKING"
     ocp.solver_options.globalization = "FIXED_STEP"
     # ocp.solver_options.eps_sufficient_descent = 1e-1
-    # ocp.solver_options.qp_tol = 1e-6  # Important! (1e-3)
-    ocp.solver_options.qp_tol = 1e-3 # Important! (1e-3)
+    ocp.solver_options.qp_tol = 1e-5 # Important! (1e-3)
+    # ocp.solver_options.qp_tol = 1e-3 # Important! (1e-3)
 
     # qp solver options
     # Full Condensing: Suitable for small to medium-sized systems, leading to a dense QP with only control inputs as decision variables.
@@ -172,9 +172,9 @@ def generate_solver(modules, model, settings=None):
     # Partial Condensing: Suitable for larger systems, providing a balance between problem size and computational complexity.
     # It allows for controlled reduction in problem size, making it more scalable and flexible but potentially more complex to implement.
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
-    # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
-    ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.qp_solver_iter_max = 50  # default = 50
+    ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
+    # ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
+    ocp.solver_options.qp_solver_iter_max = 500  # default = 50
     ocp.solver_options.qp_solver_warm_start = 1  # cold start / 1 = warm, 2 = warm primal and dual
 
     # code generation options
