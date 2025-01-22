@@ -7,7 +7,7 @@ from geometry_msgs.msg import PoseStamped
 import matplotlib.pyplot as plt
 
 def raw_track(choice='savoiardo'):
-    n_checkpoints = 10
+    n_checkpoints = 100
     # x_shift_vicon_lab = -3
     # y_shift_vicon_lab = -2.2 #-2.7
     if choice == 'savoiardo':
@@ -73,7 +73,7 @@ def publish_path(event):
 if __name__ == '__main__':
     rospy.init_node('path_publisher')
     path_pub = rospy.Publisher("roadmap/reference", Path, queue_size=1)
-    rospy.Timer(rospy.Duration(0.05), publish_path)  
+    rospy.Timer(rospy.Duration(0.5), publish_path)  
     rospy.spin()
 
     # raw_track = raw_track()

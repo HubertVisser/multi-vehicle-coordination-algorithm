@@ -94,8 +94,8 @@ class ROSMPCPlanner:
 
         self._callbacks_enabled = False
         self.initialize_publishers_and_subscribers()
-        self._path_msg = generate_path_msg(self._settings)
-        self.path_callback(self._path_msg)
+        msg = generate_path_msg(self._settings)
+        self.path_callback(msg)
         self._callbacks_enabled = True
 
         # self.start_environment()
@@ -382,7 +382,7 @@ class ROSMPCPlanner:
         else:
             throttle.data = output["throttle"]
             rospy.loginfo_throttle(1000, "MPC is driving")
-        self._th_pub.publish(throttle)
+            self._th_pub.publish(throttle)
     
     def publish_steering(self, output, exit_flag):
         steering = Float32()
@@ -391,7 +391,7 @@ class ROSMPCPlanner:
             steering.data = 0.0
         else:
             steering.data = output["steering"]
-        self._st_pub.publish(steering)
+            self._st_pub.publish(steering)
 
     def publish_robot_state(self):
         pose = PoseStamped()

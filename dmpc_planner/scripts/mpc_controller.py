@@ -74,7 +74,7 @@ class MPCPlanner:
         # Initialize the initial guesses
         if not hasattr(self, "_mpc_x_plan"):
             self._mpc_x_plan = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
-            # self.set_initial_x_plan()
+            self.set_initial_x_plan()
 
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu, self._N))
@@ -171,7 +171,7 @@ class MPCPlanner:
 
         s_0_vec = np.linspace(0, 0 + self.reference_velocity * 1.5, N_0+1)
         x_ref_0 = np.zeros(N_0+1)
-        y_ref_0 = np.zeros(N_0+1)
+        y_ref_0 = np.ones(N_0+1) * -2 
         theta_ref_0 = np.zeros(N_0+1)
 
         for i in range(1,N_0+1):
@@ -183,6 +183,7 @@ class MPCPlanner:
         self._mpc_x_plan[0,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), x_ref_0)
         self._mpc_x_plan[1,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), y_ref_0)
         self._mpc_x_plan[3,:] = self.reference_velocity
+        self._mpc_x_plan[6,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), s_0_vec)
         
     def set_initial_u_plan(self):
          # Evaluate throttle to keep the constant velocity
