@@ -17,5 +17,6 @@ include_directories(
 
 catkin_install_python(PROGRAMS 
   scripts/jetracersimulator_mpc.py
+  scripts/path_generator.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

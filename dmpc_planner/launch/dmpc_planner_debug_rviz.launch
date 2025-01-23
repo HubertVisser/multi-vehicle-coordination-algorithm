@@ -18,7 +18,7 @@
   <node name="path_node" pkg="dmpc_planner" type="path_generator.py" output="log"/> 
 
   <!-- Include dart_simulator.launch -->
-  <include file="$(find dart_simulator_pkg)/launch/dart_simulator.launch">
+  <include file="$(find dart_simulator_pkg)/launch/dart_simulator_no_visuals.launch">
   </include>
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find dmpc_planner)/rviz/simulator.rviz" output="screen"/>

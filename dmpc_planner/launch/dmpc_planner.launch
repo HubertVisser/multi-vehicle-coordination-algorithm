@@ -34,12 +34,12 @@
   <!-- <include file="$(find mobile_robot_state_publisher)/launch/mobile_robot_publisher.launch"/> -->
 
   <!-- Include dart_simulator.launch -->
-  <include file="$(find dart_simulator_pkg)/launch/dart_simulator.launch">
+  <include file="$(find dart_simulator_pkg)/launch/dart_simulator_no_visuals.launch">
   </include>
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find dmpc_planner)/rviz/simulator.rviz" output="screen"/>
 
-  <node pkg="rqt_reconfigure" type="rqt_reconfigure" name="rqt_reconfigure" output="log"/>
+  <!-- <node pkg="rqt_reconfigure" type="rqt_reconfigure" name="rqt_reconfigure" output="log"/> -->
 
   <!-- For Rviz camera stream -->
   <group ns="camera1">

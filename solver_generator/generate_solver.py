@@ -143,7 +143,7 @@ def generate_solver(modules, model, settings=None):
 
     # horizon
     ocp.solver_options.tf = settings["N"] * settings["integrator_step"]
-    ocp.solver_options.tol = 1e-2 #1e-6  # 1e-2
+    ocp.solver_options.tol = 1e-3 #1e-6  # 1e-2
 
     # Solver options
     # integrator option
@@ -175,7 +175,7 @@ def generate_solver(modules, model, settings=None):
     ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
     # ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
     ocp.solver_options.qp_solver_iter_max = 500  # default = 50
-    ocp.solver_options.qp_solver_warm_start = 1  # cold start / 1 = warm, 2 = warm primal and dual
+    ocp.solver_options.qp_solver_warm_start = 0  # cold start / 1 = warm, 2 = warm primal and dual
 
     # code generation options
     ocp.code_export_directory = f"{os.path.dirname(os.path.abspath(__file__))}/../acados/{model_acados.name}"

@@ -94,6 +94,7 @@ class Parameters:
                 print_value(f"{idx}", f"{param}", tab=True)
         print("----------")
     
+    # TODO: use the following function to generate dynamic reconfigure cfg file
     def generate_dynamic_reconfigure_cfg(self):
         gen = ParameterGenerator()
         package_name = get_current_package()

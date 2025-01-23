@@ -43,8 +43,8 @@ class MPCPlanner:
         # The generation software
         if hasattr(self, "_solver"):
             del self._solver, self._simulator, self._solver_settings
-        # if hasattr(self, "_mpc_x_plan"):
-        #     del self._mpc_x_plan, self._mpc_u_plan
+        if hasattr(self, "_mpc_x_plan"):
+            del self._mpc_x_plan, self._mpc_u_plan
 
         self._solver, self._simulator = generate_jetracer_solver.generate()
         self._solver_settings = load_settings("solver_settings", package="mpc_planner_solver")

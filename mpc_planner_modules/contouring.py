@@ -14,7 +14,7 @@ from util.math import haar_difference_without_abs, huber_loss
 class ContouringObjective:
 
     """
-        Objective for tracking a 2D reference path with contouring costs
+        Objective for tracking a 2D reference path with contouring costs (MPCC - Lorenzo Lyons)
     """
 
     def __init__(self, settings):

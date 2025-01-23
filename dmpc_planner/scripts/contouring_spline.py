@@ -6,7 +6,7 @@ from scipy.interpolate import CubicSpline
 import numpy as np
 
 from pyplot import plot_x_traj, plot_splines
-from path_generator import generate_path_msg
+# from path_generator import generate_path_msg
 
 class SplineFitter:
     def __init__(self, settings):
@@ -37,7 +37,7 @@ class SplineFitter:
         # print(self.evaluate(4.))
         # print(self.evaluate(6.7))
         # print(self.find_closest_s(np.array([3., 0.])))
-        splines = self.get_active_splines(np.array([3., 0.]))
+        # splines = self.get_active_splines(np.array([3., 0.]))
         # print(splines)
 
         # self.log_splines()

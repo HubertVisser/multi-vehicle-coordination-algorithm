@@ -36,7 +36,7 @@ from mpc_controller import MPCPlanner
 from ros_visuals import ROSMarkerPublisher
 from project_trajectory import project_trajectory_to_safety
 from pyplot import plot_x_traj, plot_splines
-from path_generator import generate_path_msg
+# from path_generator import generate_path_msg
 
 
 class ROSMPCPlanner:
@@ -70,6 +70,7 @@ class ROSMPCPlanner:
         n_states = self._solver_settings["nx"]
         self._state = np.zeros((n_states,))
         self._state[1] = -2.0
+        
 
         self._visuals = ROSMarkerPublisher("mpc_visuals", 100)
         self._path_visual = ROSMarkerPublisher("reference_path", 10)
@@ -94,10 +95,10 @@ class ROSMPCPlanner:
 
         self._callbacks_enabled = False
         self.initialize_publishers_and_subscribers()
-        msg = generate_path_msg(self._settings)
-        self.path_callback(msg)
+        # msg = generate_path_msg()
+        # self.path_callback(msg)
         self._callbacks_enabled = True
-
+        self._enable_output = True
         # self.start_environment()
 
         
@@ -209,6 +210,12 @@ class ROSMPCPlanner:
         self._reset_simulation_client(srv)
 
     def run(self, timer):
+        # Check if splines exist
+        if not self._spline_fitter._splines:
+            rospy.logwarn("Splines have not been computed yet. Waiting for splines to be available.")
+            return
+
+        
         timer = Timer("loop")
         
         self.set_parameters()
@@ -244,6 +251,7 @@ class ROSMPCPlanner:
         # self._state[5] = output["w"]
 
     def set_parameters(self):
+        
         splines = None
         if self._path_msg is not None and self._spline_fitter.ready():
             splines = self._spline_fitter.get_active_splines(
@@ -283,59 +291,59 @@ class ROSMPCPlanner:
                     # print(f"{splines[i]['a_x']:.1f}, {splines[i]['b_x']:.1f}, {splines[i]['c_x']:.1f}, {splines[i]['d_x']:.1f}, {splines[i]['a_y']:.1f}, {splines[i]['b_y']:.1f}, {splines[i]['c_y']:.1f}, {splines[i]['d_y']:.1f}, {splines[i]['s']:.1f}")
 
         # Lock obstacle data
-        with self._obst_lock:
-            pass
-            for k in range(self._N + 1):
-                if self._obstacle_msg is None:
-                    obstacles = []
-                else:
-                    obstacles = self._obstacle_msg.obstacles
+        # with self._obst_lock:
+        #     pass
+        #     for k in range(self._N + 1):
+        #         if self._obstacle_msg is None:
+        #             obstacles = []
+        #         else:
+        #             obstacles = self._obstacle_msg.obstacles
 
-                num_obs = len(obstacles)
-                self._params.set(k, "ego_disc_radius", self._robot_radius)
-                self._params.set(k, "ego_disc_0_offset", 0.0)
-                for j in range(min(self._max_obstacles, num_obs)):
-                    obs = obstacles[j]
+        #         num_obs = len(obstacles)
+        #         self._params.set(k, "ego_disc_radius", self._robot_radius)
+        #         self._params.set(k, "ego_disc_0_offset", 0.0)
+        #         for j in range(min(self._max_obstacles, num_obs)):
+        #             obs = obstacles[j]
 
-                    if k == 0:  # or k == self._N:
-                        self._params.set(
-                            k, f"ellipsoid_obst_{j}_x", self._state[0] + 100.0
-                        )
-                        self._params.set(
-                            k, f"ellipsoid_obst_{j}_y", self._state[1] + 100.0
-                        )
-                        self._params.set(k, f"ellipsoid_obst_{j}_chi", 1.0)
-                        self._params.set(k, f"ellipsoid_obst_{j}_psi", 0.0)
-                        self._params.set(k, f"ellipsoid_obst_{j}_r", 0.1)
-                        self._params.set(k, f"ellipsoid_obst_{j}_major", 0.0)
-                        self._params.set(k, f"ellipsoid_obst_{j}_minor", 0.0)
-                        continue
+        #             if k == 0:  # or k == self._N:
+        #                 self._params.set(
+        #                     k, f"ellipsoid_obst_{j}_x", self._state[0] + 100.0
+        #                 )
+        #                 self._params.set(
+        #                     k, f"ellipsoid_obst_{j}_y", self._state[1] + 100.0
+        #                 )
+        #                 self._params.set(k, f"ellipsoid_obst_{j}_chi", 1.0)
+        #                 self._params.set(k, f"ellipsoid_obst_{j}_psi", 0.0)
+        #                 self._params.set(k, f"ellipsoid_obst_{j}_r", 0.1)
+        #                 self._params.set(k, f"ellipsoid_obst_{j}_major", 0.0)
+        #                 self._params.set(k, f"ellipsoid_obst_{j}_minor", 0.0)
+        #                 continue
 
-                    # Constant velocity prediction
-                    predicted_pose = obs.gaussians[0].mean.poses[k - 1].pose
-                    obs_predicted_pos = np.array(
-                        [predicted_pose.position.x, predicted_pose.position.y]
-                    )
+        #             # Constant velocity prediction
+        #             predicted_pose = obs.gaussians[0].mean.poses[k - 1].pose
+        #             obs_predicted_pos = np.array(
+        #                 [predicted_pose.position.x, predicted_pose.position.y]
+        #             )
 
-                    yaw = quaternion_to_yaw(predicted_pose.orientation)
+        #             yaw = quaternion_to_yaw(predicted_pose.orientation)
 
-                    self._params.set(k, f"ellipsoid_obst_{j}_x", obs_predicted_pos[0])
-                    self._params.set(k, f"ellipsoid_obst_{j}_y", obs_predicted_pos[1])
-                    self._params.set(k, f"ellipsoid_obst_{j}_chi", 1.0)
-                    self._params.set(k, f"ellipsoid_obst_{j}_psi", yaw)
-                    self._params.set(k, f"ellipsoid_obst_{j}_major", 0.0)
-                    self._params.set(k, f"ellipsoid_obst_{j}_minor", 0.0)
-                    self._params.set(k, f"ellipsoid_obst_{j}_r", self._obstacle_radius)
+        #             self._params.set(k, f"ellipsoid_obst_{j}_x", obs_predicted_pos[0])
+        #             self._params.set(k, f"ellipsoid_obst_{j}_y", obs_predicted_pos[1])
+        #             self._params.set(k, f"ellipsoid_obst_{j}_chi", 1.0)
+        #             self._params.set(k, f"ellipsoid_obst_{j}_psi", yaw)
+        #             self._params.set(k, f"ellipsoid_obst_{j}_major", 0.0)
+        #             self._params.set(k, f"ellipsoid_obst_{j}_minor", 0.0)
+        #             self._params.set(k, f"ellipsoid_obst_{j}_r", self._obstacle_radius)
 
-                # Dummies
-                for j in range(num_obs, self._max_obstacles):
-                    self._params.set(k, f"ellipsoid_obst_{j}_x", self._state[0] + 100.0)
-                    self._params.set(k, f"ellipsoid_obst_{j}_y", self._state[1] + 100.0)
-                    self._params.set(k, f"ellipsoid_obst_{j}_chi", 1.0)
-                    self._params.set(k, f"ellipsoid_obst_{j}_psi", 0.0)
-                    self._params.set(k, f"ellipsoid_obst_{j}_r", 0.1)
-                    self._params.set(k, f"ellipsoid_obst_{j}_major", 0.0)
-                    self._params.set(k, f"ellipsoid_obst_{j}_minor", 0.0)
+        #         # Dummies
+        #         for j in range(num_obs, self._max_obstacles):
+        #             self._params.set(k, f"ellipsoid_obst_{j}_x", self._state[0] + 100.0)
+        #             self._params.set(k, f"ellipsoid_obst_{j}_y", self._state[1] + 100.0)
+        #             self._params.set(k, f"ellipsoid_obst_{j}_chi", 1.0)
+        #             self._params.set(k, f"ellipsoid_obst_{j}_psi", 0.0)
+        #             self._params.set(k, f"ellipsoid_obst_{j}_r", 0.1)
+        #             self._params.set(k, f"ellipsoid_obst_{j}_major", 0.0)
+        #             self._params.set(k, f"ellipsoid_obst_{j}_minor", 0.0)
 
     def project_to_safety(self, trajectory):
         # Projects a trajectory to safety from the obstacles using Douglas Rachford projection
@@ -591,7 +599,7 @@ class ROSMPCPlanner:
                 s += dist
                 line.add_line_from_poses(pose_a, pose_b)
         self._path_visual.publish()
-        self._enable_output = True
+        
 
     def print_stats(self):
         self._planner.print_stats()

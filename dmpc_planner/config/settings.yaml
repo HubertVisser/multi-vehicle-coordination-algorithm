@@ -10,14 +10,14 @@ solver_settings:
   iterations: 6 #2 # 1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
-control_frequency: 20
+control_frequency: 10
 max_obstacles: 8
 obstacle_radius: 0.5
 robot_radius: 0.325
 braking_acceleration: 1.0
 
 contouring:
-  num_segments: 5
+  num_segments: 8
   use_huber: false
 
 decomp:
@@ -30,6 +30,8 @@ weights:
   velocity: 1.
   reference_velocity: 2.
   reference_steering: 2.
+  lag: 0.1
+  contour: 0.05
 
 
 
