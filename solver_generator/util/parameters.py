@@ -1,10 +1,12 @@
 import copy
 import numpy as np
+import os
 
 import casadi as cd  # Acados
 
-from util.files import write_to_yaml, parameter_map_path, load_settings
+from util.files import write_to_yaml, parameter_map_path, load_settings, rqt_config_path, get_current_package
 from util.logging import print_value, print_header
+from dynamic_reconfigure.parameter_generator_catkin import ParameterGenerator
 
 
 class Parameters:
@@ -91,6 +93,21 @@ class Parameters:
             else:
                 print_value(f"{idx}", f"{param}", tab=True)
         print("----------")
+    
+    def generate_dynamic_reconfigure_cfg(self):
+        gen = ParameterGenerator()
+        package_name = get_current_package()
+        
+        for param, min_val, max_val in zip(self.rqt_params, self.rqt_param_min_values, self.rqt_param_max_values):
+            gen.add(param, double_t, 0, f"{param} parameter", 0.0, min_val, max_val)
+
+        cfg_file_content = gen.generate(package_name, package_name, 'rqt_settings')
+        cfg_file_path = os.path.join(rqt_config_path(), "rqt_settings.cfg")
+        
+        with open(cfg_file_path, 'w') as cfg_file:
+            cfg_file.write(cfg_file_content)
+
+        print(f"Generated dynamic reconfigure cfg file at: {cfg_file_path}")
 
 
 class AcadosParameters(Parameters):

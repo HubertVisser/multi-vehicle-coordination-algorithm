@@ -5,6 +5,9 @@ from nav_msgs.msg import Path
 from scipy.interpolate import CubicSpline
 import numpy as np
 
+from pyplot import plot_x_traj, plot_splines
+from path_generator import generate_path_msg
+
 class SplineFitter:
     def __init__(self, settings):
         self._splines = []
@@ -19,23 +22,23 @@ class SplineFitter:
             rospy.logwarn("Received empty path")
             return
 
-        x = []
-        y = []
+        self.x = []
+        self.y = []
         for pose in path_msg.poses:
-            x.append(pose.pose.position.x)
-            y.append(pose.pose.position.y)
+            self.x.append(pose.pose.position.x)
+            self.y.append(pose.pose.position.y)
 
-        if len(x) < 2:
+        if len(self.x) < 2:
             rospy.logwarn("Not enough points to fit splines")
             return
 
-        self.fit_splines(x, y)
+        self.fit_splines(self.x, self.y)
         # print(self.evaluate(0.))
         # print(self.evaluate(4.))
         # print(self.evaluate(6.7))
         # print(self.find_closest_s(np.array([3., 0.])))
         splines = self.get_active_splines(np.array([3., 0.]))
-        print(splines)
+        # print(splines)
 
         # self.log_splines()
 
@@ -49,20 +52,20 @@ class SplineFitter:
         s = np.insert(s, 0, 0)  # Include the starting point
 
         # Fit cubic splines to the path
-        cs_x = CubicSpline(s, x)
-        cs_y = CubicSpline(s, y)
-
+        self.cs_x = CubicSpline(s, x)
+        self.cs_y = CubicSpline(s, y)
+        
         # Store splines and their parameters
         for i in range(len(s) - 1):
             spline = {
-                'a_x': cs_x.c[:, i][0],
-                'b_x': cs_x.c[:, i][1],
-                'c_x': cs_x.c[:, i][2],
-                'd_x': cs_x.c[:, i][3],
-                'a_y': cs_y.c[:, i][0],
-                'b_y': cs_y.c[:, i][1],
-                'c_y': cs_y.c[:, i][2],
-                'd_y': cs_y.c[:, i][3],
+                'a_x': self.cs_x.c[:, i][0],
+                'b_x': self.cs_x.c[:, i][1],
+                'c_x': self.cs_x.c[:, i][2],
+                'd_x': self.cs_x.c[:, i][3],
+                'a_y': self.cs_y.c[:, i][0],
+                'b_y': self.cs_y.c[:, i][1],
+                'c_y': self.cs_y.c[:, i][2],
+                'd_y': self.cs_y.c[:, i][3],
                 's': s[i]
             }
             newsplines.append(spline)
@@ -147,3 +150,14 @@ class SplineFitter:
 
         s_closest = (s_start + s_end) / 2
         return s_closest
+    
+if __name__ == "__main__":
+    settings = {}
+    settings["contouring"] = {}
+    settings["contouring"]["num_segments"] = 5
+    rospy.init_node('contouring_spline')
+    path_msg = generate_path_msg()
+    spline_fitter = SplineFitter(settings)
+    spline_fitter.fit_path(path_msg)
+    plot_splines(spline_fitter.cs_x, spline_fitter.cs_y, spline_fitter.x, spline_fitter.y)
+    

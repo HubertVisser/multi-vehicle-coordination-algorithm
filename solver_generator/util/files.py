@@ -8,7 +8,6 @@ def get_base_path():
     return os.path.dirname(os.path.realpath(sys.argv[0]))
 
 
-
 def get_current_package():
     return os.path.dirname(os.path.realpath(sys.argv[0])).split("/")[-2]
 
@@ -91,6 +90,9 @@ def generated_src_file(settings):
 
 def planner_path():
     return get_package_path("dmpc_planner")
+
+def rqt_config_path():
+    return os.path.join(get_package_path("dmpc_planner"), "cfg/")
 
 
 def generated_include_file(settings):

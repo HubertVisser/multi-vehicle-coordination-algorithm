@@ -1,5 +1,5 @@
 import matplotlib 
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
@@ -29,3 +29,22 @@ def plot_x_traj(trajectory, N, dt):
         plt.legend()
         plt.grid(True)
         plt.show()
+
+def plot_splines(cs_x, cs_y, x, y):
+    # Clear the previous plot
+    plt.close()
+
+    # Generate values for plotting the spline
+    s_vals = np.linspace(0, 24, 1000)
+    x_vals = cs_x(s_vals)
+    y_vals = cs_y(s_vals)
+
+    # Plot the spline path in the x-y plane
+    plt.figure()
+    plt.plot(x_vals, y_vals, linestyle='-', color='b')
+    plt.plot(x, y, 'o', label='Data points')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('Spline Path')
+    plt.grid(True)
+    plt.show()

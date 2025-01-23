@@ -35,7 +35,7 @@ from contouring_spline import SplineFitter
 from mpc_controller import MPCPlanner
 from ros_visuals import ROSMarkerPublisher
 from project_trajectory import project_trajectory_to_safety
-from pyplot import plot_x_traj
+from pyplot import plot_x_traj, plot_splines
 from path_generator import generate_path_msg
 
 
@@ -283,58 +283,59 @@ class ROSMPCPlanner:
                     # print(f"{splines[i]['a_x']:.1f}, {splines[i]['b_x']:.1f}, {splines[i]['c_x']:.1f}, {splines[i]['d_x']:.1f}, {splines[i]['a_y']:.1f}, {splines[i]['b_y']:.1f}, {splines[i]['c_y']:.1f}, {splines[i]['d_y']:.1f}, {splines[i]['s']:.1f}")
 
         # Lock obstacle data
-        # with self._obst_lock:
-        #     for k in range(self._N + 1):
-        #         if self._obstacle_msg is None:
-        #             obstacles = []
-        #         else:
-        #             obstacles = self._obstacle_msg.obstacles
+        with self._obst_lock:
+            pass
+            for k in range(self._N + 1):
+                if self._obstacle_msg is None:
+                    obstacles = []
+                else:
+                    obstacles = self._obstacle_msg.obstacles
 
-        #         num_obs = len(obstacles)
-        #         self._params.set(k, "ego_disc_radius", self._robot_radius)
-        #         self._params.set(k, "ego_disc_0_offset", 0.0)
-        #         for j in range(min(self._max_obstacles, num_obs)):
-        #             obs = obstacles[j]
+                num_obs = len(obstacles)
+                self._params.set(k, "ego_disc_radius", self._robot_radius)
+                self._params.set(k, "ego_disc_0_offset", 0.0)
+                for j in range(min(self._max_obstacles, num_obs)):
+                    obs = obstacles[j]
 
-        #             if k == 0:  # or k == self._N:
-        #                 self._params.set(
-        #                     k, f"ellipsoid_obst_{j}_x", self._state[0] + 100.0
-        #                 )
-        #                 self._params.set(
-        #                     k, f"ellipsoid_obst_{j}_y", self._state[1] + 100.0
-        #                 )
-        #                 self._params.set(k, f"ellipsoid_obst_{j}_chi", 1.0)
-        #                 self._params.set(k, f"ellipsoid_obst_{j}_psi", 0.0)
-        #                 self._params.set(k, f"ellipsoid_obst_{j}_r", 0.1)
-        #                 self._params.set(k, f"ellipsoid_obst_{j}_major", 0.0)
-        #                 self._params.set(k, f"ellipsoid_obst_{j}_minor", 0.0)
-        #                 continue
+                    if k == 0:  # or k == self._N:
+                        self._params.set(
+                            k, f"ellipsoid_obst_{j}_x", self._state[0] + 100.0
+                        )
+                        self._params.set(
+                            k, f"ellipsoid_obst_{j}_y", self._state[1] + 100.0
+                        )
+                        self._params.set(k, f"ellipsoid_obst_{j}_chi", 1.0)
+                        self._params.set(k, f"ellipsoid_obst_{j}_psi", 0.0)
+                        self._params.set(k, f"ellipsoid_obst_{j}_r", 0.1)
+                        self._params.set(k, f"ellipsoid_obst_{j}_major", 0.0)
+                        self._params.set(k, f"ellipsoid_obst_{j}_minor", 0.0)
+                        continue
 
-        #             # Constant velocity prediction
-        #             predicted_pose = obs.gaussians[0].mean.poses[k - 1].pose
-        #             obs_predicted_pos = np.array(
-        #                 [predicted_pose.position.x, predicted_pose.position.y]
-        #             )
+                    # Constant velocity prediction
+                    predicted_pose = obs.gaussians[0].mean.poses[k - 1].pose
+                    obs_predicted_pos = np.array(
+                        [predicted_pose.position.x, predicted_pose.position.y]
+                    )
 
-        #             yaw = quaternion_to_yaw(predicted_pose.orientation)
+                    yaw = quaternion_to_yaw(predicted_pose.orientation)
 
-        #             self._params.set(k, f"ellipsoid_obst_{j}_x", obs_predicted_pos[0])
-        #             self._params.set(k, f"ellipsoid_obst_{j}_y", obs_predicted_pos[1])
-        #             self._params.set(k, f"ellipsoid_obst_{j}_chi", 1.0)
-        #             self._params.set(k, f"ellipsoid_obst_{j}_psi", yaw)
-        #             self._params.set(k, f"ellipsoid_obst_{j}_major", 0.0)
-        #             self._params.set(k, f"ellipsoid_obst_{j}_minor", 0.0)
-        #             self._params.set(k, f"ellipsoid_obst_{j}_r", self._obstacle_radius)
+                    self._params.set(k, f"ellipsoid_obst_{j}_x", obs_predicted_pos[0])
+                    self._params.set(k, f"ellipsoid_obst_{j}_y", obs_predicted_pos[1])
+                    self._params.set(k, f"ellipsoid_obst_{j}_chi", 1.0)
+                    self._params.set(k, f"ellipsoid_obst_{j}_psi", yaw)
+                    self._params.set(k, f"ellipsoid_obst_{j}_major", 0.0)
+                    self._params.set(k, f"ellipsoid_obst_{j}_minor", 0.0)
+                    self._params.set(k, f"ellipsoid_obst_{j}_r", self._obstacle_radius)
 
-        #         # Dummies
-        #         for j in range(num_obs, self._max_obstacles):
-        #             self._params.set(k, f"ellipsoid_obst_{j}_x", self._state[0] + 100.0)
-        #             self._params.set(k, f"ellipsoid_obst_{j}_y", self._state[1] + 100.0)
-        #             self._params.set(k, f"ellipsoid_obst_{j}_chi", 1.0)
-        #             self._params.set(k, f"ellipsoid_obst_{j}_psi", 0.0)
-        #             self._params.set(k, f"ellipsoid_obst_{j}_r", 0.1)
-        #             self._params.set(k, f"ellipsoid_obst_{j}_major", 0.0)
-        #             self._params.set(k, f"ellipsoid_obst_{j}_minor", 0.0)
+                # Dummies
+                for j in range(num_obs, self._max_obstacles):
+                    self._params.set(k, f"ellipsoid_obst_{j}_x", self._state[0] + 100.0)
+                    self._params.set(k, f"ellipsoid_obst_{j}_y", self._state[1] + 100.0)
+                    self._params.set(k, f"ellipsoid_obst_{j}_chi", 1.0)
+                    self._params.set(k, f"ellipsoid_obst_{j}_psi", 0.0)
+                    self._params.set(k, f"ellipsoid_obst_{j}_r", 0.1)
+                    self._params.set(k, f"ellipsoid_obst_{j}_major", 0.0)
+                    self._params.set(k, f"ellipsoid_obst_{j}_minor", 0.0)
 
     def project_to_safety(self, trajectory):
         # Projects a trajectory to safety from the obstacles using Douglas Rachford projection
@@ -486,6 +487,7 @@ class ROSMPCPlanner:
 
         self._path_msg = msg
         self._spline_fitter.fit_path(msg)
+        # plot_splines(self._spline_fitter._splines)
         self.plot_path()
 
     def visualize(self):

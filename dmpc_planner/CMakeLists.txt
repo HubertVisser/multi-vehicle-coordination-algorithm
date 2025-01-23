@@ -3,6 +3,7 @@ project(dmpc_planner)
 
 find_package(catkin REQUIRED COMPONENTS
   rospy
+  dynamic_reconfigure
 )
 
 catkin_python_setup()
@@ -14,6 +15,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-catkin_install_python(PROGRAMS scripts/jetracersimulator_mpc.py
+catkin_install_python(PROGRAMS 
+  scripts/jetracersimulator_mpc.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

@@ -7,7 +7,7 @@ from geometry_msgs.msg import PoseStamped
 import matplotlib.pyplot as plt
 
 def raw_track(choice='savoiardo'):
-    n_checkpoints = 100
+    n_checkpoints = 5
     # x_shift_vicon_lab = -3
     # y_shift_vicon_lab = -2.2 #-2.7
     if choice == 'savoiardo':
@@ -45,7 +45,7 @@ def raw_track(choice='savoiardo'):
     
     return Checkpoints_x, Checkpoints_y
 
-def generate_path_msg(settings=None):
+def generate_path_msg():
         # track_choice = settings["track_choice"]
         Checkpoints_x, Checkpoints_y = raw_track()
 
