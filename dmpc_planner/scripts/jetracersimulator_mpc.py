@@ -506,15 +506,14 @@ class ROSMPCPlanner:
 
     def visualize(self):
         if self._state_msg is not None:
-            pass
-            # robot_pos = self._visuals.get_sphere()
-            # robot_pos.set_color(0)
-            # robot_pos.set_scale(0.3, 0.3, 0.3)
+            robot_pos = self._visuals.get_sphere()
+            robot_pos.set_color(0)
+            robot_pos.set_scale(0.3, 0.3, 0.3)
 
-            # pose = Pose()
-            # pose.position.x = self._state[0]
-            # pose.position.y = self._state[1]
-            # robot_pos.add_marker(pose)
+            pose = Pose()
+            pose.position.x = self._state[0]
+            pose.position.y = self._state[1]
+            robot_pos.add_marker(pose)
 
         if self._goal_msg is not None:
             robot_pos = self._visuals.get_cube()

@@ -78,7 +78,7 @@ class MPCPlanner:
 
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu, self._N))
-            # self.set_initial_u_plan()
+            self.set_initial_u_plan()
 
         self._u_traj_init = self._mpc_u_plan
         self._x_traj_init =  self._mpc_x_plan
@@ -170,7 +170,7 @@ class MPCPlanner:
         # refinement for first guess needs to be higher because the forward euler is a bit lame
         N_0 = 1000
 
-        s_0_vec = np.linspace(0, 0 + self.reference_velocity, N_0+1)
+        s_0_vec = np.linspace(0, 0 + self.reference_velocity * 1.5, N_0+1)
         x_ref_0 = np.zeros(N_0+1)
         y_ref_0 = np.ones(N_0+1) * 2 
         theta_ref_0 = np.zeros(N_0+1)

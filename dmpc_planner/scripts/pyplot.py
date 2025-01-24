@@ -1,8 +1,4 @@
 import os
-os.environ["DISPLAY"] = "host.docker.internal:0"  # Set XQuartz display
-
-import matplotlib 
-# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
@@ -31,7 +27,8 @@ def plot_x_traj(trajectory, N, dt):
         plt.title('State Trajectory over Time')
         plt.legend()
         plt.grid(True)
-        plt.show()
+        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'trajectory_plot.png'))  # Save the plot to a file
+        plt.close()
 
 def plot_splines(cs_x, cs_y, x, y):
     # Clear the previous plot
