@@ -237,7 +237,7 @@ class BicycleModel2ndOrder(DynamicsModel):
         xdot = [xdot1,xdot2,xdot3,xdot4,xdot5,xdot6]
 
         # v Simple s_dot approx taken from standard MPCC formulation
-        s_dot = vx
+        s_dot = 0.5*vx
         return cd.vertcat(*xdot, s_dot)
     
     def get_mass(self):

@@ -29,6 +29,7 @@ from util.realtime_parameters import RealTimeParameters
 from util.convertion import quaternion_to_yaw
 from util.logging import print_value 
 from timer import Timer
+from spline import Spline, Spline2D
 
 from contouring_spline import SplineFitter
 # from static_constraints import StaticConstraints
@@ -69,12 +70,13 @@ class ROSMPCPlanner:
         self._weights = self._settings["weights"]
         n_states = self._solver_settings["nx"]
         self._state = np.zeros((n_states,))
-        self._state[1] = -2.0
+        # self._state[0] = 2.0
+        self._state[1] = 2.0
         
 
         self._visuals = ROSMarkerPublisher("mpc_visuals", 100)
         self._path_visual = ROSMarkerPublisher("reference_path", 10)
-        self._debug_visuals = ROSMarkerPublisher("mpc_planner_py/debug", 10)
+        self._debug_visuals_pub = ROSMarkerPublisher("mpc_planner_py/debug", 10)
 
         self._state_msg = None
         self._goal_msg = None
@@ -231,13 +233,17 @@ class ROSMPCPlanner:
         if self._verbose:
             time = timer.stop_and_print()
 
-        # if self._mpc_feasible:
-        #     plot_x_traj(self._trajectory, self._N, self._integrator_step)
-
+        if self._mpc_feasible:
+            plot_x_traj(self._trajectory, self._N, self._integrator_step)
+        
         self.publish_throttle(output, self._mpc_feasible)
         self.publish_steering(output, self._mpc_feasible)
         self.publish_robot_state()
         self.visualize()
+
+        # if 's' in output:
+        #     self._state[6] = output["s"]
+        #     self.print_contouring_ref()
 
         # self._state[0] = output["x"]
         # self._state[1] = output["y"]
@@ -500,14 +506,15 @@ class ROSMPCPlanner:
 
     def visualize(self):
         if self._state_msg is not None:
-            robot_pos = self._visuals.get_sphere()
-            robot_pos.set_color(0)
-            robot_pos.set_scale(0.3, 0.3, 0.3)
+            pass
+            # robot_pos = self._visuals.get_sphere()
+            # robot_pos.set_color(0)
+            # robot_pos.set_scale(0.3, 0.3, 0.3)
 
-            pose = Pose()
-            pose.position.x = self._state[0]
-            pose.position.y = self._state[1]
-            robot_pos.add_marker(pose)
+            # pose = Pose()
+            # pose.position.x = self._state[0]
+            # pose.position.y = self._state[1]
+            # robot_pos.add_marker(pose)
 
         if self._goal_msg is not None:
             robot_pos = self._visuals.get_cube()
@@ -548,9 +555,9 @@ class ROSMPCPlanner:
                     )
         self._visuals.publish()
 
-        if self._debug_visuals:
+        if self._debug_visuals_pub:
             if self._spline_fitter._closest_s is not None:
-                cube = self._debug_visuals.get_cube()
+                cube = self._debug_visuals_pub.get_cube()
                 cube.set_color(5)
                 cube.set_scale(0.3, 0.3, 0.3)
                 pose = Pose()
@@ -559,11 +566,11 @@ class ROSMPCPlanner:
                 cube.add_marker(pose)
 
             self.plot_warmstart()
-            self._debug_visuals.publish()
+            self._debug_visuals_pub.publish()
 
     # For debugging purposes
     def plot_warmstart(self):
-        cylinder = self._debug_visuals.get_cylinder()
+        cylinder = self._debug_visuals_pub.get_cylinder()
         cylinder.set_color(10, alpha=1.0)
         cylinder.set_scale(0.65, 0.65, 0.05)
 
@@ -600,10 +607,17 @@ class ROSMPCPlanner:
                 line.add_line_from_poses(pose_a, pose_b)
         self._path_visual.publish()
         
-
     def print_stats(self):
         self._planner.print_stats()
         # self._decomp_constraints.print_stats()
+
+    def print_contouring_ref(self):
+        s = self._state[6]
+        num_segments = self._settings["contouring"]["num_segments"]
+        path = Spline2D(self._params, num_segments, s)
+        path_x, path_y = path.at(s)
+        print(f"Path at s = {s}: ({path_x}, {path_y})")
+        print(f"State: ({self._spline_fitter._closest_x}, {self._spline_fitter._closest_y})")
 
 
 if __name__ == "__main__":

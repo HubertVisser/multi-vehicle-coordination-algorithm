@@ -74,11 +74,11 @@ class MPCPlanner:
         # Initialize the initial guesses
         if not hasattr(self, "_mpc_x_plan"):
             self._mpc_x_plan = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
-            self.set_initial_x_plan()
+            # self.set_initial_x_plan()
 
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu, self._N))
-            self.set_initial_u_plan()
+            # self.set_initial_u_plan()
 
         self._u_traj_init = self._mpc_u_plan
         self._x_traj_init =  self._mpc_x_plan
@@ -143,6 +143,7 @@ class MPCPlanner:
             # output["vx"] = self._model.get(1, "vx")
             # output["vy"] = self._model.get(1, "vy")
             # output["w"] = self._model.get(1, "w")
+            output["s"] = self._model.get(1, "s")
             
             
 
@@ -169,9 +170,9 @@ class MPCPlanner:
         # refinement for first guess needs to be higher because the forward euler is a bit lame
         N_0 = 1000
 
-        s_0_vec = np.linspace(0, 0 + self.reference_velocity * 1.5, N_0+1)
+        s_0_vec = np.linspace(0, 0 + self.reference_velocity, N_0+1)
         x_ref_0 = np.zeros(N_0+1)
-        y_ref_0 = np.ones(N_0+1) * -2 
+        y_ref_0 = np.ones(N_0+1) * 2 
         theta_ref_0 = np.zeros(N_0+1)
 
         for i in range(1,N_0+1):
@@ -207,19 +208,19 @@ class MPCPlanner:
     def get_braking_trajectory(self, state):
         x = state[0]
         y = state[1]
-        psi = state[2]
+        theta = state[2]
         v = state[3]
         spline = state[4]
 
         result = np.zeros((5, self._N))
-        result[:, 0] = np.array([x, y, psi, v, spline])
+        result[:, 0] = np.array([x, y, theta, v, spline])
         for k in range(1, self._N):
-            x += v * self._dt * math.cos(psi)
-            y += v * self._dt * math.sin(psi)
+            x += v * self._dt * math.cos(theta)
+            y += v * self._dt * math.sin(theta)
             spline += v * self._dt
             v -= self._braking_acceleration * self._dt
             v = np.max([v, 0.])
-            result[:, k] = np.array([x, y, psi, v, spline])
+            result[:, k] = np.array([x, y, theta, v, spline])
         return result
 
 

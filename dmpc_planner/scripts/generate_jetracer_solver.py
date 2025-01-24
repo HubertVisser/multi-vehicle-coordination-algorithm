@@ -35,11 +35,11 @@ def configuration_basic(settings):
     modules.add_module(ContouringModule(settings))
     
     # Penalize ||v - v_ref||_2^2
-    # base_module.weigh_variable(
-    # var_name="vx",
-    # weight_names=["velocity", "reference_velocity"],
-    # cost_function=lambda x, w: w[0] * (x - w[1]) ** 2,
-    # )
+    base_module.weigh_variable(
+    var_name="vx",
+    weight_names=["velocity", "reference_velocity"],
+    cost_function=lambda x, w: w[0] * (x - w[1]) ** 2,
+    )
     return model, modules
 
 

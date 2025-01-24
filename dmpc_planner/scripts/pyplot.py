@@ -1,5 +1,8 @@
+import os
+os.environ["DISPLAY"] = "host.docker.internal:0"  # Set XQuartz display
+
 import matplotlib 
-# matplotlib.use('Agg')
+# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np

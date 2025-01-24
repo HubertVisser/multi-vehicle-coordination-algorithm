@@ -7,7 +7,7 @@ from geometry_msgs.msg import PoseStamped
 import matplotlib.pyplot as plt
 
 def raw_track(choice='savoiardo'):
-    n_checkpoints = 5
+    n_checkpoints = 10
     # x_shift_vicon_lab = -3
     # y_shift_vicon_lab = -2.2 #-2.7
     if choice == 'savoiardo':
@@ -36,12 +36,16 @@ def raw_track(choice='savoiardo'):
     elif choice == 'circle':
 
         n_checkpoints = 4 * n_checkpoints
-        R = 0.3  # as a reference the max radius of curvature is  R = L/tan(delta) = 0.82
+        R = 3  # as a reference the max radius of curvature is  R = L/tan(delta) = 0.82
         theta_init = np.pi * -0.5
         theta_end = np.pi * 1.5
         theta_vec = np.linspace(theta_init, theta_end, n_checkpoints)
         Checkpoints_x = R * np.cos(theta_vec)
         Checkpoints_y = R * np.sin(theta_vec)
+    
+    elif choice == 'straight_line':
+        Checkpoints_x = np.linspace(0, 100, n_checkpoints)
+        Checkpoints_y = np.zeros(n_checkpoints)
     
     return Checkpoints_x, Checkpoints_y
 
