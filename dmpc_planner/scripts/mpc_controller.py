@@ -172,7 +172,7 @@ class MPCPlanner:
 
         s_0_vec = np.linspace(0, 0 + self.reference_velocity * 1.5, N_0+1)
         x_ref_0 = np.zeros(N_0+1)
-        y_ref_0 = np.ones(N_0+1) * 2 
+        y_ref_0 = np.zeros(N_0+1) 
         theta_ref_0 = np.zeros(N_0+1)
 
         for i in range(1,N_0+1):

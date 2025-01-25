@@ -94,9 +94,9 @@ def generate_solver(modules, model, settings=None):
     # Set state bound
     nx = model.nx
     nu = model.nu
-    # ocp.constraints.lbx = np.array([model.lower_bound[nu : model.get_nvar()]]).flatten()
-    # ocp.constraints.ubx = np.array([model.upper_bound[nu : model.get_nvar()]]).flatten()
-    # ocp.constraints.idxbx = np.array(range(model.nx))
+    ocp.constraints.lbx = np.array([model.lower_bound[nu : model.get_nvar()]]).flatten()
+    ocp.constraints.ubx = np.array([model.upper_bound[nu : model.get_nvar()]]).flatten()
+    ocp.constraints.idxbx = np.array(range(model.nx))
 
     # Set control input bound
     ocp.constraints.lbu = np.array([model.lower_bound[:nu]]).flatten()
@@ -174,7 +174,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.qp_solver_iter_max = 500 # default = 50
+    ocp.solver_options.qp_solver_iter_max = 50 # default = 50
     ocp.solver_options.qp_solver_warm_start = 1  # cold start / 1 = warm, 2 = warm primal and dual
 
     # code generation options

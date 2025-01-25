@@ -1,6 +1,6 @@
 import os
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+# import matplotlib.animation as animation
 import numpy as np
 
 def plot_x_traj(trajectory, N, dt):
@@ -29,7 +29,7 @@ def plot_x_traj(trajectory, N, dt):
         plt.grid(True)
         plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'trajectory_plot.png'))  # Save the plot to a file
         plt.close()
-
+        
 def plot_splines(cs_x, cs_y, x, y):
     # Clear the previous plot
     plt.close()

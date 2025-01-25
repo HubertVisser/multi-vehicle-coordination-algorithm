@@ -70,8 +70,8 @@ class ROSMPCPlanner:
         self._weights = self._settings["weights"]
         n_states = self._solver_settings["nx"]
         self._state = np.zeros((n_states,))
-        # self._state[0] = 2.0
-        self._state[1] = 2.0
+        self._state[0] = -5.0
+        # self._state[1] = - 2.0
         
 
         self._visuals = ROSMarkerPublisher("mpc_visuals", 100)
@@ -582,7 +582,7 @@ class ROSMPCPlanner:
             cylinder.add_marker(deepcopy(pose))
 
     def plot_path(self):
-        dist = 0.5
+        dist = 0.3
         if self._path_msg is not None:
             line = self._path_visual.get_line()
             line.set_scale(0.1)
@@ -612,10 +612,8 @@ class ROSMPCPlanner:
 
     def print_contouring_ref(self):
         s = self._state[6]
-        num_segments = self._settings["contouring"]["num_segments"]
-        path = Spline2D(self._params, num_segments, s)
-        path_x, path_y = path.at(s)
-        print(f"Path at s = {s}: ({path_x}, {path_y})")
+        x, y = self._spline_fitter.evaluate(s)
+        print(f"Path at s = {s}: ({x}, {y})")
         print(f"State: ({self._spline_fitter._closest_x}, {self._spline_fitter._closest_y})")
 
 

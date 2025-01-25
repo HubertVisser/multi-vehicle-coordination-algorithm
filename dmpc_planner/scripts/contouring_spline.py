@@ -134,7 +134,7 @@ class SplineFitter:
         # Total path length
         s_start = self._splines[0]['s']
         s_end = self._splines[-1]['s'] + np.sqrt((self._splines[-1]['a_x'])**2 + (self._splines[-1]['a_y'])**2)
-
+        #               23.8                               
         # Bisection method
         while s_end - s_start > tol:
             s_mid1 = s_start + (s_end - s_start) / 3
@@ -159,5 +159,8 @@ if __name__ == "__main__":
     path_msg = generate_path_msg()
     spline_fitter = SplineFitter(settings)
     spline_fitter.fit_path(path_msg)
+    x, y = spline_fitter.evaluate(15.)
+    print(x, y)
     plot_splines(spline_fitter.cs_x, spline_fitter.cs_y, spline_fitter.x, spline_fitter.y)
+    
     

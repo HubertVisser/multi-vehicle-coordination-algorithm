@@ -146,8 +146,8 @@ class BicycleModel2ndOrder(DynamicsModel):
         self.inputs = ["throttle", "steering"] #, "slack"]
         self.states = ["x", "y", "theta", "vx", "vy", "w", "s"]
 
-        self.lower_bound = [0.0, -1.0, 0.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] # [u, x]
-        self.upper_bound = [1.0, 1.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
+        self.lower_bound = [0.0, -1.0, -5.1, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, 0.0] # [u, x]
+        self.upper_bound = [0.6, 1.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
     
     def model_parameters(self):
         lr_reference = 0.115  #0.11650    # (measureing it wit a tape measure it's 0.1150) reference point location taken by the vicon system measured from the rear wheel
@@ -237,7 +237,7 @@ class BicycleModel2ndOrder(DynamicsModel):
         xdot = [xdot1,xdot2,xdot3,xdot4,xdot5,xdot6]
 
         # v Simple s_dot approx taken from standard MPCC formulation
-        s_dot = 0.5*vx
+        s_dot = vx
         return cd.vertcat(*xdot, s_dot)
     
     def get_mass(self):

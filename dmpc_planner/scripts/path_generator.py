@@ -6,8 +6,8 @@ from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 import matplotlib.pyplot as plt
 
-def raw_track(choice='savoiardo'):
-    n_checkpoints = 10
+def raw_track(choice='sinus'):
+    n_checkpoints = 25
     # x_shift_vicon_lab = -3
     # y_shift_vicon_lab = -2.2 #-2.7
     if choice == 'savoiardo':
@@ -47,6 +47,19 @@ def raw_track(choice='savoiardo'):
         Checkpoints_x = np.linspace(0, 100, n_checkpoints)
         Checkpoints_y = np.zeros(n_checkpoints)
     
+    elif choice == 'sinus':
+        # Straight line segment from x = -5 to x = -4 at y = 0
+        Checkpoints_x_straight = np.linspace(-5, -2, 4)
+        Checkpoints_y_straight = np.zeros(4)
+        
+        # Sinusoidal segment from x = -4 to x = 8 completing one period
+        Checkpoints_x_sinus = np.linspace(-2, 12, n_checkpoints-4)
+        Checkpoints_y_sinus = 1 * np.sin(2 * np.pi * (Checkpoints_x_sinus + 3) / 14)  # One period from -3 to 10
+        
+        # Concatenate the two segments
+        Checkpoints_x = np.concatenate((Checkpoints_x_straight[:-1], Checkpoints_x_sinus))
+        Checkpoints_y = np.concatenate((Checkpoints_y_straight[:-1], Checkpoints_y_sinus))
+
     return Checkpoints_x, Checkpoints_y
 
 def generate_path_msg():
