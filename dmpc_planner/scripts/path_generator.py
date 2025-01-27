@@ -48,12 +48,12 @@ def raw_track(choice='sinus'):
         Checkpoints_y = np.zeros(n_checkpoints)
     
     elif choice == 'sinus':
-        # Straight line segment from x = -5 to x = -4 at y = 0
+        # Straight line segment from x = -5 at y = 0
         Checkpoints_x_straight = np.linspace(-5, -2, 4)
         Checkpoints_y_straight = np.zeros(4)
         
-        # Sinusoidal segment from x = -4 to x = 8 completing one period
-        Checkpoints_x_sinus = np.linspace(-2, 12, n_checkpoints-4)
+        # Sinusoidal segment to x = 20 completing one period
+        Checkpoints_x_sinus = np.linspace(-2, 14, n_checkpoints-4)
         Checkpoints_y_sinus = 1 * np.sin(2 * np.pi * (Checkpoints_x_sinus + 3) / 14)  # One period from -3 to 10
         
         # Concatenate the two segments

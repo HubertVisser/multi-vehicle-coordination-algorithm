@@ -238,8 +238,8 @@ class ROSMPCPlanner:
         
         self.publish_throttle(output, self._mpc_feasible)
         self.publish_steering(output, self._mpc_feasible)
-        self.publish_robot_state()
         self.visualize()
+        self.publish_robot_state()
 
         # if 's' in output:
         #     self._state[6] = output["s"]
@@ -558,7 +558,7 @@ class ROSMPCPlanner:
             if self._spline_fitter._closest_s is not None:
                 cube = self._debug_visuals_pub.get_cube()
                 cube.set_color(5)
-                cube.set_scale(0.3, 0.3, 0.3)
+                cube.set_scale(0.5, 0.5, 0.5)
                 pose = Pose()
                 pose.position.x = self._spline_fitter._closest_x
                 pose.position.y = self._spline_fitter._closest_y
