@@ -49,6 +49,7 @@ class ROSMPCPlanner:
         self._braking_acceleration = self._settings["braking_acceleration"]
         self._obstacle_radius = self._settings["obstacle_radius"]
         self._robot_radius = self._settings["robot_radius"]
+        self._start_x = self._settings["start_x"]
 
         self._verbose = self._settings["verbose"]
         self._debug_visuals = self._settings["debug_visuals"]
@@ -70,7 +71,7 @@ class ROSMPCPlanner:
         self._weights = self._settings["weights"]
         n_states = self._solver_settings["nx"]
         self._state = np.zeros((n_states,))
-        self._state[0] = -5.0
+        self._state[0] = self._start_x
         # self._state[1] = - 2.0
         
 
@@ -84,6 +85,9 @@ class ROSMPCPlanner:
         self._trajectory = None
         self._obstacle_msg = None
         # self._obst_lock = threading.Lock()
+
+        self._throttle_outputs = []
+        self._steering_outputs = []
 
         self._goal_x = 0.0
         self._goal_y = 0.0
@@ -103,14 +107,21 @@ class ROSMPCPlanner:
         self._enable_output = True
         # self.start_environment()
 
-        
 
     def initialize_publishers_and_subscribers(self):
 
         # Sub
-        self._state_sub = rospy.Subscriber(
-            "vicon/jetracer1", PoseStamped, self.state_pose_callback, queue_size=1
-        )
+        # self._state_sub = rospy.Subscriber(
+        #     "vicon/jetracer1", PoseStamped, self.state_pose_callback, queue_size=1
+        # )
+
+        # self._vy_sub = rospy.Subscriber(
+        #     "vy_1", Float32, self.vy_pose_callback, queue_size=10
+        # )
+
+        # self._w_sub = rospy.Subscriber(
+        #     "omega_1", Float32, self.w_pose_callback, queue_size=10
+        # )
         # self._obs_sub = rospy.Subscriber(
         #     "/pedestrian_simulator/trajectory_predictions",
         #     ObstacleArray,
@@ -235,26 +246,28 @@ class ROSMPCPlanner:
 
         if self._mpc_feasible:
             plot_x_traj(self._trajectory, self._N, self._integrator_step)
+            self._throttle_outputs.append(output["throttle"])
+            self._steering_outputs.append(output["steering"])
         
-        self.publish_throttle(output, self._mpc_feasible)
-        self.publish_steering(output, self._mpc_feasible)
-        self.visualize()
+        # self.publish_throttle(output, self._mpc_feasible)
+        # self.publish_steering(output, self._mpc_feasible)
         self.publish_robot_state()
+        self.visualize()
 
         # if 's' in output:
         #     self._state[6] = output["s"]
         #     self.print_contouring_ref()
 
-        # self._state[0] = output["x"]
-        # self._state[1] = output["y"]
+        self._state[0] = output["x"]
+        self._state[1] = output["y"]
 
         # # Extract yaw angle (rotation around the Z-axis)
-        # self._state[2] = output["theta"]
+        self._state[2] = output["theta"]
 
         # # Velocity is in the local frame, x is the forward velocity
-        # self._state[3] = output["vx"]
-        # self._state[4] = output["vy"]
-        # self._state[5] = output["w"]
+        self._state[3] = output["vx"]
+        self._state[4] = output["vy"]
+        self._state[5] = output["w"]
 
     def set_parameters(self):
         
@@ -462,6 +475,12 @@ class ROSMPCPlanner:
         # print(f"theta = {self._state[2]:.2f}")
         # print(f"vx = {self._state[3]:.2f}")
 
+    def vy_pose_callback(self, msg):
+        self._state[4] = msg.data
+    
+    def w_pose_callback(self, msg):
+        self._state[5] = msg.data
+
     def obstacle_callback(self, msg):
         if self._state is None or not self._callbacks_enabled:
             return
@@ -615,6 +634,28 @@ class ROSMPCPlanner:
         x, y = self._spline_fitter.evaluate(s)
         print(f"Path at s = {s}: ({x}, {y})")
         print(f"State: ({self._spline_fitter._closest_x}, {self._spline_fitter._closest_y})")
+    
+    def plot_outputs(self):
+        import matplotlib.pyplot as plt
+
+        plt.figure()
+        plt.subplot(2, 1, 1)
+        plt.plot(self._throttle_outputs, label='Throttle')
+        plt.xlabel('Time Step')
+        plt.ylabel('Throttle')
+        plt.legend()
+        plt.grid(True)
+
+        plt.subplot(2, 1, 2)
+        plt.plot(self._steering_outputs, label='Steering')
+        plt.xlabel('Time Step')
+        plt.ylabel('Steering')
+        plt.legend()
+        plt.grid(True)
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'u_plot.png'))  # Save the plot to a file
+        plt.close()
 
 
 if __name__ == "__main__":
@@ -625,5 +666,5 @@ if __name__ == "__main__":
 
     while not rospy.is_shutdown():
         rospy.spin()
-
+    mpc.plot_outputs()
     mpc.print_stats()

@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
 
+import os, sys
+import pathlib
+path = pathlib.Path(__file__).parent.resolve()
+sys.path.append(os.path.join(path))
+sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
+
 import numpy as np
 import rospy
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 import matplotlib.pyplot as plt
 
-def raw_track(choice='sinus'):
-    n_checkpoints = 25
+from util.files import load_settings
+
+
+def raw_track(choice='straight_line', start_x=0):
+    n_checkpoints = 10
     # x_shift_vicon_lab = -3
     # y_shift_vicon_lab = -2.2 #-2.7
     if choice == 'savoiardo':
@@ -44,17 +53,17 @@ def raw_track(choice='sinus'):
         Checkpoints_y = R * np.sin(theta_vec)
     
     elif choice == 'straight_line':
-        Checkpoints_x = np.linspace(0, 100, n_checkpoints)
+        Checkpoints_x = np.linspace(start_x, 20, n_checkpoints)
         Checkpoints_y = np.zeros(n_checkpoints)
     
     elif choice == 'sinus':
         # Straight line segment from x = -5 at y = 0
-        Checkpoints_x_straight = np.linspace(-5, -2, 4)
+        Checkpoints_x_straight = np.linspace(start_x, start_x+3, 4)
         Checkpoints_y_straight = np.zeros(4)
         
         # Sinusoidal segment to x = 20 completing one period
-        Checkpoints_x_sinus = np.linspace(-2, 14, n_checkpoints-4)
-        Checkpoints_y_sinus = 1 * np.sin(2 * np.pi * (Checkpoints_x_sinus + 3) / 14)  # One period from -3 to 10
+        Checkpoints_x_sinus = np.linspace(start_x + 3, start_x + 11, n_checkpoints-4)
+        Checkpoints_y_sinus = 1 * np.sin(2 * np.pi * (Checkpoints_x_sinus + 3) / 8 )  # One period with length 15
         
         # Concatenate the two segments
         Checkpoints_x = np.concatenate((Checkpoints_x_straight[:-1], Checkpoints_x_sinus))
@@ -63,8 +72,10 @@ def raw_track(choice='sinus'):
     return Checkpoints_x, Checkpoints_y
 
 def generate_path_msg():
-        # track_choice = settings["track_choice"]
-        Checkpoints_x, Checkpoints_y = raw_track()
+        settings = load_settings(package="dmpc_planner")
+        track_choice = settings["track_choice"]
+        start_x = settings["start_x"]
+        Checkpoints_x, Checkpoints_y = raw_track(track_choice, start_x)
 
         path = Path()
         path.header.frame_id = "map"

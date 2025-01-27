@@ -94,9 +94,9 @@ def generate_solver(modules, model, settings=None):
     # Set state bound
     nx = model.nx
     nu = model.nu
-    ocp.constraints.lbx = np.array([model.lower_bound[nu : model.get_nvar()]]).flatten()
-    ocp.constraints.ubx = np.array([model.upper_bound[nu : model.get_nvar()]]).flatten()
-    ocp.constraints.idxbx = np.array(range(model.nx))
+    # ocp.constraints.lbx = np.array([model.lower_bound[nu : model.get_nvar()]]).flatten()
+    # ocp.constraints.ubx = np.array([model.upper_bound[nu : model.get_nvar()]]).flatten()
+    # ocp.constraints.idxbx = np.array(range(model.nx))
 
     # Set control input bound
     ocp.constraints.lbu = np.array([model.lower_bound[:nu]]).flatten()
@@ -163,8 +163,8 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.globalization = "MERIT_BACKTRACKING"
     ocp.solver_options.globalization = "FIXED_STEP"
     # ocp.solver_options.eps_sufficient_descent = 1e-1
-    ocp.solver_options.qp_tol = 1e-5 # Important! (1e-3)
-    # ocp.solver_options.qp_tol = 1e-3 # Important! (1e-3)
+    # ocp.solver_options.qp_tol = 1e-5 # Important! (1e-3)
+    ocp.solver_options.qp_tol = 1e-3 # Important! (1e-3)
 
     # qp solver options
     # Full Condensing: Suitable for small to medium-sized systems, leading to a dense QP with only control inputs as decision variables.

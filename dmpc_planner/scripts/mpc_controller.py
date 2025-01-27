@@ -137,12 +137,12 @@ class MPCPlanner:
             output = dict()
             output["throttle"] = self._model.get(0, "throttle")
             output["steering"] = self._model.get(0, "steering")
-            # output["x"] = self._model.get(1, "x")
-            # output["y"] = self._model.get(1, "y")
-            # output["theta"] = self._model.get(1, "theta")
-            # output["vx"] = self._model.get(1, "vx")
-            # output["vy"] = self._model.get(1, "vy")
-            # output["w"] = self._model.get(1, "w")
+            output["x"] = self._model.get(1, "x")
+            output["y"] = self._model.get(1, "y")
+            output["theta"] = self._model.get(1, "theta")
+            output["vx"] = self._model.get(1, "vx")
+            output["vy"] = self._model.get(1, "vy")
+            output["w"] = self._model.get(1, "w")
             output["s"] = self._model.get(1, "s")
             
             
