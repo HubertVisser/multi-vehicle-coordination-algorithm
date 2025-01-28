@@ -232,7 +232,7 @@ class BicycleModel2ndOrder(DynamicsModel):
 
 # Bicycle model multiple robots
 class BicycleModel2ndOrderMultiRobot(BicycleModel2ndOrder):   
-    
+    pass
 
 
 
