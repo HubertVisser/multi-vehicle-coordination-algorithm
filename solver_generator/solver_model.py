@@ -20,18 +20,6 @@ class DynamicsModel:
         self.params = None
         self.nx_integrate = None
 
-    # def discrete_dynamics(self, z, p, settings, **kwargs):
-    #     params = settings["params"]
-    #     params.load(p)
-    #     self.load(z)
-    #     self.load_settings(settings)
-
-    #     nx_integrate = self.nx if self.nx_integrate is None else self.nx_integrate
-    #     # integrated_states = forces_discrete_dynamics(z, p, self, settings, nx=nx_integrate, **kwargs)
-
-    #     integrated_states = self.model_discrete_dynamics(z, integrated_states, **kwargs)
-    #     return integrated_states
-
     def model_discrete_dynamics(self, z, integrated_states, **kwargs):
         return integrated_states
 
@@ -141,7 +129,7 @@ class BicycleModel2ndOrder(DynamicsModel):
     def __init__(self):
         super().__init__()
         self.nu = 2
-        self.nx = 7
+        self.nx = 7     
 
         self.inputs = ["throttle", "steering"] #, "slack"]
         self.states = ["x", "y", "theta", "vx", "vy", "w", "s"]
@@ -206,7 +194,6 @@ class BicycleModel2ndOrder(DynamicsModel):
     
     def continuous_model(self, x, u): 
 
-
         th = u[0]
         st = u[1]
         theta = x[2]
@@ -243,72 +230,11 @@ class BicycleModel2ndOrder(DynamicsModel):
     def get_mass(self):
         return self.model_parameters()[1]
 
-    #def continuous_model(self, x, u):
-        """Dynamics model with states: x, vx and input: throttle """
-
-        th = u[0]
-        vx = x[1]
-
-        # Define model parameters
-        l, m, lr, lf, l_COM_self = self.model_parameters()
-
-        # motor parameters
-        a_m =  25.35849952697754    
-        b_m =  4.815326690673828    
-        c_m =  -0.16377617418766022 
-
-        a_f =  1.2659882307052612
-        b_f =  7.666370391845703
-        c_f =  0.7393041849136353
-        d_f =  -0.11231517791748047
-
-        Fx_wheels = self.motor_force(th, vx, a_m, b_m, c_m)\
-                + self.rolling_friction(vx, a_f, b_f, c_f, d_f)
-
-        # Evaluate to acceleration
-        acc_x = Fx_wheels / m
-
-        xdot1 = vx
-        xdot2 = acc_x
-        sdot = vx
-        xdot = [xdot1,xdot2]
-
-        return cd.vertcat(*xdot, sdot)
+# Bicycle model multiple robots
+class BicycleModel2ndOrderMultiRobot(BicycleModel2ndOrder):   
     
-    #def continuous_model(self, x, u):
-        """Dynamics model with only input: steering """
-
-        st = u[0]
-        theta = x[2]
-        vx = 1.0
-        vy = x[4]
-        w = x[5]
-
-        # Define model parameters
-        l, m, lr, lf, l_COM = self.model_parameters()
-
-         # steering angle curve --from fitting on vicon data
-        a_s =  1.392930030822754
-        b_s =  0.36576229333877563
-        c_s =  0.0029959678649902344 - 0.03 # littel adjustment to allign the tire curves
-        d_s =  0.5147881507873535
-        e_s =  1.0230425596237183
 
 
-        # convert steering command to steering angle
-        steering_angle = self.steering_2_steering_angle(st, a_s, b_s, c_s, d_s, e_s)
-        w = vx * cd.tan(steering_angle) / (lr + lf)# angular velocity
-        vy = l_COM * w
-
-        xdot1 = vx * cd.cos(theta) - vy * cd.sin(theta)
-        xdot2 = vx * cd.sin(theta) + vy * cd.cos(theta)
-        xdot3 = w
-        xdot4 = 0
-        xdot5 = 0
-        xdot6 = 0
-        xdot = [xdot1,xdot2,xdot3, xdot4, xdot5, xdot6]
-
-        return cd.vertcat(*xdot)
 
 if __name__ == "__main__":
 

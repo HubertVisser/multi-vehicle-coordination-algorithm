@@ -1,6 +1,6 @@
 name: "Jetracer"
 N: 20
-integrator_step: 0.2
+integrator_step: 0.1
 n_discs: 0
 track_choice: "sinus" # 'straight_line', sinus
 start_x: -5.0
@@ -12,7 +12,7 @@ solver_settings:
   iterations: 1 #2 # 1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
-control_frequency: 20
+control_frequency: 30
 max_obstacles: 8
 obstacle_radius: 0.5
 robot_radius: 0.325
