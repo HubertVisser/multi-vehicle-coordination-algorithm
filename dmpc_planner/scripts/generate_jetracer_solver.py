@@ -20,6 +20,8 @@ from solver_model import BicycleModel2ndOrder
 
 
 def configuration_basic(settings):
+    num_robots = settings["num_robots"]
+
     modules = ModuleManager()
     model = BicycleModel2ndOrder()
 

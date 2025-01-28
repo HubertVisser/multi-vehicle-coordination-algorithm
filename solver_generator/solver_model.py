@@ -231,8 +231,30 @@ class BicycleModel2ndOrder(DynamicsModel):
         return self.model_parameters()[1]
 
 # Bicycle model multiple robots
-class BicycleModel2ndOrderMultiRobot(BicycleModel2ndOrder):   
-    pass
+class BicycleModel2ndOrderMultiRobot(BicycleModel2ndOrder):
+
+    def __init__(self, num_robots):
+        super().__init__()
+        self.num_robots = num_robots
+        self.nu = 2 * num_robots
+        self.nx = 7 * num_robots
+
+        for i in range(1, num_robots):
+            self.inputs = [f"{input}_{i}" for input in self.inputs]
+            self.states = [f"{state}_{i}" for state in self.states]
+
+        self.lower_bound = [0.0, -1.0, -5.1, -10.0, -1000.0, -1000.0, -1000.0] * num_robots
+        self.upper_bound = [1.0, 1.0, 1000.0, 10.0, 1000.0, 1000.0, 1000.0] * num_robots
+
+    def continuous_model(self, x, u):
+        xdot = []
+        for i in range(self.num_robots):
+            xi = x[i * 7:(i + 1) * 7]
+            ui = u[i * 2:(i + 1) * 2]
+            xdot_i = super().continuous_model(xi, ui)
+            xdot.extend(xdot_i.elements())
+        return cd.vertcat(*xdot)
+
 
 
 
