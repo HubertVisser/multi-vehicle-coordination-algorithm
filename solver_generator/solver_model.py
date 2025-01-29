@@ -125,9 +125,8 @@ class DynamicsModel:
         return ((var - tracking_value) / range) ** 2
 
 class MultiRobotDynamicsModel():
-    def __init__(self, n):
-        super().__init__()
-        self.n = n
+    def __init__(self):
+        self.n = 0  # number of robots
         self.nu = 0
         self.nx = 0
         self.nd = 0
@@ -140,31 +139,28 @@ class MultiRobotDynamicsModel():
         self.upper_bound = []
 
     def get_nvar(self):
-        return self.nu + self.nx + self.nz
+        return self.nu + self.nx + self.nd
 
     def acados_symbolics(self):
-        x = cd.SX.sym("x", self.nx)  # [x, y, omega, vx, vy, w]
-        u = cd.SX.sym("u", self.nu)  # [throttle, steering]
-        d = cd.SX.sym("d", self.nd)  # [lam, s_dual]
-        z = cd.horzcat(u, x, d)
+        u = cd.SX.sym("u", self.nu, self.n)     # [throttle, steering]
+        x = cd.SX.sym("x", self.nx, self.n)     # [x, y, omega, vx, vy, w]
+        d = cd.SX.sym("d", self.nd, self.n)     # [lam, s_dual]
+        z = cd.vertcat(u, x, d)
         self.load(z)
         return z
 
     def get_acados_dynamics(self):
-        f_expl = self.continuous_model(self._z[self.nu :], self._z[: self.nu])
+        f_expl = self.continuous_model(self._z[ self.nu : self.nu + self.nx, :], self._z[: self.nu, :])    #(x, u)
         return f_expl
 
     def get_x(self):
-        return self._z[self.nu :]
+        return self._z[self.nu : self.nu + self.nx, :]
 
     def get_u(self):
-        return self._z[: self.nu]
-
-    def get_acados_x_dot(self):
-        return self._x_dot
+        return self._z[: self.nu, :]
 
     def get_acados_u(self):
-        return self._z[: self.nu]
+        return cd.reshape(self._z[: self.nu, :],-1, 1)
 
     def load(self, z):
         self._z = z
@@ -177,11 +173,12 @@ class MultiRobotDynamicsModel():
         file_path = model_map_path()
 
         map = dict()
-        for idx, state in enumerate(self.states):
-            map[state] = ["x", idx + self.nu, self.get_bounds(state)[0], self.get_bounds(state)[1]]
+        for i in range(self.n):
+            for idx, state in enumerate(self.states[i:i+self.nx]):
+                map[state] = ["x", idx + self.nu, self.get_bounds(state)[0], self.get_bounds(state)[1]]
 
-        for idx, input in enumerate(self.inputs):
-            map[input] = ["u", idx, self.get_bounds(input)[0], self.get_bounds(input)[1]]
+            for idx, input in enumerate(self.inputs[i:i+self.nu]):
+                map[input] = ["u", idx, self.get_bounds(input)[0], self.get_bounds(input)[1]]
 
         write_to_yaml(file_path, map)
 
@@ -345,34 +342,131 @@ class BicycleModel2ndOrder(DynamicsModel):
         return self.model_parameters()[1]
 
 # Bicycle model multiple robots
-class BicycleModel2ndOrderMultiRobot(BicycleModel2ndOrder):
+class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
 
-    def __init__(self, num_robots):
-        self.num_robots = num_robots
-        self.nu = 2 * num_robots
-        self.nx = 7 * num_robots
-        self.nz = num_robots * (num_robots-1) * 2 # algebraic variables
+    def __init__(self, n):
+        super().__init__()
+        self.n = n
+        self.nu = 2 
+        self.nx = 7 
+        self.nd = (n-1) * 2 # algebraic variables
 
-        self.inputs = []
-        self.states = []
-        self.dual_vars = []
+        for i in range(1, n+1):
+            sublist_inputs = [f"{input}_{i}" for input in ["throttle", "steering"]]
+            sublist_states= [f"{state}_{i}" for state in ["x", "y", "theta", "vx", "vy", "w", "s"]]
+            sublist_states.append([f"lam_{i}_{j}" for j in range(1, n+1) if j != i])                     
+            sublist_states.append([f"s_dual_{i}_{j}" for j in range(1, n+1) if j != i])              
 
-        for i in range(1, num_robots+1):
-            self.inputs.extend([f"{input}_{i}" for input in ["throttle", "steering"]])
-            self.states.extend([f"{state}_{i}" for state in ["x", "y", "theta", "vx", "vy", "w", "s"]])
-            self.dual_vars.extend([f"lam_{i}_{j}" for j in range(1, num_robots+1) if j != i])                 #[x, lam, s]
-            self.dual_vars.extend([f"s_dual_{i}_{j}" for j in range(1, num_robots+1) if j != i])              #[x, lam, s]
+            self.inputs.append(sublist_inputs)
+            self.states.append(sublist_states)
         
+        self.lower_bound_inputs = np.tile([0.0, -1.0], (n, 1))
+        self.upper_bound_inputs = np.tile([1.0, 1.0], (n, 1))
 
-        self.lower_bound = [0.0, -1.0, -5.1, -10.0, -1000.0, -1000.0, -1000.0, ] * num_robots           #[u,x,lam,s_dual]
-        self.upper_bound = [1.0, 1.0, 1000.0, 10.0, 1000.0, 1000.0, 1000.0] * num_robots                #[u,x,lam,s_dual]
+        lower_bound_lam = np.tile([0.0], (n-1, 1))    
+        upper_bound_lam = np.tile([1000.0], (n-1, 1))    
+        lower_bound_s_dual = np.tile([-1.0], (n-1, 1))                       
+        upper_bound_s_dual = np.tile([1.0], (n-1, 1))      
+                         
+        self.lower_bound_states = np.tile([-5.1, -10.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] + lower_bound_lam + lower_bound_s_dual, (n, 1))
+        self.upper_bound_states = np.tile([1000.0, 10.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] + upper_bound_lam + upper_bound_s_dual, (n, 1))         
+    
+    def model_parameters(self):
+        lr_reference = 0.115  #0.11650    # (measureing it wit a tape measure it's 0.1150) reference point location taken by the vicon system measured from the rear wheel
+        #COM_positon = 0.084 #0.09375 #centre of mass position measured from the rear wheel
 
+        # car parameters
+        l = 0.1735 # [m]length of the car (from wheel to wheel)
+        m = 1.580 # mass [kg]
+        m_front_wheel = 0.847 #[kg] mass pushing down on the front wheel
+        m_rear_wheel = 0.733 #[kg] mass pushing down on the rear wheel
+
+        COM_positon = l / (1+m_rear_wheel/m_front_wheel)
+        lr = COM_positon
+        lf = l-lr
+        # Automatically adjust following parameters according to tweaked values
+        l_COM = lr_reference - COM_positon
+        return l, m, lr, lf, l_COM
+    
+    def motor_force(self, throttle_cmd, vx):
+        # motor parameters
+        a_m =  25.35849952697754    
+        b_m =  4.815326690673828    
+        c_m =  -0.16377617418766022 
+
+        w_m = 0.5 * (cd.tanh(100*(throttle_cmd+c_m))+1)
+        motor_force =  (a_m - b_m * vx) * w_m * (throttle_cmd+c_m)
+        return motor_force
+    
+    def rolling_friction(self,vx):
+        # friction parameters
+        a_f =  1.2659882307052612
+        b_f =  7.666370391845703
+        c_f =  0.7393041849136353
+        d_f =  -0.11231517791748047
+
+        force_rolling_friction = - ( a_f * cd.tanh(b_f  * vx) + c_f * vx + d_f * vx**2 )
+        return force_rolling_friction
+    
+    def fx_wheels(self,throttle_cmd, vx):
+        fx_wheels = self.motor_force(throttle_cmd, vx) + self.rolling_friction(vx)
+        return fx_wheels
+    
+    def steering_2_steering_angle(self,steering_cmd):
+        # steering angle curve --from fitting on vicon data
+        a_s =  1.392930030822754
+        b_s =  0.36576229333877563
+        c_s =  0.0029959678649902344 - 0.03 # littel adjustment to allign the tire curves
+        d_s =  0.5147881507873535
+        e_s =  1.0230425596237183
+
+        w_s = 0.5 * (cd.tanh(30*(steering_cmd+c_s))+1)
+        steering_angle1 = b_s * cd.tanh(a_s * (steering_cmd + c_s))
+        steering_angle2 = d_s * cd.tanh(e_s * (steering_cmd + c_s))
+        steering_angle = (w_s)*steering_angle1+(1-w_s)*steering_angle2
+        return steering_angle
+    
+    def kinematic_bicycle_model(self, x, u): 
+
+        th = u[0]
+        st = u[1]
+        theta = x[2]
+        vx = x[3]
+
+        # Define model parameters
+        l, m, lr, lf, l_COM = self.model_parameters()
+
+        # convert steering command to steering angle
+        steering_angle = self.steering_2_steering_angle(st)
+        
+        # convert throttle to force on the wheels
+        Fx_wheels = self.fx_wheels(th, vx)
+        
+        # Evaluate to acceleration
+        acc_x = Fx_wheels / m
+        
+        w = vx * cd.tan(steering_angle) / (lr + lf)# angular velocity
+        vy = l_COM * w
+
+        xdot1 = vx * cd.cos(theta) - vy * cd.sin(theta)
+        xdot2 = vx * cd.sin(theta) + vy * cd.cos(theta)
+        xdot3 = w
+        xdot4 = acc_x  
+        xdot5 = 0
+        xdot6 = 0
+
+        xdot = [xdot1,xdot2,xdot3,xdot4,xdot5,xdot6]
+
+        # v Simple s_dot approx taken from standard MPCC formulation
+        s_dot = vx
+        return cd.vertcat(*xdot, s_dot)
+    
     def continuous_model(self, x, u):
         xdot = []
-        for i in range(self.num_robots):
-            xi = x[i * 7:(i + 1) * 7]
-            ui = u[i * 2:(i + 1) * 2]
-            xdot_i = super().continuous_model(xi, ui)
+        for i in range(self.n):
+            xi = x[: , i]
+            ui = u[: , i]
+            xdot_i = self.kinematic_bicycle_model(xi, ui)
             xdot.extend(xdot_i.elements())
         return cd.vertcat(*xdot)
 
@@ -381,6 +475,8 @@ class BicycleModel2ndOrderMultiRobot(BicycleModel2ndOrder):
 
 if __name__ == "__main__":
 
-    model = BicycleModel2ndOrderMultiRobot(3)
-    print(model.inputs)
-    print(model.states)
+    model = BicycleModel2ndOrderMultiRobot(2)
+    model.acados_symbolics()
+    model.get_acados_dynamics()
+    # model.save_map()
+    print(model.get_x(), model.get_x().shape)
