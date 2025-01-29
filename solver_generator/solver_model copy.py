@@ -124,13 +124,13 @@ class DynamicsModel:
 
         return ((var - tracking_value) / range) ** 2
 
-class MultiRobotDynamicsModel():
+class MultiRobotDynamicsModel(DynamicsModel):
     def __init__(self, n):
         super().__init__()
         self.n = n
-        self.nu = 0
-        self.nx = 0
-        self.nd = 0
+        self.nu = []
+        self.nx = []
+        self.nz = []
 
         self.inputs = []
         self.states = []
@@ -139,83 +139,26 @@ class MultiRobotDynamicsModel():
         self.lower_bound = []
         self.upper_bound = []
 
-    def get_nvar(self):
-        return self.nu + self.nx + self.nz
-
-    def acados_symbolics(self):
-        x = cd.SX.sym("x", self.nx)  # [x, y, omega, vx, vy, w]
-        u = cd.SX.sym("u", self.nu)  # [throttle, steering]
-        d = cd.SX.sym("d", self.nd)  # [lam, s_dual]
-        z = cd.horzcat(u, x, d)
-        self.load(z)
-        return z
-
-    def get_acados_dynamics(self):
-        f_expl = self.continuous_model(self._z[self.nu :], self._z[: self.nu])
-        return f_expl
-
-    def get_x(self):
-        return self._z[self.nu :]
-
-    def get_u(self):
-        return self._z[: self.nu]
-
-    def get_acados_x_dot(self):
-        return self._x_dot
-
-    def get_acados_u(self):
-        return self._z[: self.nu]
-
-    def load(self, z):
-        self._z = z
-
-    def load_settings(self, settings):
-        self.params = settings["params"]
-        self.settings = settings
-
-    def save_map(self):
-        file_path = model_map_path()
-
-        map = dict()
-        for idx, state in enumerate(self.states):
-            map[state] = ["x", idx + self.nu, self.get_bounds(state)[0], self.get_bounds(state)[1]]
-
-        for idx, input in enumerate(self.inputs):
-            map[input] = ["u", idx, self.get_bounds(input)[0], self.get_bounds(input)[1]]
-
-        write_to_yaml(file_path, map)
-
-    def integrate(self, z, settings, integration_step):
-        return self.discrete_dynamics(z, settings["params"].get_p(), settings, integration_step=integration_step)
-
-    def do_not_use_integration_for_last_n_states(self, n):
-        self.nx_integrate = self.nx - n
-
-    def get(self, state_or_input):
+    def get(self, state_or_input, robot_index):
         if state_or_input in self.states:
-            i = self.states.index(state_or_input)
+            i = self.states.index(state_or_input) + robot_index * 7
             return self._z[self.nu + i]
         elif state_or_input in self.inputs:
-            i = self.inputs.index(state_or_input)
+            i = self.inputs.index(state_or_input) + robot_index * 2
             return self._z[i]
         else:
             raise IOError(f"Requested a state or input `{state_or_input}' that was neither a state nor an input for the selected model")
 
-    def set_bounds(self, lower_bound, upper_bound):
-        assert len(lower_bound) == len(upper_bound) == len(self.lower_bound)
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
-
-    def get_bounds(self, state_or_input):
+    def get_bounds(self, state_or_input, robot_index):
         if state_or_input in self.states:
-            i = self.states.index(state_or_input)
+            i = self.states.index(state_or_input) + robot_index * 7
             return (
                 self.lower_bound[self.nu + i],
                 self.upper_bound[self.nu + i],
                 self.upper_bound[self.nu + i] - self.lower_bound[self.nu + i],
             )
         elif state_or_input in self.inputs:
-            i = self.inputs.index(state_or_input)
+            i = self.inputs.index(state_or_input) + robot_index * 2
             return (
                 self.lower_bound[i],
                 self.upper_bound[i],
@@ -224,16 +167,15 @@ class MultiRobotDynamicsModel():
         else:
             raise IOError(f"Requested a state or input `{state_or_input}' that was neither a state nor an input for the selected model")
 
-
-    def get_cost(self, state_or_input):
-        var = self.get(state_or_input)
-        lower_bound, upper_bound, range = self.get_bounds(state_or_input)
+    def get_cost(self, state_or_input, robot_index):
+        var = self.get(state_or_input, robot_index)
+        lower_bound, upper_bound, range = self.get_bounds(state_or_input, robot_index)
 
         return (var / range) ** 2
 
-    def get_tracking_cost(self, state_or_input, tracking_value):
-        var = self.get(state_or_input)
-        lower_bound, upper_bound, range = self.get_bounds(state_or_input)
+    def get_tracking_cost(self, state_or_input, tracking_value, robot_index):
+        var = self.get(state_or_input, robot_index)
+        lower_bound, upper_bound, range = self.get_bounds(state_or_input, robot_index)
 
         return ((var - tracking_value) / range) ** 2
         
