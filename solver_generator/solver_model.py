@@ -144,9 +144,8 @@ class MultiRobotDynamicsModel():
 
     def acados_symbolics(self):
         u = cd.SX.sym("u", self.nu, self.n)     # [throttle, steering]
-        x = cd.SX.sym("x", self.nx, self.n)     # [x, y, omega, vx, vy, w]
-        d = cd.SX.sym("d", self.nd, self.n)     # [lam, s_dual]
-        z = cd.vertcat(u, x, d)
+        x = cd.SX.sym("x", self.nx + self.nd, self.n)     # [x, y, omega, vx, vy, w lam, s_dual]
+        z = cd.vertcat(u, x)
         self.load(z)
         return z
 
@@ -155,11 +154,14 @@ class MultiRobotDynamicsModel():
         return f_expl
 
     def get_x(self):
-        return self._z[self.nu : self.nu + self.nx, :]
+        return self._z[self.nu :, :]
 
     def get_u(self):
         return self._z[: self.nu, :]
 
+    def get_acados_x(self):
+        return cd.reshape(self._z[self.nu :, :],-1, 1)
+    
     def get_acados_u(self):
         return cd.reshape(self._z[: self.nu, :],-1, 1)
 
@@ -175,33 +177,25 @@ class MultiRobotDynamicsModel():
 
         map = dict()
         for idx, state in np.ndenumerate(self.states):
-            map[state] = ["x", self.idx_states[idx] , self.get_bounds(state)[0], self.get_bounds(state)[1]]
+            map[str(state)] = ["x", self.idx_states[idx].item() , self.get_bounds(state)[0], self.get_bounds(state)[1]]
 
         for idx, input in np.ndenumerate(self.inputs):
-            map[input] = ["u", self.idx_inputs[idx], self.get_bounds(input)[0], self.get_bounds(input)[1]]
+            map[str(input)] = ["u", self.idx_inputs[idx].item(), self.get_bounds(input)[0], self.get_bounds(input)[1]]
 
         write_to_yaml(file_path, map)
-
-    def integrate(self, z, settings, integration_step):
-        return self.discrete_dynamics(z, settings["params"].get_p(), settings, integration_step=integration_step)
 
     def do_not_use_integration_for_last_n_states(self, n):
         self.nx_integrate = self.nx - n
 
     def get(self, state_or_input):
-        if state_or_input in self.states:
-            i = self.states.index(state_or_input)
-            return self._z[self.nu + i]
-        elif state_or_input in self.inputs:
-            i = self.inputs.index(state_or_input)
-            return self._z[i]
+        if np.any(self.states == state_or_input):
+            i = np.where(self.states == state_or_input)
+            return self.get_x()[i]
+        elif np.any(self.inputs == state_or_input):
+            i = np.where(self.inputs == state_or_input)
+            return self.get_u()[i]
         else:
             raise IOError(f"Requested a state or input `{state_or_input}' that was neither a state nor an input for the selected model")
-
-    def set_bounds(self, lower_bound, upper_bound):
-        assert len(lower_bound) == len(upper_bound) == len(self.lower_bound)
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
 
     def get_bounds(self, state_or_input): 
         if np.any(self.states == state_or_input):
@@ -369,8 +363,8 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
                 self.states = np.hstack((self.states, sublist_states.reshape(-1, 1)))
         
         # Bounds on states and inputs
-        self.lower_bound_inputs = np.tile([0.0, -1.0], (n, 1)) #TODO transpose
-        self.upper_bound_inputs = np.tile([1.0, 1.0], (n,1))
+        self.lower_bound_inputs = np.tile([[0.0],[-1.0]], (1, n)) 
+        self.upper_bound_inputs = np.tile([[1.0], [1.0]], (1,n))
 
         lower_bound_states = np.array([[-5.1, -10.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0]])
         upper_bound_states = np.array([[1000.0, 10.0, 1000.0, 1000.0, 1000.0, 1000.0, 100]])
@@ -472,11 +466,16 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
         xdot5 = 0
         xdot6 = 0
 
-        xdot = [xdot1,xdot2,xdot3,xdot4,xdot5,xdot6]
 
         # v Simple s_dot approx taken from standard MPCC formulation
         s_dot = vx
-        return cd.vertcat(*xdot, s_dot)
+
+        xdot = [xdot1,xdot2,xdot3,xdot4,xdot5,xdot6, s_dot]
+
+        # x_dot equal to zero for dual variables
+        xdot.extend(np.zeros(self.nd))
+
+        return cd.vertcat(*xdot)
     
     def continuous_model(self, x, u):
         xdot = []
@@ -495,7 +494,9 @@ if __name__ == "__main__":
     model = BicycleModel2ndOrderMultiRobot(2)
     model.acados_symbolics()
     model.get_acados_dynamics()
-    model.save_map()
-    # print(model.get_x(), model.get_x().shape)
-    # print(model.upper_bound_states, model.upper_bound_states.shape)
+    # print("x",model.get_x())
+    # print("acados_x",model.get_acados_x())
+    # print("u",model.get_u())
+    # print("acados_u",model.get_acados_u())
+    print(model.get('steering_2'))
 

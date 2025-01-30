@@ -16,14 +16,14 @@ from goal_module import GoalModule
 from path_reference_velocity import PathReferenceVelocityModule
 
 # Import solver models that you want to use
-from solver_model import BicycleModel2ndOrder
+from solver_model import BicycleModel2ndOrderMultiRobot
 
 
 def configuration_basic(settings):
     num_robots = settings["num_robots"]
 
     modules = ModuleManager()
-    model = BicycleModel2ndOrder()
+    model = BicycleModel2ndOrderMultiRobot(num_robots)
 
     # Penalize ||steering||_2^2
     base_module = modules.add_module(MPCBaseModule(settings))
