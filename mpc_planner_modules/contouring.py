@@ -60,7 +60,7 @@ class ContouringObjective:
             cost_f = lambda value: value**2
 
         contour_weight = params.get("contour")
-        lag_weight = params.get("contour")
+        lag_weight = params.get("lag")
 
         # For normalization
         max_contour = 4.0

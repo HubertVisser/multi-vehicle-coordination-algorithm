@@ -230,12 +230,7 @@ class BicycleModel2ndOrder(DynamicsModel):
     def get_mass(self):
         return self.model_parameters()[1]
 
-# Bicycle model multiple robots
-class BicycleModel2ndOrderMultiRobot(BicycleModel2ndOrder):   
     
-
-
-
 if __name__ == "__main__":
 
     model = BicycleModel2ndOrder()
