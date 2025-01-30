@@ -133,10 +133,11 @@ class MultiRobotDynamicsModel():
 
         self.inputs = []
         self.states = []
-        self.dual_vars = []
 
-        self.lower_bound = []
-        self.upper_bound = []
+        self.lower_bound_inputs = []
+        self.upper_bound_inputs = []
+        self.lower_bound_states = []
+        self.upper_bound_states = []
 
     def get_nvar(self):
         return self.nu + self.nx + self.nd
@@ -173,12 +174,11 @@ class MultiRobotDynamicsModel():
         file_path = model_map_path()
 
         map = dict()
-        for i in range(self.n):
-            for idx, state in enumerate(self.states[i:i+self.nx]):
-                map[state] = ["x", idx + self.nu, self.get_bounds(state)[0], self.get_bounds(state)[1]]
+        for idx, state in np.ndenumerate(self.states):
+            map[state] = ["x", self.idx_states[idx] , self.get_bounds(state)[0], self.get_bounds(state)[1]]
 
-            for idx, input in enumerate(self.inputs[i:i+self.nu]):
-                map[input] = ["u", idx, self.get_bounds(input)[0], self.get_bounds(input)[1]]
+        for idx, input in np.ndenumerate(self.inputs):
+            map[input] = ["u", self.idx_inputs[idx], self.get_bounds(input)[0], self.get_bounds(input)[1]]
 
         write_to_yaml(file_path, map)
 
@@ -203,20 +203,20 @@ class MultiRobotDynamicsModel():
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
 
-    def get_bounds(self, state_or_input):
-        if state_or_input in self.states:
-            i = self.states.index(state_or_input)
+    def get_bounds(self, state_or_input): 
+        if np.any(self.states == state_or_input):
+            i = np.where(self.states == state_or_input)
             return (
-                self.lower_bound[self.nu + i],
-                self.upper_bound[self.nu + i],
-                self.upper_bound[self.nu + i] - self.lower_bound[self.nu + i],
+                self.lower_bound_states.item((i[0][0], i[1][0])),
+                self.upper_bound_states.item((i[0][0], i[1][0])),
+                (self.upper_bound_states.item((i[0][0], i[1][0])) - self.lower_bound_states.item((i[0][0], i[1][0]))),
             )
-        elif state_or_input in self.inputs:
-            i = self.inputs.index(state_or_input)
+        elif np.any(self.inputs == state_or_input):
+            i = np.where(self.inputs == state_or_input)
             return (
-                self.lower_bound[i],
-                self.upper_bound[i],
-                self.upper_bound[i] - self.lower_bound[i],
+                self.lower_bound_inputs.item((i[0][0],i[1][0])),
+                self.upper_bound_inputs.item((i[0][0],i[1][0])),
+                self.upper_bound_inputs.item((i[0][0],i[1][0])) - self.lower_bound_inputs.item((i[0][0],i[1][0])),
             )
         else:
             raise IOError(f"Requested a state or input `{state_or_input}' that was neither a state nor an input for the selected model")
@@ -351,26 +351,43 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
         self.nx = 7 
         self.nd = (n-1) * 2 # algebraic variables
 
+        # Define states and inputs
         for i in range(1, n+1):
-            sublist_inputs = [f"{input}_{i}" for input in ["throttle", "steering"]]
-            sublist_states= [f"{state}_{i}" for state in ["x", "y", "theta", "vx", "vy", "w", "s"]]
-            sublist_states.append([f"lam_{i}_{j}" for j in range(1, n+1) if j != i])                     
-            sublist_states.append([f"s_dual_{i}_{j}" for j in range(1, n+1) if j != i])              
+            sublist_inputs = np.array([f"{input}_{i}" for input in ["throttle", "steering"]])
+            sublist_states = np.array([f"{state}_{i}" for state in ["x", "y", "theta", "vx", "vy", "w", "s"]])
+            sublist_states = np.concatenate((sublist_states, np.array([f"lam_{i}_{j}" for j in range(1, n+1) if j != i])))                     
+            sublist_states = np.concatenate((sublist_states, np.array([f"s_dual_{i}_{j}" for j in range(1, n+1) if j != i])))              
 
-            self.inputs.append(sublist_inputs)
-            self.states.append(sublist_states)
+            if len(self.inputs) == 0:
+                self.inputs = sublist_inputs.reshape(-1, 1)
+            else:
+                self.inputs = np.hstack((self.inputs, sublist_inputs.reshape(-1, 1)))
+
+            if len(self.states) == 0:
+                self.states = sublist_states.reshape(-1, 1)
+            else:
+                self.states = np.hstack((self.states, sublist_states.reshape(-1, 1)))
         
-        self.lower_bound_inputs = np.tile([0.0, -1.0], (n, 1))
-        self.upper_bound_inputs = np.tile([1.0, 1.0], (n, 1))
+        # Bounds on states and inputs
+        self.lower_bound_inputs = np.tile([0.0, -1.0], (n, 1)) #TODO transpose
+        self.upper_bound_inputs = np.tile([1.0, 1.0], (n,1))
 
-        lower_bound_lam = np.tile([0.0], (n-1, 1))    
-        upper_bound_lam = np.tile([1000.0], (n-1, 1))    
-        lower_bound_s_dual = np.tile([-1.0], (n-1, 1))                       
-        upper_bound_s_dual = np.tile([1.0], (n-1, 1))      
+        lower_bound_states = np.array([[-5.1, -10.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0]])
+        upper_bound_states = np.array([[1000.0, 10.0, 1000.0, 1000.0, 1000.0, 1000.0, 100]])
+        lower_bound_states = np.concatenate((lower_bound_states.T, np.tile([0.0], (n-1, 1))))  # lambda
+        upper_bound_states = np.concatenate((upper_bound_states.T, np.tile([1000.0], (n-1, 1))))  # lambda
+        lower_bound_states = np.concatenate((lower_bound_states, np.tile([-1.0], (n-1, 1))))  # s dual
+        upper_bound_states = np.concatenate((upper_bound_states, np.tile([1.0], (n-1, 1))))  # s dual
                          
-        self.lower_bound_states = np.tile([-5.1, -10.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0] + lower_bound_lam + lower_bound_s_dual, (n, 1))
-        self.upper_bound_states = np.tile([1000.0, 10.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] + upper_bound_lam + upper_bound_s_dual, (n, 1))         
-    
+        self.lower_bound_states = np.tile(lower_bound_states , (1, n))
+        self.upper_bound_states = np.tile(upper_bound_states, (1, n))  
+
+        # Define index array
+        self.idx_states = np.arange(0, self.states.size).reshape(self.n, self.nx+self.nd)
+        self.idx_states = self.idx_states.T     
+        self.idx_inputs = np.arange(0, self.inputs.size).reshape(self.n, self.nu)
+        self.idx_inputs = self.idx_inputs.T     
+
     def model_parameters(self):
         lr_reference = 0.115  #0.11650    # (measureing it wit a tape measure it's 0.1150) reference point location taken by the vicon system measured from the rear wheel
         #COM_positon = 0.084 #0.09375 #centre of mass position measured from the rear wheel
@@ -478,5 +495,7 @@ if __name__ == "__main__":
     model = BicycleModel2ndOrderMultiRobot(2)
     model.acados_symbolics()
     model.get_acados_dynamics()
-    # model.save_map()
-    print(model.get_x(), model.get_x().shape)
+    model.save_map()
+    # print(model.get_x(), model.get_x().shape)
+    # print(model.upper_bound_states, model.upper_bound_states.shape)
+
