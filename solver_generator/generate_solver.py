@@ -43,7 +43,7 @@ def create_acados_model(settings, model, modules):
     cost_e = objective(modules, z, p, model, settings, settings["N"] - 1)
 
     # Formulating acados ocp model
-    acados_model.x = model.get_x()
+    acados_model.x = model.get_acados_x()
     acados_model.u = model.get_acados_u()
     acados_model.f_expl_expr = dyn_f_expl
     acados_model.p = params.get_acados_parameters()
@@ -69,6 +69,7 @@ def generate_solver(modules, model, settings=None):
     params.load_acados_parameters()
     settings["params"] = params
     solver_settings = settings["solver_settings"]
+    number_of_robots = settings["number_of_robots"]
 
     modules.print()
     params.print()
@@ -88,22 +89,24 @@ def generate_solver(modules, model, settings=None):
     ocp.cost.cost_type = "EXTERNAL"
     # ocp.cost.cost_type_e = "EXTERNAL"
 
+    # Number of inputs and states
+    nx = (model.nx + model.nd) * number_of_robots
+    nu = model.nu * number_of_robots
+
     # Set initial constraint
-    ocp.constraints.x0 = np.zeros(model.nx)
+    ocp.constraints.x0 = np.zeros((model.nx + model.nd) * number_of_robots)
 
     # Set state bound
-    nx = model.nx
-    nu = model.nu
-    # ocp.constraints.lbx = np.array([model.lower_bound[nu : model.get_nvar()]]).flatten()
-    # ocp.constraints.ubx = np.array([model.upper_bound[nu : model.get_nvar()]]).flatten()
-    # ocp.constraints.idxbx = np.array(range(model.nx))
+    ocp.constraints.lbx = model.lower_bound_states.T.flatten()
+    ocp.constraints.ubx = model.upper_bound_states.T.flatten()
+    ocp.constraints.idxbx = np.array(range(nx))
 
     # Set control input bound
-    ocp.constraints.lbu = np.array([model.lower_bound[:nu]]).flatten()
-    ocp.constraints.ubu = np.array([model.upper_bound[:nu]]).flatten()
+    ocp.constraints.lbu = model.lower_bound_inputs.T.flatten()
+    ocp.constraints.ubu = model.lower_bound_inputs.T.flatten()
     ocp.constraints.idxbu = np.array(range(nu))
 
-    # Set path constraints bound
+    # Set path constraints bound (TODO: change to multi-robot scenario)
     nc = ocp.model.con_h_expr.shape[0]
     # ocp.constraints.lh = np.array(constraint_lower_bounds(modules))
     # ocp.constraints.uh = np.array(constraint_upper_bounds(modules))
@@ -208,23 +211,14 @@ def generate_solver(modules, model, settings=None):
     # Save other settings
     solver_settings = dict()
     solver_settings["N"] = settings["N"]
-    solver_settings["nx"] = model.nx
-    solver_settings["nu"] = model.nu
+    solver_settings["number_of_robots"] = settings["number_of_robots"]
+    solver_settings["nx"] = nx
+    solver_settings["nu"] = nu
     solver_settings["nvar"] = model.get_nvar()
     solver_settings["npar"] = settings["params"].length()
 
     path = solver_settings_path()
     write_to_yaml(path, solver_settings)
-
-    # generate_cpp_code(settings, model)
-    # generate_parameter_cpp_code(settings, model)
-    # generate_module_header(modules)
-    # generate_module_definitions(modules)
-    # generate_module_cmake(modules)
-    # generate_module_packagexml(modules)
-    # generate_rqtreconfigure(settings)
-    # generate_ros2_rqtreconfigure(settings)
-    # generate_solver_cmake(settings)
 
     print_path("Solver", solver_path(settings), tab=True, end="")
     print_success(" -> generated")

@@ -20,27 +20,28 @@ from solver_model import BicycleModel2ndOrderMultiRobot
 
 
 def configuration_basic(settings):
-    num_robots = settings["num_robots"]
+    num_robots = settings["number_of_robots"]
 
     modules = ModuleManager()
     model = BicycleModel2ndOrderMultiRobot(num_robots)
 
-    # Penalize ||steering||_2^2
-    base_module = modules.add_module(MPCBaseModule(settings))
-    base_module.weigh_variable(var_name="steering", weight_names="steering")
-    base_module.weigh_variable(var_name="throttle", weight_names="throttle")
-    
+    for robot_idx in range(1,num_robots+1):
+        # Penalize ||steering||_2^2
+        base_module = modules.add_module(MPCBaseModule(settings, robot_idx))
+        base_module.weigh_variable(var_name=f"steering_{robot_idx}", weight_names="steering")
+        base_module.weigh_variable(var_name=f"throttle_{robot_idx}", weight_names="throttle")
+        
 
-    # modules.add_module(PathReferenceVelocityModule(settings, num_segments=settings["contouring"]["num_segments"]))
-    # modules.add_module(GoalModule(settings))
-    modules.add_module(ContouringModule(settings))
-    
-    # Penalize ||v - v_ref||_2^2
-    base_module.weigh_variable(
-    var_name="vx",
-    weight_names=["velocity", "reference_velocity"],
-    cost_function=lambda x, w: w[0] * (x - w[1]) ** 2,
-    )
+        # modules.add_module(PathReferenceVelocityModule(settings, num_segments=settings["contouring"]["num_segments"]))
+        # modules.add_module(GoalModule(settings))
+        modules.add_module(ContouringModule(settings, robot_idx))
+        
+        # Penalize ||v - v_ref||_2^2
+        base_module.weigh_variable(
+        var_name=f"vx_{robot_idx}",
+        weight_names=["velocity", "reference_velocity"],
+        cost_function=lambda x, w: w[0] * (x - w[1]) ** 2,
+        )
     return model, modules
 
 

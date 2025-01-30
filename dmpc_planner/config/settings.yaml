@@ -2,8 +2,15 @@ name: "Jetracer"
 N: 20
 integrator_step: 0.1
 n_discs: 0
-track_choice: "sinus" # 'straight_line', sinus
-start_x: -5.0
+track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
+number_of_robots: 2
+
+robot_1:
+  start_x: -5.0
+  start_y: 0.0
+robot_2:
+  start_x: 1.0
+  start_y: -5.0
 
 verbose: false
 debug_visuals: true

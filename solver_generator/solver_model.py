@@ -140,7 +140,7 @@ class MultiRobotDynamicsModel():
         self.upper_bound_states = []
 
     def get_nvar(self):
-        return self.nu + self.nx + self.nd
+        return (self.nu + self.nx + self.nd) * self.n
 
     def acados_symbolics(self):
         u = cd.SX.sym("u", self.nu, self.n)     # [throttle, steering]
@@ -494,9 +494,14 @@ if __name__ == "__main__":
     model = BicycleModel2ndOrderMultiRobot(2)
     model.acados_symbolics()
     model.get_acados_dynamics()
-    # print("x",model.get_x())
-    # print("acados_x",model.get_acados_x())
+    model.save_map()
+    print("acados_x",model.get_acados_x())
     # print("u",model.get_u())
-    # print("acados_u",model.get_acados_u())
+    print("acados_u",model.get_acados_u())
+    print("lower_bound_inputs", model.lower_bound_inputs)
+    print("lower_bound_inputs flatten", model.lower_bound_inputs.T.flatten())
+    print("lower_bound_states", model.lower_bound_states)
+    print("lower_bound_states flatten", model.lower_bound_states.T.flatten())
+    
     print(model.get('steering_2'))
 

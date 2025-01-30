@@ -63,7 +63,7 @@ class RealTimeModel:
         self._N = settings["N"]
         self._nu = solver_settings["nu"]
         self._nx = solver_settings["nx"]
-        self._nvar = self._nu + self._nx
+        self._nvar = solver_settings["nvar"]
         self._vars = np.zeros((settings["N"], self._nvar))
 
     def get(self, k, var_name):
