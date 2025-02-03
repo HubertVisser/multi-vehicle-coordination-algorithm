@@ -117,6 +117,7 @@ class MPCPlanner:
             for k in range(0, self._N):
                 self._solver.set(k, 'x', self._x_traj_init[:, k])
                 self._solver.set(k, 'u', self._u_traj_init[:, k])   #TODO: Check
+                # print(f"u_{k}: {self._u_traj_init[:, k]}")
                 self._solver.set(k, 'p', np.array(p[k*npar:(k+1)*npar])) # params for the current stage
 
             self._solver.set(self._N, 'p', np.array(p[self._N*npar:(self._N + 1)*npar])) # Repeats the final set of parameters

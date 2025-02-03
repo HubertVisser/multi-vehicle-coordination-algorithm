@@ -262,7 +262,7 @@ class ROSMPCPlanner:
             time = timer.stop_and_print()
 
         if self._mpc_feasible:
-        #     plot_x_traj(self._trajectory_1, self._N, self._integrator_step)
+            plot_x_traj(self._trajectory, self._N, self._integrator_step)
         #     self._throttle_outputs.append(output["throttle"])
         #     self._steering_outputs.append(output["steering"])
         #     self._s_outputs.append(output["s"])
