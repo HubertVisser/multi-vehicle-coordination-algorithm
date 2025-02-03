@@ -8,9 +8,11 @@ number_of_robots: 2
 robot_1:
   start_x: -5.0
   start_y: 0.0
+  start_theta: 0.5  # in radians
 robot_2:
   start_x: 1.0
   start_y: -5.0
+  start_theta: 0.5  # radians
 
 verbose: false
 debug_visuals: true
