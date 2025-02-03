@@ -53,13 +53,15 @@ class MPCPlanner:
         # acados_ocp = AcadosOcp(acados_path=acados_path)
         # self._solver = AcadosOcpSolver(acados_ocp)
         self._model = AcadosRealTimeModel(self._settings, self._solver_settings, package="mpc_planner_solver")
-        self._dynamic_model = BicycleModel2ndOrderMultiRobot()
+        self._dynamic_model = BicycleModel2ndOrderMultiRobot(self._number_of_robots)
         self.reference_velocity = self._settings["weights"]["reference_velocity"]
 
         self._nx = self._solver_settings["nx"]
         self._nu = self._solver_settings["nu"]
         self._nvar = self._solver_settings["nvar"]
-        self._prev_trajectory = np.zeros((self._N, self._nvar))
+        self._nx_one_robot = self._nx // self._number_of_robots
+
+        self._prev_trajectory = np.zeros((self._N, self._nvar)) # Is this size correct?
 
         print_success("Acados solver generated")
 
@@ -73,7 +75,8 @@ class MPCPlanner:
         # Initialize the initial guesses
         if not hasattr(self, "_mpc_x_plan"):
             self._mpc_x_plan = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
-            # self.set_initial_x_plan()
+            self.set_initial_x_plan_1(xinit)
+            # self.set_initial_x_plan_2(xinit)
 
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu, self._N))
@@ -113,7 +116,7 @@ class MPCPlanner:
             npar = int(len(p) / (self._N + 1))
             for k in range(0, self._N):
                 self._solver.set(k, 'x', self._x_traj_init[:, k])
-                self._solver.set(k, 'u', self._u_traj_init[:, k])
+                self._solver.set(k, 'u', self._u_traj_init[:, k])   #TODO: Check
                 self._solver.set(k, 'p', np.array(p[k*npar:(k+1)*npar])) # params for the current stage
 
             self._solver.set(self._N, 'p', np.array(p[self._N*npar:(self._N + 1)*npar])) # Repeats the final set of parameters
@@ -163,7 +166,7 @@ class MPCPlanner:
 
         return output, True, self._prev_trajectory
 
-    def set_initial_x_plan_1(self):
+    def set_initial_x_plan_1(self, xinit):
         # x = x y theta vx vy w s
         #     2 3   4   5  6  7 8
 
@@ -172,9 +175,33 @@ class MPCPlanner:
         N_0 = 1000
 
         s_0_vec = np.linspace(0, 0 + self.reference_velocity * 1.5, N_0+1)
-        x_ref_0 = np.zeros(N_0+1)
-        y_ref_0 = np.zeros(N_0+1) 
-        theta_ref_0 = np.zeros(N_0+1)
+        x_ref_0 = np.ones(N_0+1) * xinit[0]
+        y_ref_0 = np.ones(N_0+1) * xinit[1]
+        theta_ref_0 = np.ones(N_0+1) * xinit[2]
+
+        for i in range(1,N_0+1):
+            x_ref_0[i] = x_ref_0[i-1] + self.reference_velocity * self._dt * np.cos(theta_ref_0[i-1])
+            y_ref_0[i] = y_ref_0[i-1] + self.reference_velocity * self._dt * np.sin(theta_ref_0[i-1])
+            # theta_ref_0[i] = theta_ref_0[i-1] + k_0_vals[i-1] * self.reference_velocity * self._dt
+        
+        # now down sample to the N points
+        self._mpc_x_plan[0,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), x_ref_0)
+        self._mpc_x_plan[1,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), y_ref_0)
+        self._mpc_x_plan[3,:] = self.reference_velocity
+        self._mpc_x_plan[6,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), s_0_vec) 
+        
+    def set_initial_x_plan_2(self, xinit):
+        # x = x y theta vx vy w s
+        #     2 3   4   5  6  7 8
+
+        # assign initial guess for the states by forward euler integration on the reference path
+        # refinement for first guess needs to be higher because the forward euler is a bit lame
+        N_0 = 1000
+
+        s_0_vec = np.linspace(0, 0 + self.reference_velocity * 1.5, N_0+1)
+        x_ref_0 = np.ones(N_0+1) * xinit[0 + self._nx_one_robot]
+        y_ref_0 = np.ones(N_0+1) * xinit[1 + self._nx_one_robot]
+        theta_ref_0 = np.ones(N_0+1) * xinit[2 + self._nx_one_robot]
 
         for i in range(1,N_0+1):
             x_ref_0[i] = x_ref_0[i-1] + self.reference_velocity * self._dt * np.cos(theta_ref_0[i-1])
@@ -186,60 +213,28 @@ class MPCPlanner:
         self._mpc_x_plan[1,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), y_ref_0)
         self._mpc_x_plan[3,:] = self.reference_velocity
         self._mpc_x_plan[6,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), s_0_vec)
-        
-    def set_initial_x_plan_2(self):
-        # x = x y theta vx vy w s
-        #     2 3   4   5  6  7 8
-
-        # assign initial guess for the states by forward euler integration on the reference path
-        # refinement for first guess needs to be higher because the forward euler is a bit lame
-        N_0 = 1000
-
-        s_0_vec = np.linspace(0, 0 + self.reference_velocity * 1.5, N_0+1)
-        x_ref_0 = np.zeros(N_0+1)
-        y_ref_0 = np.zeros(N_0+1) 
-        theta_ref_0 = np.zeros(N_0+1)
-
-        for i in range(1,N_0+1):
-            x_ref_0[i] = x_ref_0[i-1] + self.reference_velocity * self._dt * np.cos(theta_ref_0[i-1])
-            y_ref_0[i] = y_ref_0[i-1] + self.reference_velocity * self._dt * np.sin(theta_ref_0[i-1])
-            # theta_ref_0[i] = theta_ref_0[i-1] + k_0_vals[i-1] * self.reference_velocity * self._dt
-        
-        # now down sample to the N points
-        self._mpc_x_plan[0,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), x_ref_0)
-        self._mpc_x_plan[1,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), y_ref_0)
-        self._mpc_x_plan[3,:] = self.reference_velocity
-        self._mpc_x_plan[6,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), s_0_vec)
-        
-    def set_initial_u_plan_2(self):
-         # Evaluate throttle to keep the constant velocity
-        throttle_search = np.linspace(0,1,30)
-        mass_vehicle = self._dynamic_model.get_mass()
-        fx = self._dynamic_model.fx_wheels(throttle_search, self.reference_velocity)
-        acceleration_x = fx / mass_vehicle
-        throttle_initial_guess = throttle_search[np.argmin(np.abs(acceleration_x))]
-        self._mpc_u_plan[0, :] = throttle_initial_guess
     
-    def set_initial_u_plan_1(self):
-         # Evaluate throttle to keep the constant velocity
+    def set_initial_u_plan(self):
+        # Evaluate throttle to keep the constant velocity
         throttle_search = np.linspace(0,1,30)
         mass_vehicle = self._dynamic_model.get_mass()
         fx = self._dynamic_model.fx_wheels(throttle_search, self.reference_velocity)
         acceleration_x = fx / mass_vehicle
         throttle_initial_guess = throttle_search[np.argmin(np.abs(acceleration_x))]
         self._mpc_u_plan[0, :] = throttle_initial_guess
-
+        if self._number_of_robots ==2 : self._mpc_u_plan[2, :] = throttle_initial_guess
 
     def get_cost_acados(self):
         return self._solver.get_cost()
 
-    def set_infeasible(self, output):
+    def set_infeasible(self, output):   # Not adjusted for multi robot
         self._mpc_feasible = False
-        output["vx"] = 0.
-        output["throttle"] = 0.
-        output["steering"] = 0.
+        for n in range(1, self._number_of_robots+1):
+            output[f"vx_{n}"] = 0.
+            output[f"throttle_{n}"] = 0.
+            output[f"steering_{n}"] = 0.
 
-    def get_braking_trajectory(self, state):
+    def get_braking_trajectory(self, state):    # Not adjusted for multi robot
         x = state[0]
         y = state[1]
         theta = state[2]
@@ -258,7 +253,7 @@ class MPCPlanner:
         return result
 
 
-    def set_projection(self, projection_func):
+    def set_projection(self, projection_func):  # # Not adjusted for multi robot
         self._projection_func = projection_func
 
     def get_solver(self):

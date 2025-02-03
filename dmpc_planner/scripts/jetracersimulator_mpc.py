@@ -57,7 +57,7 @@ class ROSMPCPlanner:
         self._planner = MPCPlanner(self._settings)
         # self._planner.set_projection(lambda trajectory: self.project_to_safety(trajectory))
 
-        self._spline_fitter = SplineFitter(self._settings)
+        self._spline_fitter_1 = SplineFitter(self._settings)
         self._spline_fitter_2 = SplineFitter(self._settings)
         # self._decomp_constraints = StaticConstraints(self._settings)
 
@@ -70,14 +70,14 @@ class ROSMPCPlanner:
             self._settings, package="mpc_planner_solver"
         )  # This maps to parameters used in the solver by name
         self._weights = self._settings["weights"]
-        n_states = self._solver_settings["nx"]
-        self.n_each_robot = self._solver_settings["nx"] // self._number_of_robots
+        _nx = self._solver_settings["nx"]
+        self._nx_one_robot = self._solver_settings["nx"] // self._number_of_robots
 
-        self._state = np.zeros((n_states,))
+        self._state = np.zeros((_nx,))
         for n in range(1, self._number_of_robots+1):
-            self._state[(n-1)*self.n_each_robot: 2 + (n-1)*self.n_each_robot] = [self._settings[f"robot_{n+1}"]["start_x"], \
-                                                                                 self._settings[f"robot_{n+1}"]["start_y"], \
-                                                                                 self._settings[f"robot_{n+1}"]["start_theta"] * np.pi]
+            self._state[(n-1)*self._nx_one_robot: 3 + (n-1)*self._nx_one_robot] = [self._settings[f"robot_{n}"]["start_x"], \
+                                                                                 self._settings[f"robot_{n}"]["start_y"], \
+                                                                                 self._settings[f"robot_{n}"]["start_theta"] * np.pi]
 
         self._visuals = ROSMarkerPublisher("mpc_visuals", 100)
         self._path_visual = ROSMarkerPublisher("reference_path", 10)
@@ -91,11 +91,9 @@ class ROSMPCPlanner:
         self._path_msg_1 = None
         self._path_msg_2 = None
 
-        self._trajectory_1 = None
-        self._trajectory_2 = None
+        self._trajectory = None
 
         self._obstacle_msg = None
-        # self._obst_lock = threading.Lock()
 
         self._throttle_outputs = []
         self._steering_outputs = []
@@ -145,7 +143,7 @@ class ROSMPCPlanner:
         #     queue_size=1,
         # )
         self._path_sub = rospy.Subscriber(
-            "roadmap/reference", Path, lambda msg: self.path_callback(msg), queue_size=1
+            "roadmap/reference_1", Path, lambda msg: self.path_callback(msg), queue_size=1
         )
         self._path_2_sub = rospy.Subscriber(
             "roadmap/reference_2", Path, lambda msg: self.path_callback_2(msg), queue_size=1
@@ -241,10 +239,12 @@ class ROSMPCPlanner:
 
     def run(self, timer):
         # Check if splines exist
-        if not self._spline_fitter._splines or not self._spline_fitter_2._splines:
+        if not self._spline_fitter_1._splines:
             rospy.logwarn("Splines have not been computed yet. Waiting for splines to be available.")
             return
-
+        if self._number_of_robots > 1 and not self._spline_fitter_2._splines:
+            rospy.logwarn("Splines have not been computed yet. Waiting for splines to be available.")
+            return
         
         timer = Timer("loop")
         
@@ -253,7 +253,7 @@ class ROSMPCPlanner:
         # self._params.check_for_nan()
 
         mpc_timer = Timer("MPC")
-        output, self._mpc_feasible, self._trajectory_1 = self._planner.solve( # TODO: Fix trajectory and mpccontroller class
+        output, self._mpc_feasible, self._trajectory = self._planner.solve( 
             self._state, self._params.get_solver_params()
         )
         del mpc_timer
@@ -261,19 +261,19 @@ class ROSMPCPlanner:
         if self._verbose:
             time = timer.stop_and_print()
 
-        # if self._mpc_feasible:
+        if self._mpc_feasible:
         #     plot_x_traj(self._trajectory_1, self._N, self._integrator_step)
         #     self._throttle_outputs.append(output["throttle"])
         #     self._steering_outputs.append(output["steering"])
         #     self._s_outputs.append(output["s"])
         
-        if self._without_sim:
-            for n in range(1, self._number_of_robots + n):
-                output_keys = [f"throttle_{n}", f"steering_{n}", f"x_{n}", f"y_{n}", f"theta_{n}", f"vx_{n}", f"vy_{n}", f"w_{n}", f"s_{n}"]
-                self._state[(n-1) * self.n_each_robot : self.n_each_robot * (n)] = [output[key] for key in output_keys]
-        else:
-            self.publish_throttle(output, self._mpc_feasible)
-            self.publish_steering(output, self._mpc_feasible)
+            if self._without_sim:
+                for n in range(1, self._number_of_robots + 1):
+                    output_keys = [f"x_{n}", f"y_{n}", f"theta_{n}", f"vx_{n}", f"vy_{n}", f"w_{n}", f"s_{n}"]
+                    self._state[(n-1) * self._nx_one_robot : self._nx_one_robot * (n)] = [output[key] for key in output_keys]
+            else:
+                self.publish_throttle(output, self._mpc_feasible)
+                self.publish_steering(output, self._mpc_feasible)
 
         self.visualize()
         # self.publish_robot_state() # Not used in simulator.rviz
@@ -286,10 +286,10 @@ class ROSMPCPlanner:
             splines = None
             if path_msg is not None and spline_fitter.ready():
                 splines = spline_fitter.get_active_splines(
-                    np.array([self._state[0 + (n-1)*self.n_each_robot], self._state[1+ (n-1)*self.n_each_robot]])
+                    np.array([self._state[0 + (n-1)*self._nx_one_robot], self._state[1+ (n-1)*self._nx_one_robot]])
                 )
-                self._state[n * self.n_each_robot-1] = spline_fitter.find_closest_s(
-                    np.array([self._state[0+ (n-1)*self.n_each_robot], self._state[1+ (n-1)*self.n_each_robot]])
+                self._state[n * self._nx_one_robot-1] = spline_fitter.find_closest_s(
+                    np.array([self._state[0+ (n-1)*self._nx_one_robot], self._state[1+ (n-1)*self._nx_one_robot]])
                 )
 
 
@@ -400,8 +400,8 @@ class ROSMPCPlanner:
         self._params = RealTimeParameters(
             self._settings, package="mpc_planner_solver"
         )  # This maps to parameters used in the solver by name
-        n_states = self._solver_settings["nx"]
-        self._state = np.zeros((n_states,))
+        _nx = self._solver_settings["nx"]
+        self._state = np.zeros((_nx,))
         self._trajectory_1 = None
 
         self._timer = rospy.Timer(
@@ -446,8 +446,8 @@ class ROSMPCPlanner:
             return
 
         self._path_msg_1 = msg
-        self._spline_fitter.fit_path(msg)
-        # plot_splines(self._spline_fitter._splines)
+        self._spline_fitter_1.fit_path(msg)
+        # plot_splines(self._spline_fitter_1._splines)
         self.plot_path()
     
     def path_callback_2(self, msg):
@@ -458,12 +458,11 @@ class ROSMPCPlanner:
 
         self._path_msg_2 = msg
         self._spline_fitter_2.fit_path(msg)
-        # plot_splines(self._spline_fitter._splines)
+        # plot_splines(self._spline_fitter_2._splines)
         self.plot_path()
 
     def visualize(self):
         for n in range(1, self._number_of_robots+1):
-            trajectory = getattr(self, f'_trajectory_{n}')
             state_msg = getattr(self, f'_state_msg_{n}')
             splineFitter = getattr(self, f'_spline_fitter_{n}')
             if state_msg is not None:
@@ -472,21 +471,10 @@ class ROSMPCPlanner:
                 robot_pos.set_scale(0.3, 0.3, 0.3)
 
                 pose = Pose()
-                pose.position.x = self._state[0 + (n-1)*self.n_each_robot]
-                pose.position.y = self._state[1 + (n-1)*self.n_each_robot]
+                pose.position.x = self._state[0 + (n-1)*self._nx_one_robot]
+                pose.position.y = self._state[1 + (n-1)*self._nx_one_robot]
                 robot_pos.add_marker(pose)
 
-            if trajectory is not None and self._mpc_feasible:
-                cylinder = self._visuals.get_cylinder()
-                cylinder.set_color(1, alpha=0.25)
-                cylinder.set_scale(0.65, 0.65, 0.05)
-
-                pose = Pose()
-                for k in range(1, self._N):
-                    pose.position.x = self._planner.get_model().get(k, f"x_{n}")
-                    pose.position.y = self._planner.get_model().get(k, f"y_{n}")
-                    cylinder.add_marker(deepcopy(pose))
-            self._visuals.publish()
 
             if self._debug_visuals_pub:
                 if splineFitter._closest_s is not None:
@@ -498,36 +486,47 @@ class ROSMPCPlanner:
                     pose.position.y = splineFitter._closest_y
                     cube.add_marker(pose)
 
-                self.plot_warmstart()
+                # self.plot_warmstart()
                 self._debug_visuals_pub.publish()
+        if self._trajectory is not None and self._mpc_feasible:
+            cylinder = self._visuals.get_cylinder()
+            cylinder.set_color(1, alpha=0.25)
+            cylinder.set_scale(0.5, 0.5, 0.05)
+
+            pose = Pose()
+            for k in range(1, self._N):
+                pose.position.x = self._planner.get_model().get(k, f"x_{n}")
+                pose.position.y = self._planner.get_model().get(k, f"y_{n}")
+                cylinder.add_marker(deepcopy(pose))
+            self._visuals.publish()
 
     # For debugging purposes
-    def plot_warmstart(self): # TODO: Check if this works with variable num of robots
+    def plot_warmstart(self): 
         cylinder = self._debug_visuals_pub.get_cylinder()
         cylinder.set_color(10, alpha=1.0)
         cylinder.set_scale(0.65, 0.65, 0.05)
 
         
         warmstart_u, warmstart_x = self._planner.get_initial_guess() 
-
-        pose = Pose()
-        for k in range(1, self._N):
-            pose.position.x = warmstart_x[0, k]
-            pose.position.y = warmstart_x[1, k]
-            cylinder.add_marker(deepcopy(pose))
+        for n in range(1, self._number_of_robots+1):
+            pose = Pose()
+            for k in range(1, self._N):
+                pose.position.x = warmstart_x[0 + (n-1)*self._nx_one_robot, k]
+                pose.position.y = warmstart_x[1 + (n-1)*self._nx_one_robot, k]
+                cylinder.add_marker(deepcopy(pose))
 
     def plot_path(self):
-        dist = 0.3
+        dist = 0.2
         for n in range(1, self._number_of_robots+1):
             path_msg = getattr(self, f'_path_msg_{n}')
             spline_fitter = getattr(self, f'_spline_fitter_{n}')
             if path_msg is not None:
                 line = self._path_visual.get_line()
-                line.set_scale(0.1)
+                line.set_scale(0.05)
                 line.set_color(1, alpha=1.0)
                 points = self._path_visual.get_cube()
                 points.set_color(3)
-                points.set_scale(0.3, 0.3, 0.3)
+                points.set_scale(0.1, 0.1, 0.1)
                 s = 0.0
                 for i in range(50):
                     a = spline_fitter.evaluate(s)

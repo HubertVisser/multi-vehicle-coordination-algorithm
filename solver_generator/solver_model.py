@@ -485,6 +485,9 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
             xdot_i = self.kinematic_bicycle_model(xi, ui)
             xdot.extend(xdot_i.elements())
         return cd.vertcat(*xdot)
+    
+    def get_mass(self):
+        return self.model_parameters()[1]
 
 
 
