@@ -43,8 +43,10 @@ def create_acados_model(settings, model, modules):
     cost_e = objective(modules, z, p, model, settings, settings["N"] - 1)
 
     # Formulating acados ocp model
+    # print_value(model.get_acados_x())
     acados_model.x = model.get_acados_x()
     acados_model.u = model.get_acados_u()
+    acados_model.u_labels = ['u0', 'u1']
     acados_model.f_expl_expr = dyn_f_expl
     acados_model.p = params.get_acados_parameters()
 

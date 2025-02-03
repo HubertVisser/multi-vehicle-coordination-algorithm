@@ -2,6 +2,7 @@ import casadi as cd
 import numpy as np
 
 from util.files import model_map_path, write_to_yaml
+from util.logging import print_value
 from spline import Spline2D
 
 
@@ -494,7 +495,7 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
 
 if __name__ == "__main__":
 
-    model = BicycleModel2ndOrderMultiRobot(2)
+    model = BicycleModel2ndOrderMultiRobot(1)
     model.acados_symbolics()
     model.get_acados_dynamics()
     model.save_map()
@@ -506,5 +507,5 @@ if __name__ == "__main__":
     print("lower_bound_states", model.lower_bound_states)
     print("lower_bound_states flatten", model.lower_bound_states.T.flatten())
     
-    print(model.get('steering_2'))
+    # print(model.get('steering_2'))
 
