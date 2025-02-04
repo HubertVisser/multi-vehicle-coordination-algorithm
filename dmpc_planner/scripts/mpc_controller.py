@@ -223,7 +223,7 @@ class MPCPlanner:
         acceleration_x = fx / mass_vehicle
         throttle_initial_guess = throttle_search[np.argmin(np.abs(acceleration_x))]
         self._mpc_u_plan[0, :] = throttle_initial_guess
-        if self._number_of_robots ==2 : self._mpc_u_plan[2, :] = throttle_initial_guess
+        if self._number_of_robots == 2 : self._mpc_u_plan[2, :] = throttle_initial_guess
 
     def get_cost_acados(self):
         return self._solver.get_cost()

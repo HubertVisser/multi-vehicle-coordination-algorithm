@@ -1,5 +1,5 @@
 name: "Jetracer"
-N: 20
+N: 10
 integrator_step: 0.1
 n_discs: 0
 track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
@@ -43,11 +43,10 @@ weights:
   throttle: .05
   steering: .05
   velocity: 1.
-  reference_velocity: 1.
-  reference_steering: 2.
+  reference_velocity: 2.
   lag: 0.1
-  contour: 0.05
-  terminal_angle: 5.0 # 0.0
+  contour: 0.2
+  terminal_angle: 5.0 #0.0
   terminal_contour: 1.0 # 0.0
   terminal_lag: 1.0 # 0.0
 

@@ -25,20 +25,21 @@ def configuration_basic(settings):
     modules = ModuleManager()
     model = BicycleModel2ndOrderMultiRobot(num_robots)
 
-    for robot_idx in range(1,num_robots+1):
+    for n in range(1,num_robots+1):
         # Penalize ||steering||_2^2
-        base_module = modules.add_module(MPCBaseModule(settings, robot_idx))
-        base_module.weigh_variable(var_name=f"steering_{robot_idx}", weight_names="steering")
-        base_module.weigh_variable(var_name=f"throttle_{robot_idx}", weight_names="throttle")
+        base_module = modules.add_module(MPCBaseModule(settings, n))
+        base_module.weigh_variable(var_name=f"steering_{n}", weight_names="steering")
+        # base_module.weigh_variable(var_name=f"y_{n}", weight_names="steering")
+        base_module.weigh_variable(var_name=f"throttle_{n}", weight_names="throttle")
         
 
         # modules.add_module(PathReferenceVelocityModule(settings, num_segments=settings["contouring"]["num_segments"]))
         # modules.add_module(GoalModule(settings))
-        modules.add_module(ContouringModule(settings, robot_idx))
+        modules.add_module(ContouringModule(settings, n))
         
         # Penalize ||v - v_ref||_2^2
         base_module.weigh_variable(
-        var_name=f"vx_{robot_idx}",
+        var_name=f"vx_{n}",
         weight_names=["velocity", "reference_velocity"],
         cost_function=lambda x, w: w[0] * (x - w[1]) ** 2,
         )

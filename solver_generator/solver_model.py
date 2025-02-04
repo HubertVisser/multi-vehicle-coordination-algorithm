@@ -342,8 +342,10 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
     def __init__(self, n):
         super().__init__()
         self.n = n
-        self.nu = 2 
-        self.nx = 7 
+
+        # For one robot:
+        self.nu = 2
+        self.nx = 7
         self.nd = (n-1) * 2 # algebraic variables
 
         # Define states and inputs
@@ -378,10 +380,10 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
         self.upper_bound_states = np.tile(upper_bound_states, (1, n))  
 
         # Define index array
-        self.idx_states = np.arange(0, self.states.size).reshape(self.n, self.nx+self.nd)
-        self.idx_states = self.idx_states.T     
         self.idx_inputs = np.arange(0, self.inputs.size).reshape(self.n, self.nu)
         self.idx_inputs = self.idx_inputs.T     
+        self.idx_states = np.arange(self.inputs.size, self.states.size + self.inputs.size).reshape(self.n, self.nx+self.nd)
+        self.idx_states = self.idx_states.T     
 
     def model_parameters(self):
         lr_reference = 0.115  #0.11650    # (measureing it wit a tape measure it's 0.1150) reference point location taken by the vicon system measured from the rear wheel
@@ -495,11 +497,11 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
 
 if __name__ == "__main__":
 
-    model = BicycleModel2ndOrderMultiRobot(1)
+    model = BicycleModel2ndOrderMultiRobot(2)
     model.acados_symbolics()
     model.get_acados_dynamics()
-    model.save_map()
     print("acados_x",model.get_acados_x())
+    model.save_map()
     # print("u",model.get_u())
     print("acados_u",model.get_acados_u())
     print("lower_bound_inputs", model.lower_bound_inputs)

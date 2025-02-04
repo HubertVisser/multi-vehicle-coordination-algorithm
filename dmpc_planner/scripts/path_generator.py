@@ -71,8 +71,8 @@ def generate_path_msg():
         paths = []
         
         if track_choice=='t_junction' and num_robot==2:
-            start_x.extend(settings[f"robot_1"]["start_x"], settings[f"robot_2"]["start_x"])
-            start_y.extend(settings[f"robot_1"]["start_y"], settings[f"robot_2"]["start_y"])
+            start_x.extend([settings[f"robot_1"]["start_x"], settings[f"robot_2"]["start_x"]])
+            start_y.extend([settings[f"robot_1"]["start_y"], settings[f"robot_2"]["start_y"]])
                 
             checkpoints_x_1, checkpoints_y_1, checkpoints_x_2, checkpoints_y_2 = raw_track(track_choice, start_x, start_y)
 

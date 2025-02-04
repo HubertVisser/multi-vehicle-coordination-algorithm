@@ -98,11 +98,12 @@ class ROSMPCPlanner:
         self._throttle_outputs = []
         self._steering_outputs = []
         self._s_outputs = []
+        self._states_save = []
 
         self._enable_output = False
         self._mpc_feasible = True
-        # self._without_sim = False
-        self._without_sim = True
+        self._without_sim = False
+        # self._without_sim = True
 
         self._timer = rospy.Timer(
             rospy.Duration(1.0 / self._settings["control_frequency"]), self.run
@@ -130,20 +131,8 @@ class ROSMPCPlanner:
                 "omega_1", Float32, self.w_pose_callback, queue_size=10
             )
 
-        # self._obs_sub = rospy.Subscriber(
-        #     "/pedestrian_simulator/trajectory_predictions",
-        #     ObstacleArray,
-        #     self.obstacle_callback,
-        #     queue_size=1,
-        # )
-        # self._goal_sub = rospy.Subscriber(
-        #     "/move_base_simple/goal",
-        #     PoseStamped,
-        #     lambda msg: self.goal_callback(msg),
-        #     queue_size=1,
-        # )
-        self._path_sub = rospy.Subscriber(
-            "roadmap/reference_1", Path, lambda msg: self.path_callback(msg), queue_size=1
+        self._path_sub_1 = rospy.Subscriber(
+            "roadmap/reference_1", Path, lambda msg: self.path_callback_1(msg), queue_size=1
         )
         self._path_2_sub = rospy.Subscriber(
             "roadmap/reference_2", Path, lambda msg: self.path_callback_2(msg), queue_size=1
@@ -167,8 +156,8 @@ class ROSMPCPlanner:
         # )
 
         # Pub
-        self._th_pub = rospy.Publisher("throttle_1", Float32, queue_size=1) # Throttle publisher
-        self._st_pub = rospy.Publisher("steering_1", Float32, queue_size=1) # Steering publisher
+        self._th_pub_1 = rospy.Publisher("throttle_1", Float32, queue_size=1) # Throttle publisher
+        self._st_pub_1 = rospy.Publisher("steering_1", Float32, queue_size=1) # Steering publisher
 
         # self._ped_robot_state_pub = rospy.Publisher(
         #     "/pedestrian_simulator/robot_state_1", PoseStamped, queue_size=1
@@ -262,18 +251,19 @@ class ROSMPCPlanner:
             time = timer.stop_and_print()
 
         if self._mpc_feasible:
-            plot_x_traj(self._trajectory, self._N, self._integrator_step)
-        #     self._throttle_outputs.append(output["throttle"])
-        #     self._steering_outputs.append(output["steering"])
-        #     self._s_outputs.append(output["s"])
+            # plot_x_traj(self._trajectory, self._N, self._integrator_step)
+            self._throttle_outputs.append(output["throttle_1"])
+            self._steering_outputs.append(output["steering_1"])
+            self._s_outputs.append(output["s_1"])
         
             if self._without_sim:
                 for n in range(1, self._number_of_robots + 1):
                     output_keys = [f"x_{n}", f"y_{n}", f"theta_{n}", f"vx_{n}", f"vy_{n}", f"w_{n}", f"s_{n}"]
                     self._state[(n-1) * self._nx_one_robot : self._nx_one_robot * (n)] = [output[key] for key in output_keys]
+                    self._states_save.append(deepcopy(self._state))
             else:
-                self.publish_throttle(output, self._mpc_feasible)
-                self.publish_steering(output, self._mpc_feasible)
+                self.publish_throttle_1(output, self._mpc_feasible)
+                self.publish_steering_1(output, self._mpc_feasible)
 
         self.visualize()
         # self.publish_robot_state() # Not used in simulator.rviz
@@ -352,7 +342,7 @@ class ROSMPCPlanner:
 
         return trajectory
 
-    def publish_throttle(self, output, exit_flag):  # Not adjusted for multi robot
+    def publish_throttle_1(self, output, exit_flag):  # Not adjusted for multi robot
         throttle = Float32()
         # print(f"v = {output['v']}, w = {output['w']}")
         if not self._mpc_feasible or not self._enable_output:
@@ -366,18 +356,18 @@ class ROSMPCPlanner:
                 rospy.logwarn_throttle(1, "Output is disabled. Sending zero velocity!")
                 throttle.data = 0.0
         else:
-            throttle.data = output["throttle"]
+            throttle.data = output["throttle_1"]
             rospy.loginfo_throttle(1000, "MPC is driving")
-            self._th_pub.publish(throttle)
+            self._th_pub_1.publish(throttle)
     
-    def publish_steering(self, output, exit_flag):  # Not adjusted for multi robot
+    def publish_steering_1(self, output, exit_flag):  # Not adjusted for multi robot
         steering = Float32()
         # print(f"v = {output['v']}, w = {output['w']}")
         if not self._mpc_feasible or not self._enable_output:
             steering.data = 0.0
         else:
-            steering.data = output["steering"]
-            self._st_pub.publish(steering)
+            steering.data = output["steering_1"]
+            self._st_pub_1.publish(steering)
 
     def publish_robot_state(self):                  # Not adjusted for multi robot and not used in rviz
         pose = PoseStamped()
@@ -427,6 +417,7 @@ class ROSMPCPlanner:
         # Velocity is in the local frame, x is the forward velocity
         self._state[3] = msg.pose.position.z
 
+        self._states_save.append(deepcopy(self._state))
         # print("-------- State ----------")
         # print(f"x = {self._state[0]:.2f}")
         # print(f"y = {self._state[1]:.2f}")
@@ -439,7 +430,7 @@ class ROSMPCPlanner:
     def w_pose_callback(self, msg):# Not adjusted for multi robot
         self._state[5] = msg.data
 
-    def path_callback(self, msg):
+    def path_callback_1(self, msg):
 
         # Filter equal paths
         if self._path_msg_1 is not None and len(self._path_msg_1.poses) == len(msg.poses):
@@ -486,7 +477,7 @@ class ROSMPCPlanner:
                     pose.position.y = splineFitter._closest_y
                     cube.add_marker(pose)
 
-                # self.plot_warmstart()
+                self.plot_warmstart()
                 self._debug_visuals_pub.publish()
         if self._trajectory is not None and self._mpc_feasible:
             cylinder = self._visuals.get_cylinder()
@@ -556,29 +547,41 @@ class ROSMPCPlanner:
         import matplotlib.pyplot as plt
 
         plt.figure()
-        plt.subplot(3, 1, 1)
+        plt.subplot(2, 1, 1)
         plt.plot(self._throttle_outputs, label='Throttle')
         plt.xlabel('Time Step')
         plt.ylabel('Throttle')
         plt.legend()
         plt.grid(True)
 
-        plt.subplot(3, 1, 2)
+        plt.subplot(2, 1, 2)
         plt.plot(self._steering_outputs, label='Steering')
         plt.xlabel('Time Step')
         plt.ylabel('Steering')
         plt.legend()
         plt.grid(True)
 
-        plt.subplot(3, 1, 3)
-        plt.plot(self._s_outputs, label='Path parameter')
-        plt.xlabel('Time Step')
-        plt.ylabel('s')
-        plt.legend()
-        plt.grid(True)
-
         plt.tight_layout()
         plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'u_plot.png'))  # Save the plot to a file
+        plt.close()
+    
+    def plot_states(self):
+        import matplotlib.pyplot as plt
+
+        labels = ["x", "y", "theta", "vx", "vy", "omega", "s"]
+
+        plt.figure()
+        num_states = len(labels)
+        for i in range(num_states):
+            state_values = [state[i] for state in self._states_save]
+            plt.plot(state_values, label=labels[i])
+
+        plt.xlabel('Time Step')
+        plt.ylabel('State Values')
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'states_plot.png'))  # Save the plot to a file
         plt.close()
 
 
@@ -592,4 +595,5 @@ if __name__ == "__main__":
         rospy.spin()
         
     mpc.plot_outputs()
+    mpc.plot_states()
     mpc.print_stats()

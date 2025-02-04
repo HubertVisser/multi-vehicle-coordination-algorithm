@@ -83,7 +83,7 @@ class AcadosRealTimeModel(RealTimeModel):
         # Load the solver data into a numpy array
         for k in range(self._settings["N"]):
             for var in range(self._nu):
-                print(f"u_{var} at k={k}: {solver.get(k, 'u')[var]}")
+                # print(f"u_{var} at k={k}: {solver.get(k, 'u')[var]}")
                 self._vars[k, var] = solver.get(k, 'u')[var]
             for var in range(self._nu, self._nvar):
                 self._vars[k, var] = solver.get(k, 'x')[var - self._nu]

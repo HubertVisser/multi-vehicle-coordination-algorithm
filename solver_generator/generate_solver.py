@@ -105,7 +105,7 @@ def generate_solver(modules, model, settings=None):
 
     # Set control input bound
     ocp.constraints.lbu = model.lower_bound_inputs.T.flatten()
-    ocp.constraints.ubu = model.lower_bound_inputs.T.flatten()
+    ocp.constraints.ubu = model.upper_bound_inputs.T.flatten()
     ocp.constraints.idxbu = np.array(range(nu))
 
     # Set path constraints bound (TODO: change to multi-robot scenario)
@@ -148,7 +148,7 @@ def generate_solver(modules, model, settings=None):
 
     # horizon
     ocp.solver_options.tf = settings["N"] * settings["integrator_step"]
-    ocp.solver_options.tol = 1e-3 #1e-6  # 1e-2
+    ocp.solver_options.tol = 1e-2 #1e-6  # 1e-2
 
     # Solver options
     # integrator option
@@ -179,7 +179,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.qp_solver_iter_max = 500 # default = 50
+    ocp.solver_options.qp_solver_iter_max = 50 # default = 50
     ocp.solver_options.qp_solver_warm_start = 1  # cold start / 1 = warm, 2 = warm primal and dual
 
     # code generation options
