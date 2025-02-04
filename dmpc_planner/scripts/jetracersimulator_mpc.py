@@ -209,37 +209,28 @@ class ROSMPCPlanner:
                         # print(f"{splines[i]['a_x']:.1f}, {splines[i]['b_x']:.1f}, {splines[i]['c_x']:.1f}, {splines[i]['d_x']:.1f}, {splines[i]['a_y']:.1f}, {splines[i]['b_y']:.1f}, {splines[i]['c_y']:.1f}, {splines[i]['d_y']:.1f}, {splines[i]['s']:.1f}")
 
     def publish_throttle(self, output, exit_flag):
-        throttle_1 = Float32()
-        throttle_2 = Float32()
-        # print(f"v = {output['v']}, w = {output['w']}")
-        if not self._mpc_feasible or not self._enable_output:
-            if not self._mpc_feasible:
-                rospy.logwarn_throttle(1, "Infeasible MPC. Braking!")
-                throttle_1.data = max(0.0, self._state[3] - self._braking_acceleration * self._integrator_step,)
-                throttle_2.data = max(0.0, self._state[10] - self._braking_acceleration * self._integrator_step,)
+        for n in range(1, self._number_of_robots + 1):
+            throttle = Float32()
+            if not self._mpc_feasible or not self._enable_output:
+                if not self._mpc_feasible:
+                    rospy.logwarn_throttle(1, "Infeasible MPC. Braking!")
+                    throttle.data = max(0.0, self._state[3 + (n-1) * self._nx_one_robot] - self._braking_acceleration * self._integrator_step,)
+                else:
+                    rospy.logwarn_throttle(1, "Output is disabled. Sending zero velocity!")
+                    throttle.data = 0.0
             else:
-                rospy.logwarn_throttle(1, "Output is disabled. Sending zero velocity!")
-                throttle_1.data = 0.0
-                throttle_2.data = 0.0
-        else:
-            throttle_1.data = output["throttle_1"]
-            throttle_2.data = output["throttle_2"]
-            rospy.loginfo_throttle(1000, "MPC is driving")
-            self._th_pub_1.publish(throttle_1)
-            self._th_pub_2.publish(throttle_2)
+                throttle.data = output[f"throttle_{n}"]
+                rospy.loginfo_throttle(1000, "MPC is driving")
+                getattr(self,f"_th_pub_{n}").publish(throttle)
     
     def publish_steering(self, output, exit_flag):
-        steering_1 = Float32()
-        steering_2 = Float32()
-        # print(f"v = {output['v']}, w = {output['w']}")
-        if not self._mpc_feasible or not self._enable_output:
-            steering_1.data = 0.0
-            steering_2.data = 0.0
-        else:
-            steering_1.data = output["steering_1"]
-            steering_2.data = output["steering_2"]
-            self._st_pub_1.publish(steering_1)
-            self._st_pub_2.publish(steering_2)
+         for n in range(1, self._number_of_robots + 1):
+            steering = Float32()
+            if not self._mpc_feasible or not self._enable_output:
+                steering.data = 0.0
+            else:
+                steering.data = output[f"steering_{n}"]
+                getattr(self, f"_st_pub_{n}").publish(steering)
 
     def publish_robot_state(self):
         pose = PoseStamped()
@@ -312,7 +303,7 @@ class ROSMPCPlanner:
             # print(f"vx = {self._state[3]:.2f}")
     
     def state_pose_callback_2(self, msg):
-        if self._dart_simulator:
+        if self._dart_simulator and self._number_of_robots > 1:
             self._state_msg_2 = msg
             self._state[7] = msg.pose.position.x
             self._state[8] = msg.pose.position.y
@@ -335,7 +326,7 @@ class ROSMPCPlanner:
             self._state[4] = msg.data
 
     def vy_pose_callback_2(self, msg):
-        if self._dart_simulator:
+        if self._dart_simulator and self._number_of_robots > 1:
             self._state[11] = msg.data
     
     def w_pose_callback_1(self, msg):
@@ -343,7 +334,7 @@ class ROSMPCPlanner:
             self._state[5] = msg.data
     
     def w_pose_callback_2(self, msg):
-        if self._dart_simulator:
+        if self._dart_simulator and self._number_of_robots > 1:
             self._state[12] = msg.data
 
     def path_callback_1(self, msg):
@@ -360,7 +351,7 @@ class ROSMPCPlanner:
     def path_callback_2(self, msg):
 
         # Filter equal paths
-        if self._path_msg_2 is not None and len(self._path_msg_2.poses) == len(msg.poses):
+        if self._path_msg_2 is not None and len(self._path_msg_2.poses) == len(msg.poses) or self._number_of_robots < 2:
             return
 
         self._path_msg_2 = msg

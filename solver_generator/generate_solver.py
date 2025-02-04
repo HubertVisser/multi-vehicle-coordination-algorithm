@@ -147,7 +147,7 @@ def generate_solver(modules, model, settings=None):
 
     # horizon
     ocp.solver_options.tf = settings["N"] * settings["integrator_step"]
-    ocp.solver_options.tol = 1e-3 #1e-6  # 1e-2
+    ocp.solver_options.tol = 1e-2 #1e-6  # 1e-2
 
     # Solver options
     # integrator option

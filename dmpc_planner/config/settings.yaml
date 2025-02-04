@@ -4,7 +4,6 @@ integrator_step: 0.1
 n_discs: 0
 track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
 number_of_robots: 2
-
 robot_1:
   start_x: -5.0
   start_y: 0.0
@@ -16,7 +15,7 @@ robot_2:
 
 verbose: false
 debug_visuals: true
-dart_simulator: false
+dart_simulator: true
 
 solver_settings:
   iterations: 1 #2 # 1
