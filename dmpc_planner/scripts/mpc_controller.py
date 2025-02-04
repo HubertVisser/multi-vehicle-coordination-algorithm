@@ -76,7 +76,7 @@ class MPCPlanner:
         if not hasattr(self, "_mpc_x_plan"):
             self._mpc_x_plan = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
             self.set_initial_x_plan_1(xinit)
-            # self.set_initial_x_plan_2(xinit)
+            self.set_initial_x_plan_2(xinit)
 
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu, self._N))

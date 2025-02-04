@@ -29,7 +29,6 @@ def configuration_basic(settings):
         # Penalize ||steering||_2^2
         base_module = modules.add_module(MPCBaseModule(settings, n))
         base_module.weigh_variable(var_name=f"steering_{n}", weight_names="steering")
-        # base_module.weigh_variable(var_name=f"y_{n}", weight_names="steering")
         base_module.weigh_variable(var_name=f"throttle_{n}", weight_names="throttle")
         
 

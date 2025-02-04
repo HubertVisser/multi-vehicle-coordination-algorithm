@@ -3,7 +3,7 @@ N: 10
 integrator_step: 0.1
 n_discs: 0
 track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
-number_of_robots: 1
+number_of_robots: 2
 
 robot_1:
   start_x: -5.0
@@ -16,6 +16,7 @@ robot_2:
 
 verbose: false
 debug_visuals: true
+dart_simulator: false
 
 solver_settings:
   iterations: 1 #2 # 1
@@ -43,7 +44,7 @@ weights:
   throttle: .05
   steering: .05
   velocity: 1.
-  reference_velocity: 2.
+  reference_velocity: 1.
   lag: 0.1
   contour: 0.2
   terminal_angle: 5.0 #0.0

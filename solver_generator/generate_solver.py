@@ -43,10 +43,9 @@ def create_acados_model(settings, model, modules):
     cost_e = objective(modules, z, p, model, settings, settings["N"] - 1)
 
     # Formulating acados ocp model
-    # print_value(model.get_acados_x())
     acados_model.x = model.get_acados_x()
     acados_model.u = model.get_acados_u()
-    acados_model.u_labels = ['u0', 'u1']
+    acados_model.u_labels = ['u0', 'u1'] # Not sure why the u_labels are equal to the x_labels
     acados_model.f_expl_expr = dyn_f_expl
     acados_model.p = params.get_acados_parameters()
 
@@ -99,9 +98,9 @@ def generate_solver(modules, model, settings=None):
     ocp.constraints.x0 = np.zeros((model.nx + model.nd) * number_of_robots)
 
     # Set state bound
-    ocp.constraints.lbx = model.lower_bound_states.T.flatten()
-    ocp.constraints.ubx = model.upper_bound_states.T.flatten()
-    ocp.constraints.idxbx = np.array(range(nx))
+    # ocp.constraints.lbx = model.lower_bound_states.T.flatten()
+    # ocp.constraints.ubx = model.upper_bound_states.T.flatten()
+    # ocp.constraints.idxbx = np.array(range(nx))
 
     # Set control input bound
     ocp.constraints.lbu = model.lower_bound_inputs.T.flatten()
@@ -148,7 +147,7 @@ def generate_solver(modules, model, settings=None):
 
     # horizon
     ocp.solver_options.tf = settings["N"] * settings["integrator_step"]
-    ocp.solver_options.tol = 1e-2 #1e-6  # 1e-2
+    ocp.solver_options.tol = 1e-3 #1e-6  # 1e-2
 
     # Solver options
     # integrator option
@@ -216,6 +215,7 @@ def generate_solver(modules, model, settings=None):
     solver_settings["number_of_robots"] = settings["number_of_robots"]
     solver_settings["nx"] = nx
     solver_settings["nu"] = nu
+    solver_settings["nd"] = model.nd
     solver_settings["nvar"] = model.get_nvar()
     solver_settings["npar"] = settings["params"].length()
 
