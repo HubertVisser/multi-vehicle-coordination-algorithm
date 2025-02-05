@@ -1,6 +1,6 @@
 name: "Jetracer"
-N: 10
-integrator_step: 0.1
+N: 8
+integrator_step: 0.3
 n_discs: 0
 track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
 number_of_robots: 2
@@ -14,7 +14,7 @@ robot_2:
   start_theta: 0.5  # radians
 
 verbose: false
-debug_visuals: true
+debug_visuals: false
 dart_simulator: true
 
 solver_settings:
@@ -40,11 +40,11 @@ decomp:
 
 weights:
   goal: 2.
-  throttle: .05
-  steering: .05
-  velocity: 1.
+  throttle: .1
+  steering: .1
+  velocity: 0.5
   reference_velocity: 1.
-  lag: 0.1
+  lag: 0.2
   contour: 0.2
   terminal_angle: 5.0 #0.0
   terminal_contour: 1.0 # 0.0

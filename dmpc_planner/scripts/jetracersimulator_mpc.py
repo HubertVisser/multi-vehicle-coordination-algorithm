@@ -71,11 +71,14 @@ class ROSMPCPlanner:
             self._settings, package="mpc_planner_solver"
         )  # This maps to parameters used in the solver by name
         self._weights = self._settings["weights"]
-        _nx = self._solver_settings["nx"]
-        self._nd = self._solver_settings["nd"]
-        self._nx_one_robot = self._solver_settings["nx"] // self._number_of_robots
 
-        self._state = np.zeros((_nx,))
+        self._nx = self._solver_settings["nx"]
+        self._nd = self._solver_settings["nd"]
+        self._nu = self._solver_settings["nu"]
+        self._nu_one_robot = self._nu // self._number_of_robots
+        self._nx_one_robot = self._nx // self._number_of_robots
+
+        self._state = np.zeros((self._nx,))
         for n in range(1, self._number_of_robots+1):
             self._state[(n-1)*self._nx_one_robot: 3 + (n-1)*self._nx_one_robot] = [self._settings[f"robot_{n}"]["start_x"], \
                                                                                  self._settings[f"robot_{n}"]["start_y"], \
@@ -115,11 +118,11 @@ class ROSMPCPlanner:
 
         # Subscribers
         self._state_sub_1 = rospy.Subscriber("vicon/jetracer1", PoseStamped, self.state_pose_callback_1, queue_size=1)
-        self._vy_sub_1 = rospy.Subscriber("vy_1", Float32, self.vy_pose_callback_1, queue_size=10)
-        self._w_sub_1 = rospy.Subscriber("omega_1", Float32, self.w_pose_callback_1, queue_size=10)
+        self._vy_sub_1 = rospy.Subscriber("vy_1", Float32, self.vy_pose_callback_1, queue_size=1)
+        self._w_sub_1 = rospy.Subscriber("omega_1", Float32, self.w_pose_callback_1, queue_size=1)
         self._state_sub_2 = rospy.Subscriber("vicon/jetracer2", PoseStamped, self.state_pose_callback_2, queue_size=1)
-        self._vy_sub_2 = rospy.Subscriber("vy_2", Float32, self.vy_pose_callback_2, queue_size=10)
-        self._w_sub_2 = rospy.Subscriber("omega_2", Float32, self.w_pose_callback_2, queue_size=10)
+        self._vy_sub_2 = rospy.Subscriber("vy_2", Float32, self.vy_pose_callback_2, queue_size=1)
+        self._w_sub_2 = rospy.Subscriber("omega_2", Float32, self.w_pose_callback_2, queue_size=1)
 
         self._path_sub_1 = rospy.Subscriber("roadmap/reference_1", Path, lambda msg: self.path_callback_1(msg), queue_size=1)
         self._path_sub_2 = rospy.Subscriber("roadmap/reference_2", Path, lambda msg: self.path_callback_2(msg), queue_size=1)
@@ -155,7 +158,6 @@ class ROSMPCPlanner:
             time = timer.stop_and_print()
 
         if self._mpc_feasible:
-            # plot_x_traj(self._trajectory, self._N, self._integrator_step)
 
             for n in range(1, self._number_of_robots + 1):
 
@@ -165,9 +167,11 @@ class ROSMPCPlanner:
                     getattr(self, f'_states_save_{n}').append(deepcopy(self._state[(n-1)*self._nx_one_robot : n*self._nx_one_robot ]))
                 
                 getattr(self, f'_outputs_save_{n}').append([output[f"throttle_{n}"], output[f"steering_{n}"]])
+            
+            # self.plot_pred_traj() # slows down the simulation
 
-        self.publish_throttle(output, self._mpc_feasible)
-        self.publish_steering(output, self._mpc_feasible)
+        self.publish_throttle(output, self._mpc_feasible) if self._dart_simulator else None
+        self.publish_steering(output, self._mpc_feasible) if self._dart_simulator else None
             
         self.visualize()
         # self.publish_robot_state() # Not used in simulator.rviz
@@ -182,7 +186,7 @@ class ROSMPCPlanner:
                 splines = spline_fitter.get_active_splines(
                     np.array([ self._state[ 0 + (n-1) * self._nx_one_robot ], self._state[1 + (n-1) * self._nx_one_robot ]])
                 )
-                self._state[n * self._nx_one_robot-1] = spline_fitter.find_closest_s(
+                self._state[n * self._nx_one_robot-(self._nd+1)] = spline_fitter.find_closest_s(
                     np.array([ self._state[ 0 + (n-1) * self._nx_one_robot ], self._state[1 + (n-1) * self._nx_one_robot ]])
                 )
 
@@ -252,8 +256,8 @@ class ROSMPCPlanner:
                 robot_pos.set_scale(0.3, 0.3, 0.3)
 
                 pose = Pose()
-                pose.position.x = self._state[0 + (n-1)*self._nx_one_robot]
-                pose.position.y = self._state[1 + (n-1)*self._nx_one_robot]
+                pose.position.x = float(self._state[0 + (n-1) * self._nx_one_robot])
+                pose.position.y = float(self._state[1 + (n-1) * self._nx_one_robot])
                 robot_pos.add_marker(pose)
 
 
@@ -263,8 +267,8 @@ class ROSMPCPlanner:
                     cube.set_color(5*n)
                     cube.set_scale(0.5, 0.5, 0.5)
                     pose = Pose()
-                    pose.position.x = splineFitter._closest_x
-                    pose.position.y = splineFitter._closest_y
+                    pose.position.x = float(splineFitter._closest_x)
+                    pose.position.y = float(splineFitter._closest_y)
                     cube.add_marker(pose)
 
                 self.plot_warmstart()
@@ -277,8 +281,8 @@ class ROSMPCPlanner:
 
                 pose = Pose()
                 for k in range(1, self._N):
-                    pose.position.x = self._planner.get_model().get(k, f"x_{n}")
-                    pose.position.y = self._planner.get_model().get(k, f"y_{n}")
+                    pose.position.x = float(self._planner.get_model().get(k, f"x_{n}"))
+                    pose.position.y = float(self._planner.get_model().get(k, f"y_{n}"))
                     cylinder.add_marker(deepcopy(pose))
         self._visuals.publish()
     
@@ -290,7 +294,7 @@ class ROSMPCPlanner:
             self._state[1] = msg.pose.position.y
 
             # Extract yaw angle (rotation around the Z-axis)
-            self._state[2] = msg.pose.orientation.z
+            self._state[2] = quaternion_to_yaw(msg.pose.orientation)
 
             # Velocity is in the local frame, x is the forward velocity
             self._state[3] = msg.pose.position.z
@@ -305,14 +309,14 @@ class ROSMPCPlanner:
     def state_pose_callback_2(self, msg):
         if self._dart_simulator and self._number_of_robots > 1:
             self._state_msg_2 = msg
-            self._state[7] = msg.pose.position.x
-            self._state[8] = msg.pose.position.y
+            self._state[9] = msg.pose.position.x
+            self._state[10] = msg.pose.position.y
 
             # Extract yaw angle (rotation around the Z-axis)
-            self._state[9] = msg.pose.orientation.z
+            self._state[11] = quaternion_to_yaw(msg.pose.orientation)
 
             # Velocity is in the local frame, x is the forward velocity
-            self._state[10] = msg.pose.position.z
+            self._state[12] = msg.pose.position.z
 
             self._states_save_2.append(deepcopy(self._state[self._nx_one_robot:]))
             # print("-------- State ----------")
@@ -327,7 +331,7 @@ class ROSMPCPlanner:
 
     def vy_pose_callback_2(self, msg):
         if self._dart_simulator and self._number_of_robots > 1:
-            self._state[11] = msg.data
+            self._state[13] = msg.data
     
     def w_pose_callback_1(self, msg):
         if self._dart_simulator:
@@ -335,7 +339,7 @@ class ROSMPCPlanner:
     
     def w_pose_callback_2(self, msg):
         if self._dart_simulator and self._number_of_robots > 1:
-            self._state[12] = msg.data
+            self._state[14] = msg.data
 
     def path_callback_1(self, msg):
 
@@ -351,7 +355,7 @@ class ROSMPCPlanner:
     def path_callback_2(self, msg):
 
         # Filter equal paths
-        if self._path_msg_2 is not None and len(self._path_msg_2.poses) == len(msg.poses) or self._number_of_robots < 2:
+        if self._path_msg_2 is not None and len(self._path_msg_2.poses) == len(msg.poses) or self._number_of_robots < 1:
             return
 
         self._path_msg_2 = msg
@@ -368,8 +372,8 @@ class ROSMPCPlanner:
             cylinder.set_scale(0.65, 0.65, 0.05)
             pose = Pose()
             for k in range(1, self._N):
-                pose.position.x = warmstart_x[0 + (n-1)*self._nx_one_robot, k]
-                pose.position.y = warmstart_x[1 + (n-1)*self._nx_one_robot, k]
+                pose.position.x = float(warmstart_x[0 + (n-1)*self._nx_one_robot, k])
+                pose.position.y = float(warmstart_x[1 + (n-1)*self._nx_one_robot, k])
                 cylinder.add_marker(deepcopy(pose))
 
     def plot_path(self):
@@ -389,12 +393,12 @@ class ROSMPCPlanner:
                     a = spline_fitter.evaluate(s)
                     b = spline_fitter.evaluate(s + dist)
                     pose_a = Pose()
-                    pose_a.position.x = a[0]
-                    pose_a.position.y = a[1]
+                    pose_a.position.x = float(a[0])
+                    pose_a.position.y = float(a[1])
                     points.add_marker(pose_a)
                     pose_b = Pose()
-                    pose_b.position.x = b[0]
-                    pose_b.position.y = b[1]
+                    pose_b.position.x = float(b[0])
+                    pose_b.position.y = float(b[1])
                     s += dist
                     line.add_line_from_poses(pose_a, pose_b)
         self._path_visual.publish()
@@ -408,28 +412,6 @@ class ROSMPCPlanner:
         x, y = self._spline_fitter.evaluate(s)
         print(f"Path at s = {s}: ({x}, {y})")
         print(f"State: ({self._spline_fitter._closest_x}, {self._spline_fitter._closest_y})")
-    
-    def plot_outputs(self):
-        
-
-        plt.figure()
-        plt.subplot(2, 1, 1)
-        plt.plot(self._throttle_outputs, label='Throttle')
-        plt.xlabel('Time Step')
-        plt.ylabel('Throttle')
-        plt.legend()
-        plt.grid(True)
-
-        plt.subplot(2, 1, 2)
-        plt.plot(self._steering_outputs, label='Steering')
-        plt.xlabel('Time Step')
-        plt.ylabel('Steering')
-        plt.legend()
-        plt.grid(True)
-
-        plt.tight_layout()
-        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'u_plot.png'))  # Save the plot to a file
-        plt.close()
     
     def plot_states(self):
         state_labels = ["x", "y", "theta", "vx", "vy", "omega", "s"]
@@ -464,6 +446,29 @@ class ROSMPCPlanner:
             plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f'states_outputs_plot_{n}.png'))  # Save the plot to a file
             plt.close()
 
+    def plot_pred_traj(self):
+        state_labels = ["x", "y", "theta", "vx", "vy", "omega", "s", "lam", "s_dual"]
+        time = np.linspace(0, (self._N-1) * self._integrator_step, self._N)
+
+        plt.figure(figsize=(6, 12))
+        for n in range(1, self._number_of_robots + 1):
+            
+            # Plot states
+            plt.subplot(self._number_of_robots, 1, n)
+            num_states = len(state_labels)
+            plt.plot(time, self._trajectory[self._nu + (n-1) * self._nx_one_robot : self._nu + n * self._nx_one_robot, :].T)
+            plt.legend(state_labels)
+
+            plt.xlabel('Time Steps')
+            plt.ylabel('State Values')
+            plt.legend()
+            plt.grid(True)
+            plt.title(f'Robot {n} Predictions')
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'prediction_plot.png'))  # Save the plot to a file
+        plt.close() 
+
 
 if __name__ == "__main__":
     rospy.loginfo("Initializing MPC")
@@ -476,4 +481,5 @@ if __name__ == "__main__":
         
     # mpc.plot_outputs()
     mpc.plot_states()
+    mpc.plot_pred_traj()
     mpc.print_stats()

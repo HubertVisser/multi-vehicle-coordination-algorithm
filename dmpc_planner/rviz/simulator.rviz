@@ -180,66 +180,6 @@ Visualization Manager:
             {}
           Queue Size: 100
           Value: true
-        - Class: rviz/Group
-          Displays:
-            - Class: rviz/MarkerArray
-              Enabled: true
-              Marker Topic: /jackalsimulator_planner/guidance_planner/start_and_goals
-              Name: Start and Goals
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: true
-            - Class: rviz/MarkerArray
-              Enabled: false
-              Marker Topic: /jackalsimulator_planner/guidance_planner/geometric_paths
-              Name: Geometric Paths
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: false
-            - Class: rviz/MarkerArray
-              Enabled: false
-              Marker Topic: /jackalsimulator_planner/guidance_planner/trajectories
-              Name: Guidance Trajectories
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: false
-            - Class: rviz/MarkerArray
-              Enabled: false
-              Marker Topic: /jackalsimulator_planner/guidance_planner/obstacles_3d
-              Name: 3D Obstacles
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: false
-            - Class: rviz/MarkerArray
-              Enabled: false
-              Marker Topic: /jackalsimulator_planner/guidance_constraints/warmstart_trajectories
-              Name: Warmstart Trajectories
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: false
-            - Class: rviz/MarkerArray
-              Enabled: true
-              Marker Topic: /jackalsimulator_planner/guidance_constraints/optimized_trajectories
-              Name: Optimized Trajectories
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: true
-            - Class: rviz/MarkerArray
-              Enabled: false
-              Marker Topic: /jackalsimulator_planner/guidance_planner/homology
-              Name: Homology
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: false
-          Enabled: false
-          Name: T-MPC
         - Class: rviz/MarkerArray
           Enabled: false
           Marker Topic: /jackalsimulator_planner/contouring/road_constraints
@@ -248,36 +188,8 @@ Visualization Manager:
             {}
           Queue Size: 100
           Value: false
-        - Class: rviz/Group
-          Displays:
-            - Class: rviz/MarkerArray
-              Enabled: true
-              Marker Topic: /jackalsimulator_planner/scenario_constraints/optimized_trajectories
-              Name: Optimized Scenario Trajectories
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: true
-            - Class: rviz/MarkerArray
-              Enabled: true
-              Marker Topic: /jackalsimulator_planner/visuals_0
-              Name: Safe Horizon
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: true
-          Enabled: true
-          Name: SH-MPC
       Enabled: true
       Name: Planner
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /jackalsimulator_planner/linearized_constraints
-      Name: Linearized Constraints
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
     - Class: rviz/Group
       Displays:
         - Angle Tolerance: 0.10000000149011612
@@ -555,6 +467,37 @@ Visualization Manager:
       Topic: /vicon/jetracer1
       Unreliable: false
       Value: true
+    - Alpha: 1
+      Axes Length: 0.10000000149011612
+      Axes Radius: 0.009999999776482582
+      Class: rviz/Pose
+      Color: 239; 41; 41
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: vehicle 1  vicon message
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.03999999910593033
+      Shape: Axes
+      Topic: /vicon/jetracer2
+      Unreliable: false
+      Value: true
     - Angle Tolerance: 0.10000000149011612
       Class: rviz/Pose
       Covariance:
@@ -588,6 +531,41 @@ Visualization Manager:
         Shaft Radius: 0.03999999910593033
         Value: Arrow
       Topic: /rviz_data_1
+      Unreliable: false
+      Value: true
+    - Angle Tolerance: 0.10000000149011612
+      Class: rviz/Pose
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: false
+      Enabled: true
+      Keep: 100
+      Name: Robot
+      Position Tolerance: 0.10000000149011612
+      Queue Size: 10
+      Shape:
+        Alpha: 0.6000000238418579
+        Axes Length: 1
+        Axes Radius: 0.10000000149011612
+        Color: 255; 197; 120
+        Head Length: 0.10000000149011612
+        Head Radius: 0.07500000298023224
+        Shaft Length: 0.12999999523162842
+        Shaft Radius: 0.03999999910593033
+        Value: Arrow
+      Topic: /rviz_data_2
       Unreliable: false
       Value: true
   Enabled: true

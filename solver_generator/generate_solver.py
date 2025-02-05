@@ -98,9 +98,9 @@ def generate_solver(modules, model, settings=None):
     ocp.constraints.x0 = np.zeros((model.nx + model.nd) * number_of_robots)
 
     # Set state bound
-    # ocp.constraints.lbx = model.lower_bound_states.T.flatten()
-    # ocp.constraints.ubx = model.upper_bound_states.T.flatten()
-    # ocp.constraints.idxbx = np.array(range(nx))
+    ocp.constraints.lbx = model.lower_bound_states.T.flatten()
+    ocp.constraints.ubx = model.upper_bound_states.T.flatten() 
+    ocp.constraints.idxbx = np.array(range(nx))
 
     # Set control input bound
     ocp.constraints.lbu = model.lower_bound_inputs.T.flatten()
@@ -147,7 +147,7 @@ def generate_solver(modules, model, settings=None):
 
     # horizon
     ocp.solver_options.tf = settings["N"] * settings["integrator_step"]
-    ocp.solver_options.tol = 1e-2 #1e-6  # 1e-2
+    ocp.solver_options.tol = 1e-3 #1e-6  # 1e-2
 
     # Solver options
     # integrator option

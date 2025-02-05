@@ -369,8 +369,8 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
         self.lower_bound_inputs = np.tile([[0.0],[-1.0]], (1, n)) 
         self.upper_bound_inputs = np.tile([[1.0], [1.0]], (1,n))
 
-        lower_bound_states = np.array([[-5.1, -10.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0]])
-        upper_bound_states = np.array([[1000.0, 10.0, 1000.0, 1000.0, 1000.0, 1000.0, 100]])
+        lower_bound_states = np.array([[-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0]])
+        upper_bound_states = np.array([[1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000]])
         lower_bound_states = np.concatenate((lower_bound_states.T, np.tile([0.0], (n-1, 1))))  # lambda
         upper_bound_states = np.concatenate((upper_bound_states.T, np.tile([1000.0], (n-1, 1))))  # lambda
         lower_bound_states = np.concatenate((lower_bound_states, np.tile([-1.0], (n-1, 1))))  # s dual
@@ -502,12 +502,14 @@ if __name__ == "__main__":
     model.get_acados_dynamics()
     print("acados_x",model.get_acados_x())
     model.save_map()
-    # print("u",model.get_u())
-    print("acados_u",model.get_acados_u())
-    print("lower_bound_inputs", model.lower_bound_inputs)
-    print("lower_bound_inputs flatten", model.lower_bound_inputs.T.flatten())
-    print("lower_bound_states", model.lower_bound_states)
-    print("lower_bound_states flatten", model.lower_bound_states.T.flatten())
+    print("states",model.states)
+    print("xdot", model.get_acados_dynamics()[8], model.get_acados_dynamics()[17])
+    # print("acados_u",model.get_acados_u())
+    # print("lower_bound_inputs", model.lower_bound_inputs)
+    # print("lower_bound_inputs flatten", model.lower_bound_inputs.T.flatten())
+    # print("lower_bound_states", model.lower_bound_states)
+    # print("lower_bound_states flatten", model.lower_bound_states.T.flatten())
+    # print("upper_bound_states flatten", model.upper_bound_states.T.flatten())
     
     # print(model.get('steering_2'))
 

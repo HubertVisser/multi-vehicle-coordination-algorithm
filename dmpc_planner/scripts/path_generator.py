@@ -86,8 +86,8 @@ def generate_path_msg():
                 pose = PoseStamped()
                 pose.header.frame_id = "map"
                 pose.header.stamp = rospy.Time.now()
-                pose.pose.position.x = x
-                pose.pose.position.y = y
+                pose.pose.position.x = float(x)
+                pose.pose.position.y = float(y)
                 pose.pose.position.z = 0
                 pose.pose.orientation.w = 1.0  # No rotation
                 path_1.poses.append(pose)
@@ -101,8 +101,8 @@ def generate_path_msg():
                 pose = PoseStamped()
                 pose.header.frame_id = "map"
                 pose.header.stamp = rospy.Time.now()
-                pose.pose.position.x = x
-                pose.pose.position.y = y
+                pose.pose.position.x = float(x)
+                pose.pose.position.y = float(y)
                 pose.pose.position.z = 0
                 pose.pose.orientation.w = 1.0  # No rotation
                 path_2.poses.append(pose)

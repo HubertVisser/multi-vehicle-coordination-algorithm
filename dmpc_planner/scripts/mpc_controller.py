@@ -30,6 +30,7 @@ class MPCPlanner:
         self._dt = self._settings["integrator_step"]
         self._braking_acceleration = self._settings["braking_acceleration"]
         self._number_of_robots = self._settings["number_of_robots"]
+        self._dart_simulator = self._settings["dart_simulator"]
 
         self._projection_func = lambda trajectory: trajectory # No projection
 
@@ -38,7 +39,7 @@ class MPCPlanner:
         self._mpc_feasible = True
         self.time_tracker = TimeTracker(self._settings["solver_settings"])
 
-        print_header("Starting MPC")
+        print_header("Starting MPC with DART simulator") if self._dart_simulator else print_header("Starting MPC without simulator")
 
     def init_acados_solver(self):
         # The generation software
@@ -149,13 +150,13 @@ class MPCPlanner:
                 output[f"vy_{n}"] = self._model.get(1, f"vy_{n}")
                 output[f"w_{n}"] = self._model.get(1, f"w_{n}")
                 output[f"s_{n}"] = self._model.get(1, f"s_{n}")
+                
+            # print("s_dual_1_2", self._model.get(1, "s_dual_1_2"))
+            # print("s_dual_2_1", self._model.get(1, "s_dual_2_1"))
             
             
 
             self.time_tracker.add(solve_time)
-            # print_value("Throttle and vx",f"{output['throttle']:.2f}, {output['vx']:.2f}")
-            # print_value("Steering and theta",f"{output['steering']:.2f}, {output['theta']:.2f}")
-            # print_value("Steering and theta",f"{output['steering']:.2f}, {output['theta']:.2f}")
 
             print_value("Current cost", f"{self.get_cost_acados():.2f}")
             self._prev_trajectory = self._model.get_trajectory(self._solver, self._mpc_x_plan, self._mpc_u_plan)
@@ -228,7 +229,7 @@ class MPCPlanner:
     def get_cost_acados(self):
         return self._solver.get_cost()
 
-    def set_infeasible(self, output):   # Not adjusted for multi robot
+    def set_infeasible(self, output):
         self._mpc_feasible = False
         for n in range(1, self._number_of_robots+1):
             output[f"vx_{n}"] = 0.
