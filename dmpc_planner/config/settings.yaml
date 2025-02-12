@@ -3,6 +3,7 @@ N: 8
 integrator_step: 0.3
 n_discs: 0
 track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
+
 number_of_robots: 2
 robot_1:
   start_x: -5.0
@@ -22,21 +23,17 @@ solver_settings:
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 20
-max_obstacles: 8
-obstacle_radius: 0.5
-robot_radius: 0.325
-robot:
+braking_acceleration: 1.0
+
+polytopic:
+  d_min: 0.2
   length: 0.65
   width: 0.65
   com_to_back: 0.0
-braking_acceleration: 1.0
 
 contouring:
   num_segments: 5
   use_huber: false
-
-decomp:
-  max_constraints: 16
 
 weights:
   goal: 2.

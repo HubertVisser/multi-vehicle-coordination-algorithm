@@ -319,11 +319,6 @@ class ROSMPCPlanner:
             self._state[12] = msg.pose.position.z
 
             self._states_save_2.append(deepcopy(self._state[self._nx_one_robot:]))
-            # print("-------- State ----------")
-            # print(f"x = {self._state[0]:.2f}")
-            # print(f"y = {self._state[1]:.2f}")
-            # print(f"theta = {self._state[2]:.2f}")
-            # print(f"vx = {self._state[3]:.2f}")
 
     def vy_pose_callback_1(self, msg):
         if self._dart_simulator:
