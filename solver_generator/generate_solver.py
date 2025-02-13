@@ -45,10 +45,8 @@ def create_acados_model(settings, model, modules):
     # Formulating acados ocp model
     acados_model.x = model.get_acados_x()
     acados_model.u = model.get_acados_u()
-    acados_model.u_labels = ['u0', 'u1'] # Not sure why the u_labels are equal to the x_labels
     acados_model.f_expl_expr = dyn_f_expl
     acados_model.p = params.get_acados_parameters()
-
     acados_model.cost_expr_ext_cost = cost_stage
     acados_model.cost_expr_ext_cost_e = cost_e
     acados_model.con_h_expr = constr
@@ -91,11 +89,12 @@ def generate_solver(modules, model, settings=None):
     # ocp.cost.cost_type_e = "EXTERNAL"
 
     # Number of inputs and states
-    nx = (model.nx + model.nd) * number_of_robots
     nu = model.nu * number_of_robots
+    nx = model.nx * number_of_robots
+    nd = model.nd * number_of_robots
 
     # Set initial constraint
-    ocp.constraints.x0 = np.zeros((model.nx + model.nd) * number_of_robots)
+    ocp.constraints.x0 = np.zeros(model.nx * number_of_robots)
 
     # Set state bound
     ocp.constraints.lbx = model.lower_bound_states.T.flatten()
@@ -103,9 +102,9 @@ def generate_solver(modules, model, settings=None):
     ocp.constraints.idxbx = np.array(range(nx))
 
     # Set control input bound
-    ocp.constraints.lbu = model.lower_bound_inputs.T.flatten()
-    ocp.constraints.ubu = model.upper_bound_inputs.T.flatten()
-    ocp.constraints.idxbu = np.array(range(nu))
+    ocp.constraints.lbu = model.lower_bound_u_acados
+    ocp.constraints.ubu = model.upper_bound_u_acados
+    ocp.constraints.idxbu = np.array(range(nu + nd))
 
     # Set path constraints bound 
     nc = ocp.model.con_h_expr.shape[0]
