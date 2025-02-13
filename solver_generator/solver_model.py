@@ -192,9 +192,6 @@ class MultiRobotDynamicsModel():
         for idx, input in np.ndenumerate(self.inputs):      
             map[str(input)] = ["u", self.idx_inputs[idx].item(), self.get_bounds(input)[0], self.get_bounds(input)[1]]
 
-        for idx, dual in np.ndenumerate(self.duals):    
-            map[str(dual)] = ["d", self.idx_duals[idx].item(), self.get_bounds(dual)[0], self.get_bounds(dual)[1]]
-
         write_to_yaml(file_path, map)
 
     def do_not_use_integration_for_last_n_states(self, n):
@@ -397,27 +394,25 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
         self.lower_bound_states = np.tile(np.array([[-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0]]).T, (1, n))
         self.upper_bound_states = np.tile(np.array([[1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000]]).T, (1, n))
         
-        self.lower_bound_inputs = np.tile([[0.0],[-1.0]], (1, n)) 
-        self.upper_bound_inputs = np.tile([[1.0], [1.0]], (1,n))
+        lower_bound_inputs = np.tile([[0.0],[-1.0]], (1, n)) 
+        upper_bound_inputs = np.tile([[1.0], [1.0]], (1, n))
 
         lower_bound_duals = np.tile([0.0], (n-1, 1))  # lambda
         upper_bound_duals = np.tile([1000.0], (n-1, 1))  # lambda
         lower_bound_duals = np.concatenate((lower_bound_duals, np.tile([-1.0], (n-1, 1))))  # s dual
         upper_bound_duals = np.concatenate((upper_bound_duals, np.tile([1.0], (n-1, 1))))  # s dual
                         
-        self.lower_bound_duals = np.tile(lower_bound_duals , (1, n))
+        self.lower_bound_duals = np.tile(lower_bound_duals, (1, n))
         self.upper_bound_duals = np.tile(upper_bound_duals, (1, n))  
 
-        self.lower_bound_u_acados = np.concatenate((self.lower_bound_inputs, self.lower_bound_duals), axis=1).T.flatten()
-        self.upper_bound_u_acados = np.concatenate((self.upper_bound_inputs, self.upper_bound_duals), axis=1).T.flatten()
+        self.lower_bound_inputs = np.concatenate((self.lower_bound_inputs, self.lower_bound_duals), axis=1)
+        self.upper_bound_inputs = np.concatenate((self.upper_bound_inputs, self.upper_bound_duals), axis=1)
 
         # Define index array
-        self.idx_inputs = np.arange(0, self.inputs.size).reshape(self.n, self.nu)
-        self.idx_inputs = self.idx_inputs.T     
-        self.idx_states = np.arange(self.inputs.size, self.states.size + self.inputs.size).reshape(self.n, self.nx)
+        self.idx_states = np.arange(0, self.states.size).reshape(self.n, self.nx)
         self.idx_states = self.idx_states.T     
-        self.idx_duals = np.arange(self.inputs.size + self.states.size, self.inputs.size + self.states.size + self.duals.size).reshape(self.n, self.nd)
-        self.idx_duals = self.idx_duals.T     
+        self.idx_inputs = np.arange(self.states.size, self.states.size + self.inputs.size + self.duals.size).reshape(self.n, self.nu)
+        self.idx_inputs = self.idx_inputs.T     
 
     def model_parameters(self):
         lr_reference = 0.115  #0.11650    # (measureing it wit a tape measure it's 0.1150) reference point location taken by the vicon system measured from the rear wheel

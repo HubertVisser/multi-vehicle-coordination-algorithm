@@ -72,8 +72,9 @@ class ROSMPCPlanner:
         self._nx = self._solver_settings["nx"]
         self._nd = self._solver_settings["nd"]
         self._nu = self._solver_settings["nu"]
-        self._nu_one_robot = self._nu // self._number_of_robots
         self._nx_one_robot = self._nx // self._number_of_robots
+        self._nu_one_robot = self._nu // self._number_of_robots
+        self._nd_one_robot = self._nd // self._number_of_robots
 
         self._state = np.zeros((self._nx,))
         for n in range(1, self._number_of_robots+1):
@@ -93,10 +94,10 @@ class ROSMPCPlanner:
 
         self._trajectory = None
 
-        self._outputs_save_1 = []
-        self._outputs_save_2 = []
         self._states_save_1 = []
         self._states_save_2 = []
+        self._outputs_save_1 = []
+        self._outputs_save_2 = []
 
         self._enable_output = False
         self._mpc_feasible = True

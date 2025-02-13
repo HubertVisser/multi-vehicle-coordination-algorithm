@@ -59,6 +59,7 @@ class MPCPlanner:
 
         self._nx = self._solver_settings["nx"]
         self._nu = self._solver_settings["nu"]
+        self._nd = self._solver_settings["nd"]
         self._nvar = self._solver_settings["nvar"]
         self._nx_one_robot = self._nx // self._number_of_robots
 
@@ -117,7 +118,7 @@ class MPCPlanner:
             npar = int(len(p) / (self._N + 1))
             for k in range(0, self._N):
                 self._solver.set(k, 'x', self._x_traj_init[:, k])
-                self._solver.set(k, 'u', self._u_traj_init[:, k])   #TODO: Check
+                self._solver.set(k, 'u', self._u_traj_init[:, k]) 
                 # print(f"u_{k}: {self._u_traj_init[:, k]}")
                 self._solver.set(k, 'p', np.array(p[k*npar:(k+1)*npar])) # params for the current stage
 

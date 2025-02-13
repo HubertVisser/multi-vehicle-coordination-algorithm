@@ -94,7 +94,7 @@ def generate_solver(modules, model, settings=None):
     nd = model.nd * number_of_robots
 
     # Set initial constraint
-    ocp.constraints.x0 = np.zeros(model.nx * number_of_robots)
+    ocp.constraints.x0 = np.zeros(nx)
 
     # Set state bound
     ocp.constraints.lbx = model.lower_bound_states.T.flatten()
@@ -102,8 +102,8 @@ def generate_solver(modules, model, settings=None):
     ocp.constraints.idxbx = np.array(range(nx))
 
     # Set control input bound
-    ocp.constraints.lbu = model.lower_bound_u_acados
-    ocp.constraints.ubu = model.upper_bound_u_acados
+    ocp.constraints.lbu = model.lower_bound_u_acados.T.flatten()
+    ocp.constraints.ubu = model.upper_bound_u_acados.T.flatten()
     ocp.constraints.idxbu = np.array(range(nu + nd))
 
     # Set path constraints bound 
@@ -213,8 +213,7 @@ def generate_solver(modules, model, settings=None):
     solver_settings["N"] = settings["N"]
     solver_settings["number_of_robots"] = settings["number_of_robots"]
     solver_settings["nx"] = nx
-    solver_settings["nu"] = nu
-    solver_settings["nd"] = model.nd
+    solver_settings["nu"] = nu + nd
     solver_settings["nvar"] = model.get_nvar()
     solver_settings["npar"] = settings["params"].length()
 
