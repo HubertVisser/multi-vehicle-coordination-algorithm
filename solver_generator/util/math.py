@@ -3,7 +3,7 @@ import casadi as cd
 
 
 def rotation_matrix(angle):
-    return np.array([[cd.cos(angle), -cd.sin(angle)], [cd.sin(angle), cd.cos(angle)]])
+    return cd.vertcat(cd.horzcat(cd.cos(angle), -cd.sin(angle)), cd.horzcat(cd.sin(angle), cd.cos(angle)))
 
 
 def haar_difference_without_abs(angle1, angle2):

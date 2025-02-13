@@ -107,10 +107,10 @@ def generate_solver(modules, model, settings=None):
     ocp.constraints.ubu = model.upper_bound_inputs.T.flatten()
     ocp.constraints.idxbu = np.array(range(nu))
 
-    # Set path constraints bound (TODO: change to multi-robot scenario)
+    # Set path constraints bound 
     nc = ocp.model.con_h_expr.shape[0]
-    # ocp.constraints.lh = np.array(constraint_lower_bounds(modules))
-    # ocp.constraints.uh = np.array(constraint_upper_bounds(modules))
+    ocp.constraints.lh = np.array(constraint_lower_bounds(modules))
+    ocp.constraints.uh = np.array(constraint_upper_bounds(modules))
 
     # Slack for constraints
     add_slack = False
@@ -178,7 +178,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.qp_solver_iter_max = 50 # default = 50
+    ocp.solver_options.qp_solver_iter_max = 500 # default = 50
     ocp.solver_options.qp_solver_warm_start = 1  # cold start / 1 = warm, 2 = warm primal and dual
 
     # code generation options

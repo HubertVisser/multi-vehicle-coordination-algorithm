@@ -14,8 +14,8 @@ class PathReferenceVelocityObjective:
     Track a reference velocity along the path component that may change with time
     """
 
-    def __init__(self, settings, num_segments):
-        self.num_segments = num_segments
+    def __init__(self, settings, robot_idx):
+        self.robot_idx = robot_idx
 
     def define_parameters(self, params):
         params.add("velocity", add_to_rqt_reconfigure=True)
@@ -33,14 +33,12 @@ class PathReferenceVelocityObjective:
 
         # # The cost is computed in the contouring cost when using CA-MPC
         # return 0.0
-        # psi = model.get("psi")
-        v = model.get("vx")
+        v = model.get(f"vx_{self.robot_idx}")
         # s = model.get("s")
 
         # path_velocity = Spline(params, "spline_v", self.num_segments, s)
         # velocity_reference = path_velocity.at(s)
         velocity_reference = params.get("reference_velocity")
-
         velocity_weight = params.get("velocity")
 
         # spline = Spline2D(params, self.num_segments, s)
@@ -59,12 +57,12 @@ class PathReferenceVelocityObjective:
 
 class PathReferenceVelocityModule(ObjectiveModule):
 
-    def __init__(self, settings, num_segments):
+    def __init__(self, settings, robot_idx):
         super().__init__()
-        self.module_name = "PathReferenceVelocity"
+        self.module_name = f"PathReferenceVelocity_{robot_idx}"
         self.import_name = "path_reference_velocity.h"
         self.type = "objective"
         self.description = "Tracks a velocity in the direction of a 2D path"
 
         self.objectives = []
-        self.objectives.append(PathReferenceVelocityObjective(settings, num_segments))
+        self.objectives.append(PathReferenceVelocityObjective(settings, robot_idx))

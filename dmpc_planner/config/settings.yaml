@@ -26,9 +26,9 @@ control_frequency: 20
 braking_acceleration: 1.0
 
 polytopic:
-  d_min: 0.2
-  length: 0.65
-  width: 0.65
+  d_min: 0.1
+  length: 0.1
+  width: 0.1
   com_to_back: 0.0
 
 contouring:
@@ -36,9 +36,10 @@ contouring:
   use_huber: false
 
 weights:
-  goal: 2.
   throttle: .1
   steering: .1
+  lambda: .1
+  s_dual: .1
   velocity: 0.5
   reference_velocity: 1.
   lag: 0.2

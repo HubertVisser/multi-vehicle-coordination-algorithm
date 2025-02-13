@@ -46,10 +46,7 @@ class ROSMPCPlanner:
         self._settings = load_settings(package="dmpc_planner")
         self._N = self._settings["N"]
         self._integrator_step = self._settings["integrator_step"]
-        self._max_obstacles = self._settings["max_obstacles"]
         self._braking_acceleration = self._settings["braking_acceleration"]
-        self._obstacle_radius = self._settings["obstacle_radius"]
-        self._robot_radius = self._settings["robot_radius"]
         self._number_of_robots = self._settings["number_of_robots"]
 
         self._verbose = self._settings["verbose"]
