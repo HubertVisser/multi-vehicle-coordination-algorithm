@@ -102,8 +102,8 @@ def generate_solver(modules, model, settings=None):
     ocp.constraints.idxbx = np.array(range(nx))
 
     # Set control input bound
-    ocp.constraints.lbu = model.lower_bound_u_acados.T.flatten()
-    ocp.constraints.ubu = model.upper_bound_u_acados.T.flatten()
+    ocp.constraints.lbu = model.lower_bound_u.flatten()
+    ocp.constraints.ubu = model.upper_bound_u.flatten()
     ocp.constraints.idxbu = np.array(range(nu + nd))
 
     # Set path constraints bound 
@@ -177,7 +177,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.qp_solver_iter_max = 500 # default = 50
+    ocp.solver_options.qp_solver_iter_max = 50 # default = 50
     ocp.solver_options.qp_solver_warm_start = 1  # cold start / 1 = warm, 2 = warm primal and dual
 
     # code generation options

@@ -59,11 +59,10 @@ class MPCPlanner:
 
         self._nx = self._solver_settings["nx"]
         self._nu = self._solver_settings["nu"]
-        self._nd = self._solver_settings["nd"]
         self._nvar = self._solver_settings["nvar"]
         self._nx_one_robot = self._nx // self._number_of_robots
 
-        self._prev_trajectory = np.zeros((self._N, self._nvar)) # Is this size correct?
+        self._prev_trajectory = np.zeros((self._N, self._nvar)) 
 
         print_success("Acados solver generated")
 
@@ -141,8 +140,6 @@ class MPCPlanner:
 
             output = dict()
             for n in range(1, self._number_of_robots+1):
-                output[f"throttle_{n}"] = self._model.get(0, f"throttle_{n}")
-                output[f"steering_{n}"] = self._model.get(0, f"steering_{n}")
 
                 output[f"x_{n}"] = self._model.get(1, f"x_{n}")
                 output[f"y_{n}"] = self._model.get(1, f"y_{n}")
@@ -152,8 +149,12 @@ class MPCPlanner:
                 output[f"w_{n}"] = self._model.get(1, f"w_{n}")
                 output[f"s_{n}"] = self._model.get(1, f"s_{n}")
                 
-            # print("s_dual_1_2", self._model.get(1, "s_dual_1_2"))
-            # print("s_dual_2_1", self._model.get(1, "s_dual_2_1"))
+                output[f"throttle_{n}"] = self._model.get(0, f"throttle_{n}")
+                output[f"steering_{n}"] = self._model.get(0, f"steering_{n}")
+                for j in range(1, self._number_of_robots+1):
+                    if j != n:
+                        output[f"lam_{n}_{j}"] = self._model.get(0, f"lam_{n}_{j}")
+                        output[f"s_dual_{n}_{j}"] = self._model.get(0, f"s_dual_{n}_{j}")
             
             
 

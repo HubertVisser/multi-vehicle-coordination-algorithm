@@ -19,11 +19,11 @@ class PolytopicDminConstraintModule(ConstraintModule):
     def __init__(self, settings, robot_idx):
         super().__init__()
 
-        self.module_name = f"PolytopicConstraints_{robot_idx}"  # c++ name of the module
+        self.module_name = f"PolytopicConstraints_dmin_{robot_idx}"  # c++ name of the module
         self.import_name = "polytopic_constraints.h"
 
         self.constraints.append(PolytopicDminConstraints(n_robots=settings["number_of_robots"], d_min=settings["polytopic"]["d_min"], length=settings["polytopic"]["length"], width=settings["polytopic"]["width"], robot_idx=robot_idx, use_slack=False))
-        self.description = "Polytopic set based collision avoidance constraints in dual formulation"
+        self.description = "Polytopic set based collision avoidance constraints in dual formulation (constraint 5a)"
 
 
 # Constraints of the form -b_i * lam_ij^T - b_j * lam_ji^T >= d_min

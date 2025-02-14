@@ -70,11 +70,9 @@ class ROSMPCPlanner:
         self._weights = self._settings["weights"]
 
         self._nx = self._solver_settings["nx"]
-        self._nd = self._solver_settings["nd"]
         self._nu = self._solver_settings["nu"]
         self._nx_one_robot = self._nx // self._number_of_robots
         self._nu_one_robot = self._nu // self._number_of_robots
-        self._nd_one_robot = self._nd // self._number_of_robots
 
         self._state = np.zeros((self._nx,))
         for n in range(1, self._number_of_robots+1):
@@ -161,10 +159,14 @@ class ROSMPCPlanner:
 
                 if self._dart_simulator == False:
                     output_keys = [f"x_{n}", f"y_{n}", f"theta_{n}", f"vx_{n}", f"vy_{n}", f"w_{n}", f"s_{n}"]
-                    self._state[(n-1) * self._nx_one_robot : self._nx_one_robot * (n) - self._nd] = [output[key] for key in output_keys]
+                    self._state[(n-1) * self._nx_one_robot : self._nx_one_robot * (n)] = [output[key] for key in output_keys]
                     getattr(self, f'_states_save_{n}').append(deepcopy(self._state[(n-1)*self._nx_one_robot : n*self._nx_one_robot ]))
                 
-                getattr(self, f'_outputs_save_{n}').append([output[f"throttle_{n}"], output[f"steering_{n}"]])
+                output_keys = [f"throttle_{n}", f"steering_{n}"]
+                output_keys += [f"lam_{n}_{j}" for j in range(1, self._number_of_robots+1) if j != n]
+                output_keys += [f"s_dual_{n}_{j}" for j in range(1, self._number_of_robots+1) if j != n]
+                output_u = [output[key] for key in output_keys]
+                getattr(self, f'_outputs_save_{n}').append(output_u)
             
             # self.plot_pred_traj() # slows down the simulation
 
@@ -184,7 +186,7 @@ class ROSMPCPlanner:
                 splines = spline_fitter.get_active_splines(
                     np.array([ self._state[ 0 + (n-1) * self._nx_one_robot ], self._state[1 + (n-1) * self._nx_one_robot ]])
                 )
-                self._state[n * self._nx_one_robot-(self._nd+1)] = spline_fitter.find_closest_s(
+                self._state[n * self._nx_one_robot-1] = spline_fitter.find_closest_s(
                     np.array([ self._state[ 0 + (n-1) * self._nx_one_robot ], self._state[1 + (n-1) * self._nx_one_robot ]])
                 )
 
@@ -307,14 +309,14 @@ class ROSMPCPlanner:
     def state_pose_callback_2(self, msg):
         if self._dart_simulator and self._number_of_robots > 1:
             self._state_msg_2 = msg
-            self._state[9] = msg.pose.position.x
-            self._state[10] = msg.pose.position.y
+            self._state[7] = msg.pose.position.x
+            self._state[8] = msg.pose.position.y
 
             # Extract yaw angle (rotation around the Z-axis)
-            self._state[11] = quaternion_to_yaw(msg.pose.orientation)
+            self._state[9] = quaternion_to_yaw(msg.pose.orientation)
 
             # Velocity is in the local frame, x is the forward velocity
-            self._state[12] = msg.pose.position.z
+            self._state[10] = msg.pose.position.z
 
             self._states_save_2.append(deepcopy(self._state[self._nx_one_robot:]))
 
@@ -324,7 +326,7 @@ class ROSMPCPlanner:
 
     def vy_pose_callback_2(self, msg):
         if self._dart_simulator and self._number_of_robots > 1:
-            self._state[13] = msg.data
+            self._state[11] = msg.data
     
     def w_pose_callback_1(self, msg):
         if self._dart_simulator:
@@ -332,7 +334,7 @@ class ROSMPCPlanner:
     
     def w_pose_callback_2(self, msg):
         if self._dart_simulator and self._number_of_robots > 1:
-            self._state[14] = msg.data
+            self._state[12] = msg.data
 
     def path_callback_1(self, msg):
 
@@ -408,7 +410,7 @@ class ROSMPCPlanner:
     
     def plot_states(self):
         state_labels = ["x", "y", "theta", "vx", "vy", "omega", "s"]
-        output_labels = ["throttle", "steering"]
+        output_labels = ["throttle", "steering", "lam", "s_dual"]
         for n in range(1, self._number_of_robots + 1):
             plt.figure(figsize=(12, 6))
             

@@ -15,6 +15,8 @@ from contouring import ContouringModule
 from goal_module import GoalModule
 from path_reference_velocity import PathReferenceVelocityModule
 from polytopic_dmin_constraints import PolytopicDminConstraintModule
+from polytopic_si_constraints import PolytopicSidualConstraintModule
+from polytopic_sj_constraints import PolytopicSjdualConstraintModule
 
 # Import solver models that you want to use
 from solver_model import BicycleModel2ndOrderMultiRobot
@@ -37,9 +39,11 @@ def configuration_basic(settings):
                 base_module.weigh_variable(var_name=f"s_dual_{n}_{j}", weight_names="s_dual")
         
         modules.add_module(ContouringModule(settings, n))
-        modules.add_module(PolytopicDminConstraintModule(settings, n))
         modules.add_module(PathReferenceVelocityModule(settings, n))
         
+        modules.add_module(PolytopicDminConstraintModule(settings, n))
+        modules.add_module(PolytopicSidualConstraintModule(settings, n))
+        modules.add_module(PolytopicSjdualConstraintModule(settings, n))
         
         
     return model, modules
