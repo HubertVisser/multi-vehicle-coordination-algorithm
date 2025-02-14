@@ -74,6 +74,8 @@ class PolytopicSidualConstraints:
             lam_vec_ij = cd.DM.ones(A_i.shape[0],1) * lamda_ij
             s_vec_ij = cd.DM.ones(A_i.shape[1],1) * s_dual_ij
 
-            constraints.append(A_i.T @ lam_vec_ij + s_vec_ij)
+            constraint = A_i.T @ lam_vec_ij + s_vec_ij
+            constraints.append(constraint[0])
+            constraints.append(constraint[1])
 
         return constraints

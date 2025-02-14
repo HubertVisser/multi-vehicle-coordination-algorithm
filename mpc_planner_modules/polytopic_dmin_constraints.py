@@ -94,7 +94,7 @@ class PolytopicDminConstraints:
             lamda_ji = model.get(f"lam_{j}_{self.robot_idx}")
 
             rot_mat_j = rotation_matrix(theta_j)
-            A_j = cd.vcat([rot_mat_j.T, -rot_mat_j.T])
+            A_j = cd.vertcat([rot_mat_j.T, -rot_mat_j.T])
             assert A_j.shape == (4, 2)
 
             b_j = dim_vector + A_j @ pos_j

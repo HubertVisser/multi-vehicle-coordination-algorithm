@@ -71,6 +71,9 @@ class PolytopicSjdualConstraints:
             lam_vec_ji = cd.DM.ones(A_j.shape[0],1) * lamda_ji
             s_vec_ji = cd.DM.ones(A_j.shape[1],1) * s_dual_ji
 
-            constraints.append(A_j.T @ lam_vec_ji - s_vec_ji)
+            constraint = A_j.T @ lam_vec_ji - s_vec_ji
+
+            constraints.append(constraint[0])
+            constraints.append(constraint[1])
 
         return constraints

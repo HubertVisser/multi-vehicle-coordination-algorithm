@@ -153,8 +153,8 @@ class MPCPlanner:
                 output[f"steering_{n}"] = self._model.get(0, f"steering_{n}")
                 for j in range(1, self._number_of_robots+1):
                     if j != n:
-                        output[f"lam_{n}_{j}"] = self._model.get(0, f"lam_{n}_{j}")
-                        output[f"s_dual_{n}_{j}"] = self._model.get(0, f"s_dual_{n}_{j}")
+                        output[f"lam_{n}_{j}"] = self._model.get(1, f"lam_{n}_{j}")
+                        output[f"s_dual_{n}_{j}"] = self._model.get(1, f"s_dual_{n}_{j}")
             
             
 

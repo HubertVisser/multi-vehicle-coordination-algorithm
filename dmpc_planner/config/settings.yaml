@@ -26,7 +26,7 @@ control_frequency: 5
 braking_acceleration: 1.0
 
 polytopic:
-  d_min: 0.5
+  d_min: 2.
   length: 2.
   width: 2.
   com_to_back: 0.0
