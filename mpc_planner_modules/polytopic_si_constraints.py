@@ -34,7 +34,7 @@ class PolytopicSidualConstraints:
         self.length = length
         self.width = width
         self.robot_idx = robot_idx
-        self.n_constraints = (n_robots - 1)
+        self.n_constraints = (n_robots - 1)* 2
         self.nh = self.n_constraints
         self.use_slack = use_slack
 

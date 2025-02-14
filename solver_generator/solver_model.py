@@ -232,8 +232,8 @@ class MultiRobotDynamicsModel():
         elif np.any(self.duals == input_state_or_dual):
             i = np.where(self.duals == input_state_or_dual)
             return (
-                self.upper_bound_duals.item((i[0][0], i[1][0])),
                 self.lower_bound_duals.item((i[0][0], i[1][0])),
+                self.upper_bound_duals.item((i[0][0], i[1][0])),
                 (self.upper_bound_duals.item((i[0][0], i[1][0])) - self.lower_bound_duals.item((i[0][0], i[1][0]))),
             )
         else:
@@ -528,7 +528,7 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
 
 if __name__ == "__main__":
 
-    model = BicycleModel2ndOrderMultiRobot(1)
+    model = BicycleModel2ndOrderMultiRobot(2)
     model.acados_symbolics()
     model.get_acados_dynamics()
     model.save_map()
@@ -539,12 +539,12 @@ if __name__ == "__main__":
     
     
     print("d",model.get_d())
-    print("acados_u",model.get_acados_u())
+    print("bounds", model.get_bounds("lam_1_2"))
     # print("lower_bound_u_acados", model.lower_bound_inputs)
-    print("upper_bound_inputs flatten", model.upper_bound_u.flatten())
-    print("upper_bound_inputs", model.upper_bound_inputs)
-    print("upper_bound_inputs flatten", model.upper_bound_u.T.flatten())
-    print("lower_bound_inputs flatten", model.lower_bound_u.T.flatten())
+    # print("upper_bound_inputs flatten", model.upper_bound_u.flatten())
+    # print("upper_bound_inputs", model.upper_bound_inputs)
+    # print("upper_bound_inputs flatten", model.upper_bound_u.T.flatten())
+    # print("lower_bound_inputs flatten", model.lower_bound_u.T.flatten())
     # print("acados_x",model.get_acados_x())
     # print("lower_bound_states", model.lower_bound_states)
     # print("lower_bound_states flatten", model.lower_bound_states.T.flatten())

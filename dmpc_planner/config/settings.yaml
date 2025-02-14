@@ -6,7 +6,7 @@ track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
 
 number_of_robots: 2
 robot_1:
-  start_x: -5.0
+  start_x: -3.0
   start_y: 0.0
   start_theta: 0.0  # in radians
 robot_2:
@@ -16,19 +16,19 @@ robot_2:
 
 verbose: false
 debug_visuals: false
-dart_simulator: true
+dart_simulator: false
 
 solver_settings:
   iterations: 1 #2 # 1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
-control_frequency: 20
+control_frequency: 5
 braking_acceleration: 1.0
 
 polytopic:
-  d_min: 0.2
-  length: 0.5
-  width: 0.5
+  d_min: 0.5
+  length: 2.
+  width: 2.
   com_to_back: 0.0
 
 contouring:
