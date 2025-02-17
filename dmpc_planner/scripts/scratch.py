@@ -1,14 +1,11 @@
 import casadi as cd
+import numpy as np
 
 n = 8
 num_lam = (n-1)
 
 
-lam1 = cd.MX.sym("lam",num_lam, 4, num_lam)
-lam2 = cd.MX.sym("lam",num_lam, 4, num_lam)
-
-s = cd.MX.sym("s", n, n)
-
-
-z = [lam1, s]
-print(lam1)
+lam = cd.MX.sym("lam", n, 4, n)               # [x, y, omega, vx, vy, w, s]
+s = cd.MX.sym("s", n, n)               # [throttle, steering]
+d = [lam, s]
+print("d: ", d)

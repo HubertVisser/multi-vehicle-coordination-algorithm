@@ -22,7 +22,8 @@ def create_acados_model(settings, model, modules):
     acados_model.name = solver_name(settings)
     
     # Dynamics
-    z = model.acados_symbolics()
+    z = model.acados_symbolics_z()
+    d = model.acados_symbolics_d()
     dyn_f_expl = model.get_acados_dynamics()
 
     # Parameters
@@ -30,7 +31,7 @@ def create_acados_model(settings, model, modules):
     p = params.get_acados_p()
 
     # Constraints
-    constr = cd.vertcat(*constraints(modules, z, p, model, settings, 1))
+    constr = cd.vertcat(*constraints(modules, z, d, p, model, settings, 1))
 
     if constr.shape[0] == 0:
         print("No constraints specified")
@@ -45,6 +46,7 @@ def create_acados_model(settings, model, modules):
     # Formulating acados ocp model
     acados_model.x = model.get_acados_x()
     acados_model.u = model.get_acados_u()
+    acados_model.z = model.get_acados_d()
     acados_model.f_expl_expr = dyn_f_expl
     acados_model.p = params.get_acados_parameters()
     acados_model.cost_expr_ext_cost = cost_stage
@@ -102,9 +104,9 @@ def generate_solver(modules, model, settings=None):
     ocp.constraints.idxbx = np.array(range(nx))
 
     # Set control input bound
-    ocp.constraints.lbu = model.lower_bound_u.flatten()
-    ocp.constraints.ubu = model.upper_bound_u.flatten()
-    ocp.constraints.idxbu = np.array(range(nu + nd))
+    ocp.constraints.lbu = model.lower_bound_inputs.flatten()
+    ocp.constraints.ubu = model.upper_bound_inputs.flatten()
+    ocp.constraints.idxbu = np.array(range(nu))
 
     # Set path constraints bound 
     nc = ocp.model.con_h_expr.shape[0]
@@ -213,7 +215,8 @@ def generate_solver(modules, model, settings=None):
     solver_settings["N"] = settings["N"]
     solver_settings["number_of_robots"] = settings["number_of_robots"]
     solver_settings["nx"] = nx
-    solver_settings["nu"] = nu + nd
+    solver_settings["nu"] = nu
+    solver_settings["nd"] = nd
     solver_settings["nvar"] = model.get_nvar()
     solver_settings["npar"] = settings["params"].length()
 

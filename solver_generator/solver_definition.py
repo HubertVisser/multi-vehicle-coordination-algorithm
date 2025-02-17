@@ -31,12 +31,13 @@ def objective(modules, z, p, model, settings, stage_idx):
 
 
 # lb <= constraints <= ub
-def constraints(modules, z, p, model, settings, stage_idx):
+def constraints(modules, z, d, p, model, settings, stage_idx):
     constraints = []
 
     params = settings["params"]
     params.load(p)
     model.load(z)
+    model.load(d)
 
     for module in modules.modules:
         if module.type == "constraint":
