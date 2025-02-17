@@ -374,7 +374,7 @@ class ROSMPCPlanner:
     def plot_path(self):
         dist = 0.2
         for n in range(1, self._number_of_robots+1):
-            path_msg = getattr(self, f'_path_msg_{n}')
+            path_msg = getattr(self, f'_path_msg_{n}')≤
             spline_fitter = getattr(self, f'_spline_fitter_{n}')
             if path_msg is not None:
                 line = self._path_visual.get_line()

@@ -1,21 +1,14 @@
-import numpy as np
-from scipy.interpolate import CubicSpline
-import matplotlib.pyplot as plt
-from util.math import rotation_matrix
+import casadi as cd
 
-x = 1
-y = 0.5
-pos = np.array([x,y])
-assert pos.shape == (2,)
-
-theta = 1/3*np.pi
-rot_mat = rotation_matrix(theta)
-A = np.vstack([rot_mat.T, -rot_mat.T])
-assert A.shape == (4, 2)
-dim_vector = np.array([1, 1, 1, 1])
-assert dim_vector.shape == (4,)
-
-b = dim_vector * 2
-print(b)
+n = 8
+num_lam = (n-1)
 
 
+lam1 = cd.MX.sym("lam",num_lam, 4, num_lam)
+lam2 = cd.MX.sym("lam",num_lam, 4, num_lam)
+
+s = cd.MX.sym("s", n, n)
+
+
+z = [lam1, s]
+print(lam1)
