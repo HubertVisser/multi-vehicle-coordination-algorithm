@@ -211,6 +211,12 @@ class MultiRobotDynamicsModel():
 
         for idx, input in np.ndenumerate(self.inputs):      
             map[str(input)] = ["u", self.idx_inputs[idx].item(), self.get_bounds(input)[0], self.get_bounds(input)[1]]
+        
+        for idx, s in np.ndenumerate(self.s):      
+            map[str(s)] = ["s", self.idx_s[idx].item()]
+        
+        for idx, lam in np.ndenumerate(self.lams):      
+            map[str(lam)] = ["lam", self.idx_lam[idx].item()]
 
         write_to_yaml(file_path, map)
 
@@ -384,11 +390,11 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
         # For one robot:
         self.nx = 7
         self.nu = 2
-        self.nlam = (n-1) *n *4 # lambda variables
-        self.ns = (n*n) -n # s variables
+        self.nlam = n*n*4 # lambda variables
+        self.ns = n*n # s variables
 
         # Define states and inputs
-        self.lams = np.empty((n, n), dtype=object)
+        self.lams = np.empty((n*4, n), dtype=object)
         self.s = np.empty((n, n), dtype=object)
 
         for i in range(n):
@@ -396,7 +402,7 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
             sublist_inputs = np.array([f"{input}_{i+1}" for input in ["throttle", "steering"]])
             for j in range(n):
                 if i != j:
-                    self.lams[j,i] = f"lam_{i+1}_{j+1}"                
+                    self.lams[j*4:(j+1)*4,i] = f"lam_{i+1}_{j+1}"                
                     self.s[j,i] = f"s_{i+1}_{j+1}"        
 
             if len(self.states) == 0:
@@ -430,6 +436,10 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
         self.idx_states = self.idx_states.T
         self.idx_inputs = np.arange(self.states.size, self.states.size + self.inputs.size).reshape(self.n, self.nu)
         self.idx_inputs = self.idx_inputs.T
+        self.idx_s = np.arange(self.states.size + self.inputs.size, self.states.size + self.inputs.size + self.ns).reshape(self.n, self.n)
+        self.idx_s = self.idx_s.T
+        self.idx_lam = np.arange(self.get_nvar() - self.nlam, self.get_nvar()).reshape(self.n, self.n*4)
+        self.idx_lam = self.idx_lam.T
 
     def model_parameters(self):
         lr_reference = 0.115  #0.11650    # (measureing it wit a tape measure it's 0.1150) reference point location taken by the vicon system measured from the rear wheel
