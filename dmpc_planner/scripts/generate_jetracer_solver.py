@@ -3,6 +3,7 @@ sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
 sys.path.append(os.path.join(sys.path[0], "..", "..", "mpc_planner_modules"))
 
 import numpy as np
+import casadi as cd
 
 from util.files import load_settings, get_current_package
 from control_modules import ModuleManager
@@ -35,15 +36,17 @@ def configuration_basic(settings):
         base_module.weigh_variable(var_name=f"throttle_{n}", weight_names="throttle")
         for j in range(1,num_robots+1):
             if j != n:
-                base_module.weigh_variable(var_name=f"lam_{n}_{j}", weight_names="lambda")
-                base_module.weigh_variable(var_name=f"s_dual_{n}_{j}", weight_names="s_dual")
+                base_module.weigh_variable(var_name=f"lam_{n}_{j}", weight_names="lambda",
+                                           cost_function=lambda x, w: w[0] * x.T @ x)
+                base_module.weigh_variable(var_name=f"s_{n}_{j}", weight_names="s_dual",
+                                           cost_function=lambda x, w: w[0] * x.T @ x)
         
         modules.add_module(ContouringModule(settings, n))
         modules.add_module(PathReferenceVelocityModule(settings, n))
         
         modules.add_module(PolytopicDminConstraintModule(settings, n))
-        modules.add_module(PolytopicSidualConstraintModule(settings, n))
-        modules.add_module(PolytopicSjdualConstraintModule(settings, n))
+        # modules.add_module(PolytopicSidualConstraintModule(settings, n))
+        # modules.add_module(PolytopicSjdualConstraintModule(settings, n))
         
         
     return model, modules

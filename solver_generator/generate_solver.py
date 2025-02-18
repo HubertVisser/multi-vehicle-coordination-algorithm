@@ -38,15 +38,15 @@ def create_acados_model(settings, model, modules):
         constr = cd.SX()
 
     # stage cost
-    cost_stage = objective(modules, z, p, model, settings, 1)
+    cost_stage = objective(modules, z, d, p, model, settings, 1)
 
     # terminal cost
-    cost_e = objective(modules, z, p, model, settings, settings["N"] - 1)
+    cost_e = objective(modules, z, d, p, model, settings, settings["N"] - 1)
 
     # Formulating acados ocp model
     acados_model.x = model.get_acados_x()
     acados_model.u = model.get_acados_u()
-    acados_model.z = model.get_acados_d()
+    # acados_model.z = model.get_acados_d() #algebraic variables are not supported by ERK module
     acados_model.f_expl_expr = dyn_f_expl
     acados_model.p = params.get_acados_parameters()
     acados_model.cost_expr_ext_cost = cost_stage
@@ -93,7 +93,8 @@ def generate_solver(modules, model, settings=None):
     # Number of inputs and states
     nu = model.nu * number_of_robots
     nx = model.nx * number_of_robots
-    nd = model.nd * number_of_robots
+    nlam = model.nlam
+    ns = model.ns
 
     # Set initial constraint
     ocp.constraints.x0 = np.zeros(nx)
@@ -216,7 +217,7 @@ def generate_solver(modules, model, settings=None):
     solver_settings["number_of_robots"] = settings["number_of_robots"]
     solver_settings["nx"] = nx
     solver_settings["nu"] = nu
-    solver_settings["nd"] = nd
+    solver_settings["nd"] = nlam + ns
     solver_settings["nvar"] = model.get_nvar()
     solver_settings["npar"] = settings["params"].length()
 
