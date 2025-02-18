@@ -414,7 +414,9 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
                 self.inputs = sublist_inputs.reshape(-1, 1)
             else:
                 self.inputs = np.hstack((self.inputs, sublist_inputs.reshape(-1, 1)))
- 
+
+        
+
         
         # Bounds on states and inputs
         self.lower_bound_states = np.tile(np.array([[-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0]]).T, (1, n))
@@ -436,10 +438,12 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
         self.idx_states = self.idx_states.T
         self.idx_inputs = np.arange(self.states.size, self.states.size + self.inputs.size).reshape(self.n, self.nu)
         self.idx_inputs = self.idx_inputs.T
-        self.idx_s = np.arange(self.states.size + self.inputs.size, self.states.size + self.inputs.size + self.ns).reshape(self.n, self.n)
-        self.idx_s = self.idx_s.T
-        self.idx_lam = np.arange(self.get_nvar() - self.nlam, self.get_nvar()).reshape(self.n, self.n*4)
-        self.idx_lam = self.idx_lam.T
+        mask_s = self.s != None
+        self.idx_s = np.empty((n, n), dtype=object)
+        self.idx_s[mask_s] = np.arange(22, 22+ np.sum(mask_s))
+        mask_lam = self.lams != None
+        self.idx_lam = np.empty((n*4, n), dtype=object)
+        self.idx_lam[mask_lam] = np.arange(22+np.sum(mask_s), 22+np.sum(mask_lam))
 
     def model_parameters(self):
         lr_reference = 0.115  #0.11650    # (measureing it wit a tape measure it's 0.1150) reference point location taken by the vicon system measured from the rear wheel
@@ -550,7 +554,7 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
 
 if __name__ == "__main__":
 
-    model = BicycleModel2ndOrderMultiRobot(2)
+    model = BicycleModel2ndOrderMultiRobot(3)
     model.acados_symbolics_z()
     model.acados_symbolics_d()
     model.get_acados_dynamics()
