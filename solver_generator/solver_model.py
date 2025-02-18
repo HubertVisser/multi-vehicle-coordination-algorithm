@@ -147,8 +147,11 @@ class MultiRobotDynamicsModel():
 
         # Bounds for dual variables in constraint form
 
+    def get_nx_nu(self):
+        return (self.nx + self.nu) * self.n
+    
     def get_nvar(self):
-        return (self.nx + self.nu + self.nlam + self.ns)
+        return (self.nx + self.nu) * self.n + self.nlam + self.ns
 
     def acados_symbolics_z(self):
         x = cd.SX.sym("x", self.nx, self.n)               # [x, y, omega, vx, vy, w, s]

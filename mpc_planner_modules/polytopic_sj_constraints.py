@@ -62,16 +62,13 @@ class PolytopicSjdualConstraints:
                 continue   
             
             theta_j = model.get(f"theta_{j}")            
-            lamda_ji = model.get(f"lam_{j}_{self.robot_idx}")
-            s_dual_ji = model.get(f"s_dual_{j}_{self.robot_idx}")
+            lam_ji = model.get(f"lam_{j}_{self.robot_idx}")
+            s_ji = model.get(f"s_{j}_{self.robot_idx}")
 
             rot_mat_j = rotation_matrix(theta_j)
-            A_j = cd.vcat([rot_mat_j.T, -rot_mat_j.T])
+            A_j = cd.vertcat(rot_mat_j.T, -rot_mat_j.T)
 
-            lam_vec_ji = cd.DM.ones(A_j.shape[0],1) * lamda_ji
-            s_vec_ji = cd.DM.ones(A_j.shape[1],1) * s_dual_ji
-
-            constraint = A_j.T @ lam_vec_ji - s_vec_ji
+            constraint = A_j.T @ lam_ji - s_ji
 
             constraints.append(constraint[0])
             constraints.append(constraint[1])

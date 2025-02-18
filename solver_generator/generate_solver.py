@@ -218,6 +218,7 @@ def generate_solver(modules, model, settings=None):
     solver_settings["nx"] = nx
     solver_settings["nu"] = nu
     solver_settings["nd"] = nlam + ns
+    solver_settings["nx_nu"] = model.get_nx_nu()
     solver_settings["nvar"] = model.get_nvar()
     solver_settings["npar"] = settings["params"].length()
 

@@ -26,7 +26,7 @@ class PolytopicDminConstraintModule(ConstraintModule):
         self.description = "Polytopic set based collision avoidance constraints in dual formulation (constraint 5a)"
 
 
-# Constraints of the form -b_i * lam_ij^T - b_j * lam_ji^T >= d_min
+# Constraints of the form -b_i^T * lam_ij - b_j^T * lam_ji >= d_min
 class PolytopicDminConstraints:
 
     def __init__(self, n_robots, d_min, length, width, robot_idx, use_slack=False):
@@ -45,7 +45,7 @@ class PolytopicDminConstraints:
     def get_lower_bound(self):
         lower_bound = []
         for index in range(0, self.n_constraints):
-            lower_bound.append(0)
+            lower_bound.append(self.d_min)
         return lower_bound
 
     def get_upper_bound(self):
@@ -90,19 +90,16 @@ class PolytopicDminConstraints:
             pos_j = cd.vertcat(pos_j_x, pos_j_y)
 
             theta_j = model.get(f"theta_{j}")
-            lamda_ij = model.get(f"lam_{self.robot_idx}_{j}")
-            lamda_ji = model.get(f"lam_{j}_{self.robot_idx}")
+            lam_ij = model.get(f"lam_{self.robot_idx}_{j}")
+            lam_ji = model.get(f"lam_{j}_{self.robot_idx}")
 
             rot_mat_j = rotation_matrix(theta_j)
-            A_j = cd.vertcat([rot_mat_j.T, -rot_mat_j.T])
+            A_j = cd.vertcat(rot_mat_j.T, -rot_mat_j.T)
             assert A_j.shape == (4, 2)
 
             b_j = dim_vector + A_j @ pos_j
             assert b_j.shape == (4,1)
 
-            lam_vec_ij = cd.DM.ones(b_i.shape[0],1) * lamda_ij
-            lam_vec_ji = cd.DM.ones(b_j.shape[0],1) * lamda_ji
-
-            constraints.append(- b_i.T @ lam_vec_ij - b_j.T @ lam_vec_ji)
+            constraints.append(- b_i.T @ lam_ij - b_j.T @ lam_ji)
 
         return constraints

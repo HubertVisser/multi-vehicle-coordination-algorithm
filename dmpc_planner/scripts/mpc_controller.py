@@ -59,6 +59,7 @@ class MPCPlanner:
 
         self._nx = self._solver_settings["nx"]
         self._nu = self._solver_settings["nu"]
+        self._nd = self._solver_settings["nd"]
         self._nvar = self._solver_settings["nvar"]
         self._nx_one_robot = self._nx // self._number_of_robots
 
@@ -80,7 +81,7 @@ class MPCPlanner:
             self.set_initial_x_plan_2(xinit) if self._number_of_robots > 1 else None
 
         if not hasattr(self, "_mpc_u_plan"):
-            self._mpc_u_plan = np.zeros((self._nu, self._N))
+            self._mpc_u_plan = np.zeros((self._nu + self._nd, self._N))
             self.set_initial_u_plan()
 
         self._u_traj_init = self._mpc_u_plan
@@ -154,7 +155,7 @@ class MPCPlanner:
                 for j in range(1, self._number_of_robots+1):
                     if j != n:
                         output[f"lam_{n}_{j}"] = self._model.get(1, f"lam_{n}_{j}")
-                        output[f"s_dual_{n}_{j}"] = self._model.get(1, f"s_dual_{n}_{j}")
+                        output[f"s_{n}_{j}"] = self._model.get(1, f"s_{n}_{j}")
             
             
 

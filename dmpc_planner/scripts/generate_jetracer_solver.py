@@ -45,8 +45,8 @@ def configuration_basic(settings):
         modules.add_module(PathReferenceVelocityModule(settings, n))
         
         modules.add_module(PolytopicDminConstraintModule(settings, n))
-        # modules.add_module(PolytopicSidualConstraintModule(settings, n))
-        # modules.add_module(PolytopicSjdualConstraintModule(settings, n))
+        modules.add_module(PolytopicSidualConstraintModule(settings, n))
+        modules.add_module(PolytopicSjdualConstraintModule(settings, n))
         
         
     return model, modules

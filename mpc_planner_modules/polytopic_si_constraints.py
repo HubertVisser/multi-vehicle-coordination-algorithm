@@ -68,13 +68,10 @@ class PolytopicSidualConstraints:
             if j == self.robot_idx:
                 continue   
             
-            lamda_ij = model.get(f"lam_{self.robot_idx}_{j}")
-            s_dual_ij = model.get(f"s_dual_{self.robot_idx}_{j}")
+            lam_ij = model.get(f"lam_{self.robot_idx}_{j}")
+            s_ij = model.get(f"s_{self.robot_idx}_{j}")
 
-            lam_vec_ij = cd.DM.ones(A_i.shape[0],1) * lamda_ij
-            s_vec_ij = cd.DM.ones(A_i.shape[1],1) * s_dual_ij
-
-            constraint = A_i.T @ lam_vec_ij + s_vec_ij
+            constraint = A_i.T @ lam_ij + s_ij
             constraints.append(constraint[0])
             constraints.append(constraint[1])
 
