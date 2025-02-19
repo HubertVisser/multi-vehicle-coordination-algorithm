@@ -68,7 +68,10 @@ class PolytopicSidualConstraints:
             if j == self.robot_idx:
                 continue   
             
-            lam_ij = model.get(f"lam_{self.robot_idx}_{j}")
+            lam_ij = cd.vertcat(model.get(f"lam_{self.robot_idx}_{j}_0"), 
+                                model.get(f"lam_{self.robot_idx}_{j}_1"), 
+                                model.get(f"lam_{self.robot_idx}_{j}_2"), 
+                                model.get(f"lam_{self.robot_idx}_{j}_3"))
             s_ij = model.get(f"s_{self.robot_idx}_{j}")
 
             constraint = A_i.T @ lam_ij + s_ij

@@ -26,9 +26,9 @@ control_frequency: 5
 braking_acceleration: 1.0
 
 polytopic:
-  d_min: 2.
-  length: 2.
-  width: 2.
+  d_min: 0.1
+  length: .1
+  width: .1
   com_to_back: 0.0
 
 contouring:
@@ -41,7 +41,7 @@ weights:
   lambda: .1
   s_dual: .1
   velocity: 0.5
-  reference_velocity: 1.
+  reference_velocity: 0.4
   lag: 0.2
   contour: 0.2
   terminal_angle: 5.0 #0.0

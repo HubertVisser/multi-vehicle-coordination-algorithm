@@ -91,8 +91,8 @@ def generate_solver(modules, model, settings=None):
     # ocp.cost.cost_type_e = "EXTERNAL"
 
     # Number of inputs and states
-    nu = model.nu * number_of_robots
-    nx = model.nx * number_of_robots
+    nu = model.nu 
+    nx = model.nx
     nlam = model.nlam
     ns = model.ns
 
@@ -105,9 +105,9 @@ def generate_solver(modules, model, settings=None):
     ocp.constraints.idxbx = np.array(range(nx))
 
     # Set control input bound
-    ocp.constraints.lbu = model.lower_bound_inputs.flatten()
-    ocp.constraints.ubu = model.upper_bound_inputs.flatten()
-    ocp.constraints.idxbu = np.array(range(nu))
+    ocp.constraints.lbu = model.lower_bound_u.flatten()
+    ocp.constraints.ubu = model.upper_bound_u.flatten()
+    ocp.constraints.idxbu = np.array(range(nu + ns + nlam))
 
     # Set path constraints bound 
     nc = ocp.model.con_h_expr.shape[0]
@@ -180,7 +180,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.qp_solver_iter_max = 50 # default = 50
+    ocp.solver_options.qp_solver_iter_max = 500 # default = 50
     ocp.solver_options.qp_solver_warm_start = 1  # cold start / 1 = warm, 2 = warm primal and dual
 
     # code generation options
@@ -217,6 +217,8 @@ def generate_solver(modules, model, settings=None):
     solver_settings["number_of_robots"] = settings["number_of_robots"]
     solver_settings["nx"] = nx
     solver_settings["nu"] = nu
+    solver_settings["nlam"] = nlam
+    solver_settings["ns"] = ns
     solver_settings["nd"] = nlam + ns
     solver_settings["nx_nu"] = model.get_nx_nu()
     solver_settings["nvar"] = model.get_nvar()

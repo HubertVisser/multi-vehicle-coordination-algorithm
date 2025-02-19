@@ -31,6 +31,7 @@ class MPCPlanner:
         self._braking_acceleration = self._settings["braking_acceleration"]
         self._number_of_robots = self._settings["number_of_robots"]
         self._dart_simulator = self._settings["dart_simulator"]
+        self._dmin = self._settings["polytopic"]["d_min"]
 
         self._projection_func = lambda trajectory: trajectory # No projection
 
@@ -60,6 +61,7 @@ class MPCPlanner:
         self._nx = self._solver_settings["nx"]
         self._nu = self._solver_settings["nu"]
         self._nd = self._solver_settings["nd"]
+        self._nlam = self._solver_settings["nlam"]
         self._nvar = self._solver_settings["nvar"]
         self._nx_one_robot = self._nx // self._number_of_robots
 
@@ -102,7 +104,7 @@ class MPCPlanner:
 
             # Xinit everywhere (could be infeasible)
             self._x_traj_init = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
-            self._u_traj_init = np.zeros((self._nu, self._N))
+            self._u_traj_init = np.zeros((self._nu + self._nd, self._N))
             self._solver.reset(reset_qp_solver_mem=1)
             self._solver.options_set('warm_start_first_qp', False)
 
@@ -154,7 +156,7 @@ class MPCPlanner:
                 output[f"steering_{n}"] = self._model.get(0, f"steering_{n}")
                 for j in range(1, self._number_of_robots+1):
                     if j != n:
-                        output[f"lam_{n}_{j}"] = self._model.get(1, f"lam_{n}_{j}")
+                        output[f"lam_{n}_{j}_0"] = self._model.get(1, f"lam_{n}_{j}_0")
                         output[f"s_{n}_{j}"] = self._model.get(1, f"s_{n}_{j}")
             
             
@@ -227,7 +229,9 @@ class MPCPlanner:
         acceleration_x = fx / mass_vehicle
         throttle_initial_guess = throttle_search[np.argmin(np.abs(acceleration_x))]
         self._mpc_u_plan[0, :] = throttle_initial_guess
-        if self._number_of_robots == 2 : self._mpc_u_plan[2, :] = throttle_initial_guess
+        if self._number_of_robots == 2 : 
+            self._mpc_u_plan[2, :] = throttle_initial_guess
+            self._mpc_u_plan[-self._nlam:, :] = self._dmin + 0.05
 
     def get_cost_acados(self):
         return self._solver.get_cost()

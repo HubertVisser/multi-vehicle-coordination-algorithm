@@ -148,40 +148,40 @@ class MultiRobotDynamicsModel():
         # Bounds for dual variables in constraint form
 
     def get_nx_nu(self):
-        return (self.nx + self.nu) * self.n
+        return self.nx + self.nu
     
     def get_nvar(self):
-        return (self.nx + self.nu) * self.n + self.nlam + self.ns
+        return self.nx + self.nu + self.nlam + self.ns
 
     def acados_symbolics_z(self):
-        x = cd.SX.sym("x", self.nx, self.n)               # [x, y, omega, vx, vy, w, s]
-        u = cd.SX.sym("u", self.nu, self.n)               # [throttle, steering]
+        x = cd.SX.sym("x", self.nx//self.n, self.n)               # [x, y, omega, vx, vy, w, s]
+        u = cd.SX.sym("u", self.nu//self.n, self.n)               # [throttle, steering]
         z = cd.vertcat(x, u)
         self.load_z(z)
         return z
     
     def acados_symbolics_d(self):
         s = cd.SX.sym("s", self.n, self.n)               
-        lam = cd.SX.sym("lam", self.n, self.n * 4)               
-        d = cd.horzcat(s, lam) 
+        lam = cd.SX.sym("lam", self.n *4, self.n)               
+        d = cd.vertcat(s, lam) 
         self.load_d(d)
         return d
 
     def get_acados_dynamics(self):
-        f_expl = self.continuous_model(self._z[ : self.nx, :], self._z[self.nx : self.nx + self.nu, :])    #(x, u)
+        f_expl = self.continuous_model(self._z[ : self.nx//self.n, :], self._z[self.nx//self.n : self.nx//self.n + self.nu//self.n, :])    #(x, u)
         return f_expl
 
     def get_x(self):
-        return self._z[ : self.nx, :]
+        return self._z[ : self.nx//self.n, :]
     
     def get_u(self):
-        return self._z[self.nx : self.nx + self.nu, :]
+        return self._z[self.nx//self.n : self.nx//self.n + self.nu//self.n, :]
     
     def get_lam(self):
-        return self._d[:, self.n:]
+        return self._d[self.n:, :]
     
     def get_s(self):
-        return self._d[:, : self.n]
+        return self._d[: self.n, :]
     
     def get_acados_x(self):
         return cd.reshape(self.get_x(),-1, 1)
@@ -190,7 +190,7 @@ class MultiRobotDynamicsModel():
         return cd.vertcat(cd.reshape(self.get_u(),-1, 1), self.get_acados_d())
     
     def get_acados_d(self):    
-        return  cd.reshape(self._d,-1, 1)
+        return  cd.vertcat(cd.reshape(self.get_s(),-1, 1), cd.reshape(self.get_lam(),-1, 1))
 
     def load_z(self, z):
         self._z = z
@@ -209,14 +209,14 @@ class MultiRobotDynamicsModel():
         for idx, state in np.ndenumerate(self.states):
             map[str(state)] = ["x", self.idx_states[idx].item() , self.get_bounds(state)[0], self.get_bounds(state)[1]]
 
-        for idx, input in np.ndenumerate(self.inputs):      
+        for idx, input in np.ndenumerate(self.inputs):    
             map[str(input)] = ["u", self.idx_inputs[idx].item(), self.get_bounds(input)[0], self.get_bounds(input)[1]]
         
-        for idx, s in np.ndenumerate(self.s):      
+        for idx, s in np.ndenumerate(self.s):
             map[str(s)] = ["s", self.idx_s[idx].item()]
         
-        for idx, lam in np.ndenumerate(self.lams):      
-            map[str(lam)] = ["lam", self.idx_lam[idx].item()]
+        for idx, lam in np.ndenumerate(self.lams):
+            map[str(lam)] = ["lam", self.idx_lam[idx].item(), self.get_bounds(lam)[0], self.get_bounds(lam)[1]]
 
         write_to_yaml(file_path, map)
 
@@ -232,7 +232,7 @@ class MultiRobotDynamicsModel():
             return self.get_u()[i]
         elif np.any(self.lams == input_state_or_dual):
             i = np.where(self.lams == input_state_or_dual)
-            return self.get_lam()[i[0][0],(i[1][0]*4) :(i[1][0]+1)*4].T     # This slice takes a copy from the original array
+            return self.get_lam()[i]     # This slice takes a copy from the original array
         elif np.any(self.s == input_state_or_dual):
             i = np.where(self.s == input_state_or_dual)
             if i[0][0] < i[1][0]:
@@ -241,24 +241,31 @@ class MultiRobotDynamicsModel():
         else:
             raise IOError(f"Requested a state or input `{input_state_or_dual}' that was neither a state nor an input for the selected model")
 
-    def get_bounds(self, state_or_input): 
+    def get_bounds(self, state_input_or_lam): 
         
-        if np.any(self.states == state_or_input):
-            i = np.where(self.states == state_or_input)
+        if np.any(self.states == state_input_or_lam):
+            i = np.where(self.states == state_input_or_lam)
             return (
                 self.lower_bound_states.item((i[0][0], i[1][0])),
                 self.upper_bound_states.item((i[0][0], i[1][0])),
                 (self.upper_bound_states.item((i[0][0], i[1][0])) - self.lower_bound_states.item((i[0][0], i[1][0]))),
             )
-        elif np.any(self.inputs == state_or_input):
-            i = np.where(self.inputs == state_or_input)
+        elif np.any(self.inputs == state_input_or_lam):
+            i = np.where(self.inputs == state_input_or_lam)
             return (
                 self.lower_bound_inputs.item((i[0][0],i[1][0])),
                 self.upper_bound_inputs.item((i[0][0],i[1][0])),
                 self.upper_bound_inputs.item((i[0][0],i[1][0])) - self.lower_bound_inputs.item((i[0][0],i[1][0])),
             )
+        elif np.any(self.lams == state_input_or_lam):
+            i = np.where(self.lams == state_input_or_lam)
+            return (
+                0,          # Lower bound
+                1000,       # Upper bound
+                1000 - 0,   # Range
+            )
         else:
-            raise IOError(f"Requested a state or input `{state_or_input}' that was neither a state nor an input for the selected model")
+            raise IOError(f"Requested a state or input `{state_input_or_lam}' that was neither a state nor an input for the selected model")
 
 
     def get_cost(self, input_state_or_dual):
@@ -388,8 +395,8 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
         self.n = n
 
         # For one robot:
-        self.nx = 7
-        self.nu = 2
+        self.nx = 7 * n
+        self.nu = 2 * n
         self.nlam = n*n*4 # lambda variables
         self.ns = n*n # s variables
 
@@ -401,9 +408,8 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
             sublist_states = np.array([f"{state}_{i+1}" for state in ["x", "y", "theta", "vx", "vy", "w", "s"]])
             sublist_inputs = np.array([f"{input}_{i+1}" for input in ["throttle", "steering"]])
             for j in range(n):
-                if i != j:
-                    self.lams[j*4:(j+1)*4,i] = f"lam_{i+1}_{j+1}"                
-                    self.s[j,i] = f"s_{i+1}_{j+1}"        
+                self.lams[i*4:(i+1)*4,j] = [f"lam_{i+1}_{j+1}_0", f"lam_{i+1}_{j+1}_1", f"lam_{i+1}_{j+1}_2", f"lam_{i+1}_{j+1}_3"]             
+                self.s[i,j] = f"s_{i+1}_{j+1}"        
 
             if len(self.states) == 0:
                 self.states = sublist_states.reshape(-1, 1)
@@ -425,25 +431,20 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
         self.lower_bound_inputs = np.tile([[0.0],[-1.0]], (1, n)) 
         self.upper_bound_inputs = np.tile([[1.0], [1.0]], (1, n))
 
-        lower_bound_duals = np.tile([0.0], (n-1, 1))  # lambda
-        upper_bound_duals = np.tile([1000.0], (n-1, 1))  # lambda
-        lower_bound_duals = np.concatenate((lower_bound_duals, np.tile([-1.0], (n-1, 1))))  # s dual
-        upper_bound_duals = np.concatenate((upper_bound_duals, np.tile([1.0], (n-1, 1))))  # s dual
-                        
-        self.lower_bound_duals = np.tile(lower_bound_duals, (1, n))
-        self.upper_bound_duals = np.tile(upper_bound_duals, (1, n))  
+        lower_bound_s = np.ones_like(self.s)* - 1000
+        upper_bound_s = np.ones_like(self.s)* 1000
+
+        lower_bound_lams = np.zeros_like(self.lams)  # lambda
+        upper_bound_lams = np.ones_like(self.lams)*1000  # lambda  
+
+        self.lower_bound_u = np.concatenate((self.lower_bound_inputs.T.reshape(-1,1), lower_bound_s.reshape(-1,1), lower_bound_lams.reshape(-1,1)), axis=0)
+        self.upper_bound_u = np.concatenate((self.upper_bound_inputs.T.reshape(-1,1), upper_bound_s.reshape(-1,1), upper_bound_lams.reshape(-1,1)), axis=0)
 
         # Define index array
-        self.idx_states = np.arange(0, self.states.size).reshape(self.n, self.nx)
-        self.idx_states = self.idx_states.T
-        self.idx_inputs = np.arange(self.states.size, self.states.size + self.inputs.size).reshape(self.n, self.nu)
-        self.idx_inputs = self.idx_inputs.T
-        mask_s = self.s != None
-        self.idx_s = np.empty((n, n), dtype=object)
-        self.idx_s[mask_s] = np.arange(22, 22+ np.sum(mask_s))
-        mask_lam = self.lams != None
-        self.idx_lam = np.empty((n*4, n), dtype=object)
-        self.idx_lam[mask_lam] = np.arange(22+np.sum(mask_s), 22+np.sum(mask_lam))
+        self.idx_states = np.arange(0, self.states.size).reshape(self.n, self.nx//self.n).T
+        self.idx_inputs = np.arange(self.states.size, self.states.size + self.inputs.size).reshape(self.n, self.nu//self.n).T
+        self.idx_s = np.arange(self.nx + self.nu, self.nx + self.nu + self.ns).reshape(self.n, self.ns//self.n).T
+        self.idx_lam = np.arange(self.get_nvar() - self.nlam, self.get_nvar()).reshape(self.n, self.nlam//self.n).T
 
     def model_parameters(self):
         lr_reference = 0.115  #0.11650    # (measureing it wit a tape measure it's 0.1150) reference point location taken by the vicon system measured from the rear wheel
@@ -565,16 +566,8 @@ if __name__ == "__main__":
     print("xdot", model.get_acados_dynamics().shape)
     
     
-    print("s_1_2 :", model.get("s_1_2"))
-    print("s_2_1 :", model.get("s_2_1"))
-    lam12 = model.get("lam_1_2")
-    print(lam12.shape)
-    result = lam12.T @ lam12
-    print(result,"shape:",result.shape)
-    lam21 = model.get("lam_2_1")
-    print(lam21.shape)
-    result1 = lam21.T @ lam21
-    print(result1,"shape:",result1.shape)
+    print(model.get_acados_x())
+    print(model.get_acados_u())
     # print("lam_1_2", slice_1_2[0], slice_1_2[1], slice_1_2[2], slice_1_2[3])
     # print("lower_bound_u_acados", model.lower_bound_inputs)
     # print("upper_bound_inputs flatten", model.upper_bound_u.flatten())

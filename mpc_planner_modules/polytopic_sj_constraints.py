@@ -62,7 +62,10 @@ class PolytopicSjdualConstraints:
                 continue   
             
             theta_j = model.get(f"theta_{j}")            
-            lam_ji = model.get(f"lam_{j}_{self.robot_idx}")
+            lam_ji = cd.vertcat(model.get(f"lam_{j}_{self.robot_idx}_0"), 
+                                model.get(f"lam_{j}_{self.robot_idx}_1"), 
+                                model.get(f"lam_{j}_{self.robot_idx}_2"), 
+                                model.get(f"lam_{j}_{self.robot_idx}_3"))
             s_ji = model.get(f"s_{j}_{self.robot_idx}")
 
             rot_mat_j = rotation_matrix(theta_j)

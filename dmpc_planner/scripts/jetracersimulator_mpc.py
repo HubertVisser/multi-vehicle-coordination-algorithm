@@ -163,8 +163,8 @@ class ROSMPCPlanner:
                     getattr(self, f'_states_save_{n}').append(deepcopy(self._state[(n-1)*self._nx_one_robot : n*self._nx_one_robot ]))
                 
                 output_keys = [f"throttle_{n}", f"steering_{n}"]
-                output_keys += [f"lam_{n}_{j}" for j in range(1, self._number_of_robots+1) if j != n]
-                output_keys += [f"s_dual_{n}_{j}" for j in range(1, self._number_of_robots+1) if j != n]
+                output_keys += [f"lam_{n}_{j}_0" for j in range(1, self._number_of_robots+1) if j != n]
+                output_keys += [f"s_{n}_{j}" for j in range(1, self._number_of_robots+1) if j != n]
                 output_u = [output[key] for key in output_keys]
                 getattr(self, f'_outputs_save_{n}').append(output_u)
             
@@ -451,7 +451,7 @@ class ROSMPCPlanner:
             # Plot states
             plt.subplot(self._number_of_robots, 1, n)
             num_states = len(state_labels)
-            plt.plot(time, self._trajectory[self._nu + (n-1) * self._nx_one_robot : self._nu + n * self._nx_one_robot, :].T)
+            plt.plot(time, self._trajectory[n * self._nx_one_robot : n +1 * self._nx_one_robot, :].T)
             plt.legend(state_labels)
 
             plt.xlabel('Time Steps')

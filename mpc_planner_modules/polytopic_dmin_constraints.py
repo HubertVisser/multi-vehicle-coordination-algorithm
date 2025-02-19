@@ -90,8 +90,15 @@ class PolytopicDminConstraints:
             pos_j = cd.vertcat(pos_j_x, pos_j_y)
 
             theta_j = model.get(f"theta_{j}")
-            lam_ij = model.get(f"lam_{self.robot_idx}_{j}")
-            lam_ji = model.get(f"lam_{j}_{self.robot_idx}")
+            lam_ij = cd.vertcat(model.get(f"lam_{self.robot_idx}_{j}_0"), 
+                                model.get(f"lam_{self.robot_idx}_{j}_1"), 
+                                model.get(f"lam_{self.robot_idx}_{j}_2"), 
+                                model.get(f"lam_{self.robot_idx}_{j}_3"))
+            lam_ji = cd.vertcat(model.get(f"lam_{j}_{self.robot_idx}_0"), 
+                                model.get(f"lam_{j}_{self.robot_idx}_1"), 
+                                model.get(f"lam_{j}_{self.robot_idx}_2"), 
+                                model.get(f"lam_{j}_{self.robot_idx}_3"))
+            assert lam_ij.shape == (4,1)
 
             rot_mat_j = rotation_matrix(theta_j)
             A_j = cd.vertcat(rot_mat_j.T, -rot_mat_j.T)
