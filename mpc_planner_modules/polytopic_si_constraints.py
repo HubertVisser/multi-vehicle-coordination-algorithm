@@ -56,14 +56,13 @@ class PolytopicSidualConstraints:
     def get_constraints(self, model, params, settings, stage_idx):
         constraints = []
 
-        # States
+        # Constraints form ego robot (i) to all neighbouring robots (j)
         theta = model.get(f"theta_{self.robot_idx}")
 
         rot_mat_i = rotation_matrix(theta)
         A_i = cd.vertcat(rot_mat_i.T, -rot_mat_i.T)
         assert A_i.shape == (4, 2)
 
-        # Constraints for all neighbouring robots (j)
         for j in range(1, self.n_robots+1): 
             if j == self.robot_idx:
                 continue   

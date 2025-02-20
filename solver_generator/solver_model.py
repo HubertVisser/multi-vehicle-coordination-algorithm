@@ -260,9 +260,9 @@ class MultiRobotDynamicsModel():
         elif np.any(self.lams == state_input_or_lam):
             i = np.where(self.lams == state_input_or_lam)
             return (
-                0,          # Lower bound
-                1000,       # Upper bound
-                1000 - 0,   # Range
+                self.lower_bound_lams.item((i[0][0],i[1][0])),
+                self.upper_bound_lams.item((i[0][0],i[1][0])),
+                self.upper_bound_lams.item((i[0][0],i[1][0])) - self.lower_bound_lams.item((i[0][0],i[1][0])),  # Range
             )
         else:
             raise IOError(f"Requested a state or input `{state_input_or_lam}' that was neither a state nor an input for the selected model")
@@ -420,9 +420,6 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
                 self.inputs = sublist_inputs.reshape(-1, 1)
             else:
                 self.inputs = np.hstack((self.inputs, sublist_inputs.reshape(-1, 1)))
-
-        
-
         
         # Bounds on states and inputs
         self.lower_bound_states = np.tile(np.array([[-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0]]).T, (1, n))
@@ -434,11 +431,15 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
         lower_bound_s = np.ones_like(self.s)* - 1000
         upper_bound_s = np.ones_like(self.s)* 1000
 
-        lower_bound_lams = np.zeros_like(self.lams)  # lambda
-        upper_bound_lams = np.ones_like(self.lams)*1000  # lambda  
+        self.lower_bound_lams = np.zeros_like(self.lams)  # lambda
+        self.upper_bound_lams = np.ones_like(self.lams)*1000  # lambda  
 
-        self.lower_bound_u = np.concatenate((self.lower_bound_inputs.T.reshape(-1,1), lower_bound_s.reshape(-1,1), lower_bound_lams.reshape(-1,1)), axis=0)
-        self.upper_bound_u = np.concatenate((self.upper_bound_inputs.T.reshape(-1,1), upper_bound_s.reshape(-1,1), upper_bound_lams.reshape(-1,1)), axis=0)
+        # Create a mask for the positions where i and j are equal
+        mask = np.eye(n, dtype=bool)
+        self.upper_bound_lams[mask.repeat(4, axis=0)] = 0 # Set elements where i and j are equal to 0
+
+        self.lower_bound_u = np.concatenate((self.lower_bound_inputs.T.reshape(-1,1), lower_bound_s.reshape(-1,1), self.lower_bound_lams.T.reshape(-1,1)), axis=0)
+        self.upper_bound_u = np.concatenate((self.upper_bound_inputs.T.reshape(-1,1), upper_bound_s.reshape(-1,1), self.upper_bound_lams.T.reshape(-1,1)), axis=0)
 
         # Define index array
         self.idx_states = np.arange(0, self.states.size).reshape(self.n, self.nx//self.n).T
@@ -555,7 +556,7 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
 
 if __name__ == "__main__":
 
-    model = BicycleModel2ndOrderMultiRobot(3)
+    model = BicycleModel2ndOrderMultiRobot(2)
     model.acados_symbolics_z()
     model.acados_symbolics_d()
     model.get_acados_dynamics()

@@ -96,6 +96,13 @@ class ROSMPCPlanner:
         self._states_save_2 = []
         self._outputs_save_1 = []
         self._outputs_save_2 = []
+        self._s_save_1 = []
+        self._s_save_2 = []
+        self._lams_save_1 = []
+        self._lams_save_2 = []
+
+        self._neighbour_pos_1 = np.array([])
+        self._neighbour_pos_2 = np.array([])
 
         self._enable_output = False
         self._mpc_feasible = True
@@ -162,11 +169,11 @@ class ROSMPCPlanner:
                     self._state[(n-1) * self._nx_one_robot : self._nx_one_robot * (n)] = [output[key] for key in output_keys]
                     getattr(self, f'_states_save_{n}').append(deepcopy(self._state[(n-1)*self._nx_one_robot : n*self._nx_one_robot ]))
                 
-                output_keys = [f"throttle_{n}", f"steering_{n}"]
-                output_keys += [f"lam_{n}_{j}_0" for j in range(1, self._number_of_robots+1) if j != n]
-                output_keys += [f"s_{n}_{j}" for j in range(1, self._number_of_robots+1) if j != n]
-                output_u = [output[key] for key in output_keys]
-                getattr(self, f'_outputs_save_{n}').append(output_u)
+                getattr(self, f'_outputs_save_{n}').append([output[f"throttle_{n}"], output[f"steering_{n}"]])
+                s_keys = [f"s_{n}_{j}" for j in range(1, self._number_of_robots+1) if j != n]
+                getattr(self, f'_s_save_{n}').append([output[key] for key in s_keys])
+                lams_keys = [f"lam_{n}_{j}_{k}" for j in range(1, self._number_of_robots+1) for k in range(3) if j != n]
+                getattr(self, f'_lams_save_{n}').append(output[key] for key in lams_keys)
             
             # self.plot_pred_traj() # slows down the simulation
 
@@ -259,7 +266,33 @@ class ROSMPCPlanner:
                 pose.position.x = float(self._state[0 + (n-1) * self._nx_one_robot])
                 pose.position.y = float(self._state[1 + (n-1) * self._nx_one_robot])
                 robot_pos.add_marker(pose)
+            if self._s_save_1:
+                s = np.array(getattr(self, f'_s_save_{n}')[-1][0])
+                line = self._visuals.get_line()
+                line.set_scale(0.05)
+                line.set_color(n*7, alpha=1.0)
 
+                ego_pos = np.array([self._state[0 + (n-1)*self._nx_one_robot], self._state[1 + (n-1)*self._nx_one_robot]])
+                for j in range(1, self._number_of_robots+1):
+                    if j == n:
+                        continue
+                #     #setattr(self, f'neighbour_pos_{j}', np.array([]))
+                    neighbour_pos = np.array([self._state[0 + (j-1)*self._nx_one_robot], self._state[1 + (j-1)*self._nx_one_robot]])
+                    midpoint = (ego_pos + neighbour_pos) / 2
+            
+                    # Calculate the direction vector of the line (perpendicular to the normal vector)
+                    direction_vector = np.array([-s[1], s[0]]) 
+                    assert np.dot(direction_vector, s) == 0
+                    line_length = 100
+                    line_start = midpoint - (line_length / 2) * direction_vector
+                    line_end = midpoint + (line_length / 2) * direction_vector
+                    pose_a = Pose()
+                    pose_a.position.x = float(line_start[0])
+                    pose_a.position.y = float(line_start[1])
+                    pose_b = Pose()
+                    pose_b.position.x = float(line_end[0])
+                    pose_b.position.y = float(line_end[1])
+                    line.add_line_from_poses(pose_a, pose_b)
 
             if self._debug_visuals:
                 if splineFitter._closest_s is not None:
@@ -276,7 +309,7 @@ class ROSMPCPlanner:
 
             if self._trajectory is not None and self._mpc_feasible:
                 cylinder = self._visuals.get_cylinder()
-                cylinder.set_color(1, alpha=0.25)
+                cylinder.set_color(n, alpha=0.25)
                 cylinder.set_scale(0.5, 0.5, 0.05)
 
                 pose = Pose()
@@ -410,7 +443,7 @@ class ROSMPCPlanner:
     
     def plot_states(self):
         state_labels = ["x", "y", "theta", "vx", "vy", "omega", "s"]
-        output_labels = ["throttle", "steering", "lam", "s_dual"]
+        output_labels = ["throttle", "steering"]
         for n in range(1, self._number_of_robots + 1):
             plt.figure(figsize=(12, 6))
             

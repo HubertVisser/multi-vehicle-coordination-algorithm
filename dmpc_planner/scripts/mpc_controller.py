@@ -86,8 +86,8 @@ class MPCPlanner:
             self._mpc_u_plan = np.zeros((self._nu + self._nd, self._N))
             self.set_initial_u_plan()
 
-        self._u_traj_init = self._mpc_u_plan
         self._x_traj_init =  self._mpc_x_plan
+        self._u_traj_init = self._mpc_u_plan
 
         if self._mpc_feasible:
             pass
@@ -157,7 +157,11 @@ class MPCPlanner:
                 for j in range(1, self._number_of_robots+1):
                     if j != n:
                         output[f"lam_{n}_{j}_0"] = self._model.get(1, f"lam_{n}_{j}_0")
-                        output[f"s_{n}_{j}"] = self._model.get(1, f"s_{n}_{j}")
+                        output[f"lam_{n}_{j}_1"] = self._model.get(1, f"lam_{n}_{j}_1")
+                        output[f"lam_{n}_{j}_2"] = self._model.get(1, f"lam_{n}_{j}_2")
+                        output[f"lam_{n}_{j}_3"] = self._model.get(1, f"lam_{n}_{j}_3")
+                        output[f"s_{n}_{j}"] = [self._model.get(1, f"s_{j}_{n}"), self._model.get(1, f"s_{n}_{j}")] if j > n else \
+                            [self._model.get(1, f"s_{n}_{j}"), self._model.get(1, f"s_{j}_{n}")]  # dual variable
             
             
 
@@ -231,7 +235,7 @@ class MPCPlanner:
         self._mpc_u_plan[0, :] = throttle_initial_guess
         if self._number_of_robots == 2 : 
             self._mpc_u_plan[2, :] = throttle_initial_guess
-            self._mpc_u_plan[-self._nlam:, :] = self._dmin + 0.05
+            self._mpc_u_plan[-self._nlam+4:-self._nlam+12, :] = self._dmin
 
     def get_cost_acados(self):
         return self._solver.get_cost()

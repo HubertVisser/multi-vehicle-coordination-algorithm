@@ -6,12 +6,12 @@ track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
 
 number_of_robots: 2
 robot_1:
-  start_x: -3.0
-  start_y: 0.0
+  start_x: 0.0
+  start_y: 3.0
   start_theta: 0.0  # in radians
 robot_2:
-  start_x: 1.0
-  start_y: -3.0
+  start_x: 5.0
+  start_y: 0.0
   start_theta: 0.5  # radians
 
 verbose: false
@@ -22,13 +22,13 @@ solver_settings:
   iterations: 1 #2 # 1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
-control_frequency: 5
+control_frequency: 10.0
 braking_acceleration: 1.0
 
 polytopic:
-  d_min: 0.1
-  length: .1
-  width: .1
+  d_min: 0.2
+  length: .5
+  width: .5
   com_to_back: 0.0
 
 contouring:
@@ -38,12 +38,12 @@ contouring:
 weights:
   throttle: .1
   steering: .1
-  lambda: .1
-  s_dual: .1
-  velocity: 0.5
+  lambda: .01
+  s_dual: .01
+  velocity: 1.0
   reference_velocity: 0.4
   lag: 0.2
-  contour: 0.2
+  contour: 0.4
   terminal_angle: 5.0 #0.0
   terminal_contour: 1.0 # 0.0
   terminal_lag: 1.0 # 0.0
