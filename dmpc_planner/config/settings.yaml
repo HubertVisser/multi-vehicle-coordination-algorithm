@@ -42,7 +42,7 @@ weights:
   s_dual: .01
   velocity: 1.0
   reference_velocity: 0.4
-  lag: 0.2
+  lag: 0.4
   contour: 0.4
   terminal_angle: 5.0 #0.0
   terminal_contour: 1.0 # 0.0

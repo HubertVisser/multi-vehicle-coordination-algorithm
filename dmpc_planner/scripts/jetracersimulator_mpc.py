@@ -97,6 +97,8 @@ class ROSMPCPlanner:
         self._outputs_save_1 = []
         self._outputs_save_2 = []
         self._save_output = []
+        self._save_s = np.array([])
+        self._save_lam = []
 
 
         self._neighbour_pos_1 = np.array([])
@@ -159,17 +161,22 @@ class ROSMPCPlanner:
             time = timer.stop_and_print()
 
         if self._mpc_feasible:
-
-            for n in range(1, self._number_of_robots + 1):
+            lam = np.array([])
+            for i in range(1, self._number_of_robots + 1):
 
                 if self._dart_simulator == False:
-                    output_keys = [f"x_{n}", f"y_{n}", f"theta_{n}", f"vx_{n}", f"vy_{n}", f"w_{n}", f"s_{n}"]
-                    self._state[(n-1) * self._nx_one_robot : self._nx_one_robot * (n)] = [output[key] for key in output_keys]
-                    getattr(self, f'_states_save_{n}').append(deepcopy(self._state[(n-1)*self._nx_one_robot : n*self._nx_one_robot ]))
+                    output_keys = [f"x_{i}", f"y_{i}", f"theta_{i}", f"vx_{i}", f"vy_{i}", f"w_{i}", f"s_{i}"]
+                    self._state[(i-1) * self._nx_one_robot : self._nx_one_robot * (i)] = [output[key] for key in output_keys]
+                    getattr(self, f'_states_save_{i}').append(deepcopy(self._state[(i-1)*self._nx_one_robot : i*self._nx_one_robot ]))
                 
-                getattr(self, f'_outputs_save_{n}').append([output[f"throttle_{n}"], output[f"steering_{n}"]])
-
-                self._save_output.append(output)
+                getattr(self, f'_outputs_save_{i}').append([output[f"throttle_{i}"], output[f"steering_{i}"]])
+                for j in range(1, self._number_of_robots+1):
+                    if i != j:
+                        lam.append([output[f"lam_{i}_{j}_0"], output[f"lam_{i}_{j}_1"], output[f"lam_{i}_{j}_2"], output[f"lam_{i}_{j}_3"]])
+                        if i < j:
+                            self._save_s.vstack(np.array(output[f"s_{i}_{j}"], output[f"s_{j}_{i}"]))
+                
+            self._save_lam.append(lam)
             
             # self.plot_pred_traj() # slows down the simulation
 
@@ -213,7 +220,6 @@ class ROSMPCPlanner:
                         self._params.set(k, f"spline_y{i}_d_{n}", splines[i]["d_y"])
 
                         self._params.set(k, f"spline{i}_start_{n}", splines[i]["s"])
-                        # print(f"{splines[i]['a_x']:.1f}, {splines[i]['b_x']:.1f}, {splines[i]['c_x']:.1f}, {splines[i]['d_x']:.1f}, {splines[i]['a_y']:.1f}, {splines[i]['b_y']:.1f}, {splines[i]['c_y']:.1f}, {splines[i]['d_y']:.1f}, {splines[i]['s']:.1f}")
 
     def publish_throttle(self, output, exit_flag):
         for n in range(1, self._number_of_robots + 1):
@@ -262,33 +268,32 @@ class ROSMPCPlanner:
                 pose.position.x = float(self._state[0 + (n-1) * self._nx_one_robot])
                 pose.position.y = float(self._state[1 + (n-1) * self._nx_one_robot])
                 robot_pos.add_marker(pose)
-            if self._save_output:
-                output = self._save_output[-1]
+            if self._save_s:
                 line = self._visuals.get_line()
                 line.set_scale(0.05)
                 line.set_color(n*7, alpha=1.0)
                 ego_pos = np.array([self._state[0 + (n-1)*self._nx_one_robot], self._state[1 + (n-1)*self._nx_one_robot]])
 
-            for j in range(n, self._number_of_robots+1):
-                if j != n:
-                    s = [output[f"s_{n}_{j}"], output[f"s_{j}_{n}"]]
-                    #setattr(self, f'neighbour_pos_{j}', np.array([]))
-                    neighbour_pos = np.array([self._state[0 + (j-1)*self._nx_one_robot], self._state[1 + (j-1)*self._nx_one_robot]])
-                    midpoint = (ego_pos + neighbour_pos) / 2
-            
-                    # Calculate the direction vector of the line (perpendicular to the normal vector)
-                    direction_vector = np.array([s[1], -s[0]]) 
-                    assert np.dot(direction_vector, s) == 0
-                    line_length = 100
-                    line_start = midpoint - (line_length / 2) * direction_vector
-                    line_end = midpoint + (line_length / 2) * direction_vector
-                    pose_a = Pose()
-                    pose_a.position.x = float(line_start[0])
-                    pose_a.position.y = float(line_start[1])
-                    pose_b = Pose()
-                    pose_b.position.x = float(line_end[0])
-                    pose_b.position.y = float(line_end[1])
-                    line.add_line_from_poses(pose_a, pose_b)
+                for j in range(n, self._number_of_robots+1):
+                    if j != n:
+                        s = self._save_s[-1]
+                        #setattr(self, f'neighbour_pos_{j}', np.array([]))
+                        neighbour_pos = np.array([self._state[0 + (j-1)*self._nx_one_robot], self._state[1 + (j-1)*self._nx_one_robot]])
+                        midpoint = (ego_pos + neighbour_pos) / 2
+                
+                        # Calculate the direction vector of the line (perpendicular to the normal vector)
+                        direction_vector = np.array([-s[1], s[0]]) 
+                        assert np.dot(direction_vector, s) == 0
+                        line_length = 100
+                        line_start = midpoint - (line_length / 2) * direction_vector
+                        line_end = midpoint + (line_length / 2) * direction_vector
+                        pose_a = Pose()
+                        pose_a.position.x = float(line_start[0])
+                        pose_a.position.y = float(line_start[1])
+                        pose_b = Pose()
+                        pose_b.position.x = float(line_end[0])
+                        pose_b.position.y = float(line_end[1])
+                        line.add_line_from_poses(pose_a, pose_b)
 
             if self._debug_visuals:
                 if splineFitter._closest_s is not None:
@@ -473,33 +478,35 @@ class ROSMPCPlanner:
     def plot_duals(self):
         plt.figure(figsize=(12, 6))
         
-        for output in len(self._save_output):
-            # Plot s
-            plt.subplot(1, 2, 1)
 
-            for n in range(1, self._number_of_robots + 1):
-                for j in range(n, self._number_of_robots + 1):
-                    plt.plot([output[f"s_{j}_{n}"], output[f"s_{n}_{j}"]], label=[f"s_{j}_{n}_0", "s_{j}_{n}_1"])
-            plt.xlabel('Time Step')
-            plt.ylabel('s Values')
-            plt.legend()
-            plt.grid(True)
-            plt.title('s')
+        # Plot s
+        plt.subplot(1, 2, 1)
 
-            # Plot lams
-            plt.subplot(1, 2, 2)
-            for n in range(1, self._number_of_robots + 1):
-                for j in range(n, self._number_of_robots + 1):
-                    for k in range(4):
-                        plt.plot(output[f"lam_{j}_{n}_{k}"], label=[f"lam_{j}_{n}_{k}"])
-            plt.xlabel('Time Step')
-            plt.ylabel('Lam Values')
-            plt.legend()
-            plt.grid(True)
-            plt.title('lam')
+      
+        for idx, s in enumerate(self._save_s):
+            plt.plot([idx, idx], [s[0], s[1]], label=f's_{idx}')
+        plt.xlabel('Time Step')
+        plt.ylabel('s Values')
+        plt.legend()
+        plt.grid(True)
+        plt.title('s')
+
+        # Plot lams
+        plt.subplot(1, 2, 2)
+        # for n in range(1, self._number_of_robots + 1):
+        #     for j in range(1, self._number_of_robots + 1):
+        #         if j != n:
+        #             for k in range(4):
+        for lam in self._save_lam:
+            plt.plot(lam)
+        plt.xlabel('Time Step')
+        plt.ylabel('Lam Values')
+        plt.legend()
+        plt.grid(True)
+        plt.title('lam')
 
         plt.tight_layout()
-        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f'lams_outputs_plot.png'))  # Save the plot to a file
+        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f'duals_plot.png'))  # Save the plot to a file
         plt.close()
 
     def plot_pred_traj(self):
@@ -524,6 +531,25 @@ class ROSMPCPlanner:
         plt.tight_layout()
         plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'prediction_plot.png'))  # Save the plot to a file
         plt.close() 
+    
+    def plot_min_distance(self):
+        
+        min_distances = []
+        for state1, state2 in zip(self._states_save_1, self._states_save_2):
+            dist = np.linalg.norm(np.array([state1[0], state1[1]]) - np.array([state2[0], state2[1]]))
+            min_distances.append(dist)
+
+        plt.plot(min_distances, label='Min Distance')
+            
+
+        plt.xlabel('Time Steps')
+        plt.ylabel('Minimum Distance')
+        plt.legend()
+        plt.grid(True)
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'min_dist_plot.png'))  # Save the plot to a file
+        plt.close() 
 
 
 if __name__ == "__main__":
@@ -537,5 +563,7 @@ if __name__ == "__main__":
         
     # mpc.plot_outputs()
     mpc.plot_states()
-    mpc.plot_pred_traj()
+    mpc.plot_duals()
+    mpc.plot_min_distance()
+    # mpc.plot_pred_traj()
     mpc.print_stats()

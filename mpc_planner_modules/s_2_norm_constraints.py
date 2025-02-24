@@ -16,7 +16,7 @@ from control_modules import ConstraintModule
 
 class s2normConstraintModule(ConstraintModule):
 
-    def __init__(self, settings, robot_idx):
+    def __init__(self, settings):
         super().__init__()
 
         self.module_name = f"s_2norm"  # c++ name of the module
@@ -40,13 +40,13 @@ class s2normConstraintConstraints:
     def get_lower_bound(self):
         lower_bound = []
         for index in range(0, self.n_constraints):
-            lower_bound.append(0)
+            lower_bound.append(-100)
         return lower_bound
 
     def get_upper_bound(self):
         upper_bound = []
-        for index in range(1, self.n_constraints):
-            upper_bound.append(0)
+        for index in range(0, self.n_constraints):
+            upper_bound.append(1)
         return upper_bound
 
     def get_constraints(self, model, params, settings, stage_idx):
@@ -55,9 +55,8 @@ class s2normConstraintConstraints:
         for i in range(1, self.n_robots+1):
             for j in range(i, self.n_robots+1): 
                 if j != i:
-                    s_ij = model.get(f"s_{self.robot_idx}_{j}")
-
-                    constraint = cd.norm_2(s_ij)
-                    constraints.append(constraint)
+                    s_ij = model.get(f"s_{i}_{j}")
+        constraint = cd.norm_2(s_ij)
+        constraints.append(constraint)
 
         return constraints

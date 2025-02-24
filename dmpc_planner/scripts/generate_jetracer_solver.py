@@ -18,6 +18,7 @@ from path_reference_velocity import PathReferenceVelocityModule
 from polytopic_dmin_constraints import PolytopicDminConstraintModule
 from polytopic_si_constraints import PolytopicSidualConstraintModule
 from polytopic_sj_constraints import PolytopicSjdualConstraintModule
+from s_2_norm_constraints import s2normConstraintModule
 
 # Import solver models that you want to use
 from solver_model import BicycleModel2ndOrderMultiRobot
@@ -50,7 +51,8 @@ def configuration_basic(settings):
             modules.add_module(PolytopicSidualConstraintModule(settings, n))
             modules.add_module(PolytopicSjdualConstraintModule(settings, n))
             modules.add_module(PolytopicDminConstraintModule(settings, n))
-        
+    
+    # modules.add_module(s2normConstraintModule(settings))
         
     return model, modules
 
