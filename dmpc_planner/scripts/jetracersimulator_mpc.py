@@ -96,10 +96,8 @@ class ROSMPCPlanner:
         self._states_save_2 = []
         self._outputs_save_1 = []
         self._outputs_save_2 = []
-        self._s_save_1 = []
-        self._s_save_2 = []
-        self._lams_save_1 = []
-        self._lams_save_2 = []
+        self._save_output = []
+
 
         self._neighbour_pos_1 = np.array([])
         self._neighbour_pos_2 = np.array([])
@@ -170,10 +168,8 @@ class ROSMPCPlanner:
                     getattr(self, f'_states_save_{n}').append(deepcopy(self._state[(n-1)*self._nx_one_robot : n*self._nx_one_robot ]))
                 
                 getattr(self, f'_outputs_save_{n}').append([output[f"throttle_{n}"], output[f"steering_{n}"]])
-                s_keys = [f"s_{n}_{j}" for j in range(1, self._number_of_robots+1) if j != n]
-                getattr(self, f'_s_save_{n}').append([output[key] for key in s_keys])
-                lams_keys = [f"lam_{n}_{j}_{k}" for j in range(1, self._number_of_robots+1) for k in range(3) if j != n]
-                getattr(self, f'_lams_save_{n}').append(output[key] for key in lams_keys)
+
+                self._save_output.append(output)
             
             # self.plot_pred_traj() # slows down the simulation
 
@@ -266,22 +262,22 @@ class ROSMPCPlanner:
                 pose.position.x = float(self._state[0 + (n-1) * self._nx_one_robot])
                 pose.position.y = float(self._state[1 + (n-1) * self._nx_one_robot])
                 robot_pos.add_marker(pose)
-            if self._s_save_1:
-                s = np.array(getattr(self, f'_s_save_{n}')[-1][0])
+            if self._save_output:
+                output = self._save_output[-1]
                 line = self._visuals.get_line()
                 line.set_scale(0.05)
                 line.set_color(n*7, alpha=1.0)
-
                 ego_pos = np.array([self._state[0 + (n-1)*self._nx_one_robot], self._state[1 + (n-1)*self._nx_one_robot]])
-                for j in range(1, self._number_of_robots+1):
-                    if j == n:
-                        continue
-                #     #setattr(self, f'neighbour_pos_{j}', np.array([]))
+
+            for j in range(n, self._number_of_robots+1):
+                if j != n:
+                    s = [output[f"s_{n}_{j}"], output[f"s_{j}_{n}"]]
+                    #setattr(self, f'neighbour_pos_{j}', np.array([]))
                     neighbour_pos = np.array([self._state[0 + (j-1)*self._nx_one_robot], self._state[1 + (j-1)*self._nx_one_robot]])
                     midpoint = (ego_pos + neighbour_pos) / 2
             
                     # Calculate the direction vector of the line (perpendicular to the normal vector)
-                    direction_vector = np.array([-s[1], s[0]]) 
+                    direction_vector = np.array([s[1], -s[0]]) 
                     assert np.dot(direction_vector, s) == 0
                     line_length = 100
                     line_start = midpoint - (line_length / 2) * direction_vector
@@ -473,6 +469,38 @@ class ROSMPCPlanner:
             plt.tight_layout()
             plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f'states_outputs_plot_{n}.png'))  # Save the plot to a file
             plt.close()
+    
+    def plot_duals(self):
+        plt.figure(figsize=(12, 6))
+        
+        for output in len(self._save_output):
+            # Plot s
+            plt.subplot(1, 2, 1)
+
+            for n in range(1, self._number_of_robots + 1):
+                for j in range(n, self._number_of_robots + 1):
+                    plt.plot([output[f"s_{j}_{n}"], output[f"s_{n}_{j}"]], label=[f"s_{j}_{n}_0", "s_{j}_{n}_1"])
+            plt.xlabel('Time Step')
+            plt.ylabel('s Values')
+            plt.legend()
+            plt.grid(True)
+            plt.title('s')
+
+            # Plot lams
+            plt.subplot(1, 2, 2)
+            for n in range(1, self._number_of_robots + 1):
+                for j in range(n, self._number_of_robots + 1):
+                    for k in range(4):
+                        plt.plot(output[f"lam_{j}_{n}_{k}"], label=[f"lam_{j}_{n}_{k}"])
+            plt.xlabel('Time Step')
+            plt.ylabel('Lam Values')
+            plt.legend()
+            plt.grid(True)
+            plt.title('lam')
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f'lams_outputs_plot.png'))  # Save the plot to a file
+        plt.close()
 
     def plot_pred_traj(self):
         state_labels = ["x", "y", "theta", "vx", "vy", "omega", "s", "lam", "s_dual"]

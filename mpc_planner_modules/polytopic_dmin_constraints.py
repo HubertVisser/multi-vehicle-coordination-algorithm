@@ -35,7 +35,7 @@ class PolytopicDminConstraints:
         self.length = length
         self.width = width
         self.robot_idx = robot_idx
-        self.n_constraints = n_robots - 1
+        self.n_constraints = (n_robots - self.robot_idx)
         self.nh = self.n_constraints
         self.use_slack = use_slack
 
@@ -63,15 +63,6 @@ class PolytopicDminConstraints:
         pos = cd.vertcat(pos_x, pos_y)   # Center of gravity
         theta = model.get(f"theta_{self.robot_idx}")
 
-
-        # try:
-        #     if self.use_slack:
-        #         slack = model.get("slack")
-        #     else:
-        #         slack = 0.0
-        # except:
-        #     slack = 0.0
-
         rot_mat_i = rotation_matrix(theta)
         A_i = cd.vertcat(rot_mat_i.T, -rot_mat_i.T)
         assert A_i.shape == (4, 2)
@@ -81,7 +72,7 @@ class PolytopicDminConstraints:
         assert b_i.shape == (4,1)
 
         # Constraints for all neighbouring robots (j)
-        for j in range(1, self.n_robots+1): 
+        for j in range(self.robot_idx, self.n_robots+1): 
             if j == self.robot_idx:
                 continue   
             

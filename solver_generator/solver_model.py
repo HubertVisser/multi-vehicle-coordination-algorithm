@@ -235,7 +235,7 @@ class MultiRobotDynamicsModel():
             return self.get_lam()[i]     # This slice takes a copy from the original array
         elif np.any(self.s == input_state_or_dual):
             i = np.where(self.s == input_state_or_dual)
-            if i[0][0] < i[1][0]:
+            if i[0][0] > i[1][0]:
                 return cd.vertcat(self.get_s()[i[1][0], i[0][0]], self.get_s()[i])
             return cd.vertcat(self.get_s()[i], self.get_s()[i[1][0], i[0][0]])
         else:

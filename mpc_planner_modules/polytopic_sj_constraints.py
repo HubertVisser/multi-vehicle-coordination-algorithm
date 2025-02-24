@@ -34,7 +34,7 @@ class PolytopicSjdualConstraints:
         self.length = length
         self.width = width
         self.robot_idx = robot_idx
-        self.n_constraints = (n_robots - 1) * 2
+        self.n_constraints = (n_robots - self.robot_idx) * 2
         self.nh = self.n_constraints
         self.use_slack = use_slack
 
@@ -57,24 +57,23 @@ class PolytopicSjdualConstraints:
         constraints = []
 
         # Constraints from all neighbouring robots (j) to the ego robot (i)
-        for j in range(1, self.n_robots+1): 
+        for j in range(self.robot_idx, self.n_robots+1): 
             if j == self.robot_idx:
-                continue   
-            
-            theta_j = model.get(f"theta_{j}")            
-            
-            rot_mat_j = rotation_matrix(theta_j)
-            A_j = cd.vertcat(rot_mat_j.T, -rot_mat_j.T)
-            assert A_j.shape == (4, 2)
 
-            lam_ji = cd.vertcat(model.get(f"lam_{j}_{self.robot_idx}_0"), 
-                                model.get(f"lam_{j}_{self.robot_idx}_1"), 
-                                model.get(f"lam_{j}_{self.robot_idx}_2"), 
-                                model.get(f"lam_{j}_{self.robot_idx}_3"))
-            s_ji = model.get(f"s_{self.robot_idx}_{j}")
+                theta_j = model.get(f"theta_{j}")            
+                
+                rot_mat_j = rotation_matrix(theta_j)
+                A_j = cd.vertcat(rot_mat_j.T, -rot_mat_j.T)
+                assert A_j.shape == (4, 2)
 
-            constraint = A_j.T @ lam_ji - s_ji
-            constraints.append(constraint[0])
-            constraints.append(constraint[1])
+                lam_ji = cd.vertcat(model.get(f"lam_{j}_{self.robot_idx}_0"), 
+                                    model.get(f"lam_{j}_{self.robot_idx}_1"), 
+                                    model.get(f"lam_{j}_{self.robot_idx}_2"), 
+                                    model.get(f"lam_{j}_{self.robot_idx}_3"))
+                s_ji = model.get(f"s_{self.robot_idx}_{j}")
+
+                constraint = A_j.T @ lam_ji - s_ji
+                constraints.append(constraint[0])
+                constraints.append(constraint[1])
 
         return constraints

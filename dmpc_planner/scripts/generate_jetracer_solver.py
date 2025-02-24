@@ -46,9 +46,10 @@ def configuration_basic(settings):
         modules.add_module(ContouringModule(settings, n))
         modules.add_module(PathReferenceVelocityModule(settings, n))
         
-    modules.add_module(PolytopicSidualConstraintModule(settings, 2))
-    modules.add_module(PolytopicSjdualConstraintModule(settings, 2))
-    modules.add_module(PolytopicDminConstraintModule(settings, 2))
+        if n != num_robots:
+            modules.add_module(PolytopicSidualConstraintModule(settings, n))
+            modules.add_module(PolytopicSjdualConstraintModule(settings, n))
+            modules.add_module(PolytopicDminConstraintModule(settings, n))
         
         
     return model, modules
