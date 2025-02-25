@@ -98,7 +98,7 @@ class ROSMPCPlanner:
         self._outputs_save_2 = []
         self._save_output = []
         self._save_s = np.array([])
-        self._save_lam = []
+        self._save_lam = np.array([])
 
 
         self._neighbour_pos_1 = np.array([])
@@ -162,8 +162,7 @@ class ROSMPCPlanner:
 
         if self._mpc_feasible:
             lam = np.array([])
-            for i in range(1, self._number_of_robots + 1):
-
+            for i in range(1, self._number_of_robots + 1): 
                 if self._dart_simulator == False:
                     output_keys = [f"x_{i}", f"y_{i}", f"theta_{i}", f"vx_{i}", f"vy_{i}", f"w_{i}", f"s_{i}"]
                     self._state[(i-1) * self._nx_one_robot : self._nx_one_robot * (i)] = [output[key] for key in output_keys]
@@ -172,11 +171,11 @@ class ROSMPCPlanner:
                 getattr(self, f'_outputs_save_{i}').append([output[f"throttle_{i}"], output[f"steering_{i}"]])
                 for j in range(1, self._number_of_robots+1):
                     if i != j:
-                        lam.append([output[f"lam_{i}_{j}_0"], output[f"lam_{i}_{j}_1"], output[f"lam_{i}_{j}_2"], output[f"lam_{i}_{j}_3"]])
+                        lam = np.concatenate((lam, np.array([output[f"lam_{i}_{j}_0"], output[f"lam_{i}_{j}_1"], output[f"lam_{i}_{j}_2"], output[f"lam_{i}_{j}_3"]])))
                         if i < j:
-                            self._save_s.vstack(np.array(output[f"s_{i}_{j}"], output[f"s_{j}_{i}"]))
+                            self._save_s = np.vstack((self._save_s, np.array([output[f"s_{i}_{j}"], output[f"s_{j}_{i}"]]))) if self._save_s.size else np.array([[output[f"s_{i}_{j}"], output[f"s_{j}_{i}"]]])
                 
-            self._save_lam.append(lam)
+            self._save_lam = np.vstack((self._save_lam, lam)) if self._save_lam.size else lam
             
             # self.plot_pred_traj() # slows down the simulation
 
@@ -268,7 +267,7 @@ class ROSMPCPlanner:
                 pose.position.x = float(self._state[0 + (n-1) * self._nx_one_robot])
                 pose.position.y = float(self._state[1 + (n-1) * self._nx_one_robot])
                 robot_pos.add_marker(pose)
-            if self._save_s:
+            if self._save_s.size:
                 line = self._visuals.get_line()
                 line.set_scale(0.05)
                 line.set_color(n*7, alpha=1.0)
@@ -276,7 +275,7 @@ class ROSMPCPlanner:
 
                 for j in range(n, self._number_of_robots+1):
                     if j != n:
-                        s = self._save_s[-1]
+                        s = self._save_s[-1,:]
                         #setattr(self, f'neighbour_pos_{j}', np.array([]))
                         neighbour_pos = np.array([self._state[0 + (j-1)*self._nx_one_robot], self._state[1 + (j-1)*self._nx_one_robot]])
                         midpoint = (ego_pos + neighbour_pos) / 2
@@ -481,10 +480,7 @@ class ROSMPCPlanner:
 
         # Plot s
         plt.subplot(1, 2, 1)
-
-      
-        for idx, s in enumerate(self._save_s):
-            plt.plot([idx, idx], [s[0], s[1]], label=f's_{idx}')
+        plt.plot(self._save_s, label=['s_0', 's_1'])
         plt.xlabel('Time Step')
         plt.ylabel('s Values')
         plt.legend()
@@ -493,12 +489,7 @@ class ROSMPCPlanner:
 
         # Plot lams
         plt.subplot(1, 2, 2)
-        # for n in range(1, self._number_of_robots + 1):
-        #     for j in range(1, self._number_of_robots + 1):
-        #         if j != n:
-        #             for k in range(4):
-        for lam in self._save_lam:
-            plt.plot(lam)
+        plt.plot(self._save_lam, label=['lam_0', 'lam_1', 'lam_2', 'lam_3','lam_0', 'lam_1', 'lam_2', 'lam_3'])
         plt.xlabel('Time Step')
         plt.ylabel('Lam Values')
         plt.legend()
@@ -510,7 +501,7 @@ class ROSMPCPlanner:
         plt.close()
 
     def plot_pred_traj(self):
-        state_labels = ["x", "y", "theta", "vx", "vy", "omega", "s", "lam", "s_dual"]
+        state_labels = ["x", "y", "theta", "vx", "vy", "omega", "s"]
         time = np.linspace(0, (self._N-1) * self._integrator_step, self._N)
 
         plt.figure(figsize=(6, 12))

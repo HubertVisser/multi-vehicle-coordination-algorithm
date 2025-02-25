@@ -19,16 +19,16 @@ debug_visuals: false
 dart_simulator: false
 
 solver_settings:
-  iterations: 1 #2 # 1
+  iterations: 2 #2 # 1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 10.0
 braking_acceleration: 1.0
 
 polytopic:
-  d_min: 0.2
-  length: .5
-  width: .5
+  d_min: 0.1
+  length: .3
+  width: .3
   com_to_back: 0.0
 
 contouring:
@@ -38,12 +38,12 @@ contouring:
 weights:
   throttle: .1
   steering: .1
-  lambda: .01
-  s_dual: .01
+  lambda: .1
+  s_dual: .1
   velocity: 1.0
   reference_velocity: 0.4
-  lag: 0.4
-  contour: 0.4
+  lag: 0.8
+  contour: 0.8
   terminal_angle: 5.0 #0.0
   terminal_contour: 1.0 # 0.0
   terminal_lag: 1.0 # 0.0

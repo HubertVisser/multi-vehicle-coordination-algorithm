@@ -567,8 +567,10 @@ if __name__ == "__main__":
     print("xdot", model.get_acados_dynamics().shape)
     
     
-    print(model.get_acados_x())
-    print(model.get_acados_u())
+    print(model.s)
+    print(model.idx_s)
+    print(model.get_s())
+    print(model.get("s_1_2"))
     # print("lam_1_2", slice_1_2[0], slice_1_2[1], slice_1_2[2], slice_1_2[3])
     # print("lower_bound_u_acados", model.lower_bound_inputs)
     # print("upper_bound_inputs flatten", model.upper_bound_u.flatten())

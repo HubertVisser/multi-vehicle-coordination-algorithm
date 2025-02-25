@@ -72,7 +72,7 @@ class PolytopicDminConstraints:
         assert b_i.shape == (4,1)
 
         # Constraints for all neighbouring robots (j)
-        for j in range(self.robot_idx, self.n_robots+1): 
+        for j in range(self.robot_idx, self.n_robots+1): # [1,2]
             if j == self.robot_idx:
                 continue   
             
