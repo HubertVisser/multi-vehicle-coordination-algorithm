@@ -111,7 +111,7 @@ def generated_parameter_include_file(settings):
 
 
 def solver_name(settings):
-    return "Solver"
+    return settings["solver_name"]
 
 
 def write_to_yaml(filename, data):

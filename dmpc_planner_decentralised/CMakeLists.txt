@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(dmpc_planner)
+project(dmpc_planner_decentralised)
 
 find_package(catkin REQUIRED COMPONENTS
   rospy
@@ -16,7 +16,7 @@ include_directories(
 )
 
 catkin_install_python(PROGRAMS 
-  scripts/jetracersimulator_mpc.py
+  scripts/main.py
   scripts/path_generator.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

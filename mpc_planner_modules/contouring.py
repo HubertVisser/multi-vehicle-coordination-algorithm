@@ -17,9 +17,10 @@ class ContouringObjective:
         Objective for tracking a 2D reference path with contouring costs (MPCC - Lorenzo Lyons)
     """
 
-    def __init__(self, settings, robot_idx):
+    def __init__(self, settings, robot_idx=0):
         self.idx = robot_idx
         self.num_segments = settings["contouring"]["num_segments"]
+        self.decentralised = settings["decentralised"]
 
     def define_parameters(self, params):
         params.add("contour", add_to_rqt_reconfigure=True)
@@ -29,19 +30,19 @@ class ContouringObjective:
         params.add("terminal_lag", add_to_rqt_reconfigure=True)
         params.add("terminal_contour", add_to_rqt_reconfigure=True)
 
-        for i in range(self.num_segments):
-            params.add(f"spline_x{i}_a_{self.idx}", bundle_name=f"spline_x_a_{self.idx}")
-            params.add(f"spline_x{i}_b_{self.idx}", bundle_name=f"spline_x_b_{self.idx}")
-            params.add(f"spline_x{i}_c_{self.idx}", bundle_name=f"spline_x_c_{self.idx}")
-            params.add(f"spline_x{i}_d_{self.idx}", bundle_name=f"spline_x_d_{self.idx}")
+        if self.decentralised:
+            for i in range(self.num_segments):
+                params.add(f"spline_x{i}_a_{self.idx}", bundle_name=f"spline_x_a_{self.idx}")
+                params.add(f"spline_x{i}_b_{self.idx}", bundle_name=f"spline_x_b_{self.idx}")
+                params.add(f"spline_x{i}_c_{self.idx}", bundle_name=f"spline_x_c_{self.idx}")
+                params.add(f"spline_x{i}_d_{self.idx}", bundle_name=f"spline_x_d_{self.idx}")
 
-            params.add(f"spline_y{i}_a_{self.idx}", bundle_name=f"spline_y_a_{self.idx}")
-            params.add(f"spline_y{i}_b_{self.idx}", bundle_name=f"spline_y_b_{self.idx}")
-            params.add(f"spline_y{i}_c_{self.idx}", bundle_name=f"spline_y_c_{self.idx}")
-            params.add(f"spline_y{i}_d_{self.idx}", bundle_name=f"spline_y_d_{self.idx}")
+                params.add(f"spline_y{i}_a_{self.idx}", bundle_name=f"spline_y_a_{self.idx}")
+                params.add(f"spline_y{i}_b_{self.idx}", bundle_name=f"spline_y_b_{self.idx}")
+                params.add(f"spline_y{i}_c_{self.idx}", bundle_name=f"spline_y_c_{self.idx}")
+                params.add(f"spline_y{i}_d_{self.idx}", bundle_name=f"spline_y_d_{self.idx}")
 
-            params.add(f"spline{i}_start_{self.idx}", bundle_name=f"spline_start_{self.idx}")
-
+                params.add(f"spline{i}_start_{self.idx}", bundle_name=f"spline_start_{self.idx}")
         return params
 
     def get_value(self, model, params, settings, stage_idx):
@@ -97,7 +98,7 @@ class ContouringObjective:
 
 class ContouringModule(ObjectiveModule):
 
-    def __init__(self, settings, robot_idx):
+    def __init__(self, settings, robot_idx=0):
         super().__init__()
         self.module_name = f"Contouring_{robot_idx}"  # Needs to correspond to the c++ name of the module
         self.import_name = "contouring.h"

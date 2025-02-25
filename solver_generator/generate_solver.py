@@ -19,7 +19,7 @@ import solver_model
 def create_acados_model(settings, model, modules):
     # Create an acados ocp model
     acados_model = AcadosModel()
-    acados_model.name = solver_name(settings)
+    acados_model.name = solver_name(settings) # TODO: let solver name be dependent on settings and the caller of this script
     
     # Dynamics
     z = model.acados_symbolics_z()
@@ -46,7 +46,6 @@ def create_acados_model(settings, model, modules):
     # Formulating acados ocp model
     acados_model.x = model.get_acados_x()
     acados_model.u = model.get_acados_u()
-    # acados_model.z = model.get_acados_d() #algebraic variables are not supported by ERK module
     acados_model.f_expl_expr = dyn_f_expl
     acados_model.p = params.get_acados_parameters()
     acados_model.cost_expr_ext_cost = cost_stage
@@ -180,7 +179,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.qp_solver_iter_max = 500 # default = 50
+    ocp.solver_options.qp_solver_iter_max = 50 # default = 50
     ocp.solver_options.qp_solver_warm_start = 1  # cold start / 1 = warm, 2 = warm primal and dual
 
     # code generation options

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>dmpc_planner</name>
+  <name>dmpc_planner_centralised</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
   <maintainer email="hubertv16@live.nl">hubert</maintainer>

@@ -16,13 +16,13 @@ from control_modules import ConstraintModule
 
 class PolytopicDminConstraintModule(ConstraintModule):
 
-    def __init__(self, settings, robot_idx=None):
+    def __init__(self, settings, robot_idx):
         super().__init__()
 
-        self.module_name = f"PolytopicConstraints_dmin"  # c++ name of the module
+        self.module_name = f"PolytopicConstraints_dmin_{robot_idx}"  # c++ name of the module
         self.import_name = "polytopic_constraints.h"
 
-        self.constraints.append(PolytopicDminConstraints(settings,robot_idx=robot_idx, use_slack=False))
+        self.constraints.append(PolytopicDminConstraints(settings, robot_idx=robot_idx, use_slack=False))
         self.description = "Polytopic set based collision avoidance constraints in dual formulation (constraint 5a)"
 
 
@@ -30,19 +30,19 @@ class PolytopicDminConstraintModule(ConstraintModule):
 class PolytopicDminConstraints:
 
     def __init__(self, settings, robot_idx, use_slack=False):
-        self.n_robots = settings["number_of_robots"]
         self.d_min = settings["polytopic"]["d_min"]
         self.length = settings["polytopic"]["length"]
         self.width = settings["polytopic"]["width"]
         self.robot_idx = robot_idx
-        self.n_constraints = self.n_robots - 1
+        self.n_constraints = 1
         self.nh = self.n_constraints
         self.use_slack = use_slack
         self.decentralised = settings["decentralised"]
-        self.solver_name = settings["solver_name"]
 
     def define_parameters(self, params):
-        pass
+        if self.decentralised:
+            if 
+
 
     def get_lower_bound(self):
         lower_bound = []

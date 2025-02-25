@@ -57,7 +57,7 @@ def configuration_basic(settings):
 
 
 def generate():
-    settings = load_settings(package="dmpc_planner")
+    settings = load_settings(package="dmpc_planner_decentralised")
     print(settings)
 
     model, modules = configuration_basic(settings)

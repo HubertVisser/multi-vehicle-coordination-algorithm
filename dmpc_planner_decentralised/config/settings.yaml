@@ -1,4 +1,5 @@
-name: "Jetracer"
+name: "Jetracer_decentralised"
+decentralised: true
 N: 8
 integrator_step: 0.3
 n_discs: 0
