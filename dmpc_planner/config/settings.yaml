@@ -1,44 +1,50 @@
 name: "Jetracer"
-N: 20
-integrator_step: 0.1
+N: 8
+integrator_step: 0.3
 n_discs: 0
-track_choice: "sinus" # 'straight_line', sinus
-start_x: -5.0
+track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
+
+number_of_robots: 2
+robot_1:
+  start_x: 0.0
+  start_y: 3.0
+  start_theta: 0.0  # in radians
+robot_2:
+  start_x: 5.0
+  start_y: 0.0
+  start_theta: 0.5  # radians
 
 verbose: false
-debug_visuals: true
+debug_visuals: false
+dart_simulator: false
 
 solver_settings:
-  iterations: 1 #2 # 1
+  iterations: 2 #2 # 1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
-control_frequency: 30
-max_obstacles: 8
-obstacle_radius: 0.5
-robot_radius: 0.325
-robot:
-  length: 0.65
-  width: 0.65
-  com_to_back: 0.0
+control_frequency: 10.0
 braking_acceleration: 1.0
+
+polytopic:
+  d_min: 0.1
+  length: .3
+  width: .3
+  com_to_back: 0.0
 
 contouring:
   num_segments: 5
   use_huber: false
 
-decomp:
-  max_constraints: 16
-
 weights:
-  goal: 2.
-  throttle: .05
-  steering: .05
-  velocity: 1.
-  reference_velocity: 1.
-  reference_steering: 2.
-  lag: 0.1
-  contour: 0.05
-  terminal_angle: 5.0 # 0.0
+  throttle: .1
+  steering: .1
+  lambda: .1
+  s_dual: .1
+  velocity: 1.0
+  reference_velocity: 0.4
+  lag: 0.8
+  contour: 0.8
+  terminal_angle: 5.0 #0.0
   terminal_contour: 1.0 # 0.0
   terminal_lag: 1.0 # 0.0
 

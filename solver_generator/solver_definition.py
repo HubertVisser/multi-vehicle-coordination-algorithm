@@ -16,30 +16,29 @@ def define_parameters(modules, params, settings):
     return params
 
 
-def objective(modules, z, p, model, settings, stage_idx):
+def objective(modules, z, d, p, model, settings, stage_idx):
     cost = 0.0
 
     params = settings["params"]
     params.load(p)
-    model.load(z)
+    model.load_z(z)
+    model.load_d(d)
 
     for module in modules.modules:
         if module.type == "objective":
             cost += module.get_value(model, params, settings, stage_idx)
 
-    # if stage_idx == 0:
-    # print(cost)
-
     return cost
 
 
 # lb <= constraints <= ub
-def constraints(modules, z, p, model, settings, stage_idx):
+def constraints(modules, z, d, p, model, settings, stage_idx):
     constraints = []
 
     params = settings["params"]
     params.load(p)
-    model.load(z)
+    model.load_z(z)
+    model.load_d(d)
 
     for module in modules.modules:
         if module.type == "constraint":

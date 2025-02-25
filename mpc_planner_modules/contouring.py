@@ -17,8 +17,8 @@ class ContouringObjective:
         Objective for tracking a 2D reference path with contouring costs (MPCC - Lorenzo Lyons)
     """
 
-    def __init__(self, settings):
-
+    def __init__(self, settings, robot_idx):
+        self.idx = robot_idx
         self.num_segments = settings["contouring"]["num_segments"]
 
     def define_parameters(self, params):
@@ -30,28 +30,28 @@ class ContouringObjective:
         params.add("terminal_contour", add_to_rqt_reconfigure=True)
 
         for i in range(self.num_segments):
-            params.add(f"spline_x{i}_a", bundle_name="spline_x_a")
-            params.add(f"spline_x{i}_b", bundle_name="spline_x_b")
-            params.add(f"spline_x{i}_c", bundle_name="spline_x_c")
-            params.add(f"spline_x{i}_d", bundle_name="spline_x_d")
+            params.add(f"spline_x{i}_a_{self.idx}", bundle_name=f"spline_x_a_{self.idx}")
+            params.add(f"spline_x{i}_b_{self.idx}", bundle_name=f"spline_x_b_{self.idx}")
+            params.add(f"spline_x{i}_c_{self.idx}", bundle_name=f"spline_x_c_{self.idx}")
+            params.add(f"spline_x{i}_d_{self.idx}", bundle_name=f"spline_x_d_{self.idx}")
 
-            params.add(f"spline_y{i}_a", bundle_name="spline_y_a")
-            params.add(f"spline_y{i}_b", bundle_name="spline_y_b")
-            params.add(f"spline_y{i}_c", bundle_name="spline_y_c")
-            params.add(f"spline_y{i}_d", bundle_name="spline_y_d")
+            params.add(f"spline_y{i}_a_{self.idx}", bundle_name=f"spline_y_a_{self.idx}")
+            params.add(f"spline_y{i}_b_{self.idx}", bundle_name=f"spline_y_b_{self.idx}")
+            params.add(f"spline_y{i}_c_{self.idx}", bundle_name=f"spline_y_c_{self.idx}")
+            params.add(f"spline_y{i}_d_{self.idx}", bundle_name=f"spline_y_d_{self.idx}")
 
-            params.add(f"spline{i}_start", bundle_name="spline_start")
+            params.add(f"spline{i}_start_{self.idx}", bundle_name=f"spline_start_{self.idx}")
 
         return params
 
     def get_value(self, model, params, settings, stage_idx):
         cost = 0
 
-        pos_x = model.get("x")
-        pos_y = model.get("y")
-        theta = model.get("theta")
+        pos_x = model.get(f"x_{self.idx}")
+        pos_y = model.get(f"y_{self.idx}")
+        theta = model.get(f"theta_{self.idx}")
         # v = model.get("vx")
-        s = model.get("s")
+        s = model.get(f"s_{self.idx}")
 
         quadratic_from = 0.125
         if settings["contouring"]["use_huber"]:
@@ -66,7 +66,7 @@ class ContouringObjective:
         max_contour = 4.0
         max_lag = 4.0
 
-        path = Spline2D(params, self.num_segments, s)
+        path = Spline2D(params, self.num_segments, s, self.idx)
         path_x, path_y = path.at(s)
         path_dx_normalized, path_dy_normalized = path.deriv_normalized(s)
 
@@ -97,13 +97,13 @@ class ContouringObjective:
 
 class ContouringModule(ObjectiveModule):
 
-    def __init__(self, settings):
+    def __init__(self, settings, robot_idx):
         super().__init__()
-        self.module_name = "Contouring"  # Needs to correspond to the c++ name of the module
+        self.module_name = f"Contouring_{robot_idx}"  # Needs to correspond to the c++ name of the module
         self.import_name = "contouring.h"
         self.type = "objective"
 
         self.description = "MPCC: Tracks a 2D reference path with contouring costs"
 
         self.objectives = []
-        self.objectives.append(ContouringObjective(settings))
+        self.objectives.append(ContouringObjective(settings, robot_idx))

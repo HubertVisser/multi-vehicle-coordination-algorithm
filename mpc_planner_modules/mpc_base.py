@@ -53,7 +53,7 @@ class WeightsObjective(Objective):
 
             variable = model.get(self._variables_per_function[idx])  # Retrieve the state / input to be weighted
             # _, _, var_range = model.get_bounds(self._variables_per_function[idx])
-            print("Variable: ", variable, "Weights: ", weights)
+            # print("Variable: ", variable, "Weights: ", weights)
 
             # Add to the cost
             cost += cost_function(variable, weights)
@@ -68,9 +68,9 @@ class MPCBaseModule(ObjectiveModule):
     Weight states and inputs of an MPC problem
     """
 
-    def __init__(self, settings):
+    def __init__(self, settings, robot_idx):
         super().__init__()
-        self.module_name = "MPCBaseModule"  # Needs to correspond to the c++ name of the module
+        self.module_name = f"MPCBaseModule_{robot_idx}"  # Needs to correspond to the c++ name of the module
         self.import_name = "mpc_base.h"
         self.description = "Contains input and state penalties with weights that can be tuned in rqt_reconfigure"
 

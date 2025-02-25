@@ -22,7 +22,8 @@ def create_acados_model(settings, model, modules):
     acados_model.name = solver_name(settings)
     
     # Dynamics
-    z = model.acados_symbolics()
+    z = model.acados_symbolics_z()
+    d = model.acados_symbolics_d()
     dyn_f_expl = model.get_acados_dynamics()
 
     # Parameters
@@ -30,24 +31,24 @@ def create_acados_model(settings, model, modules):
     p = params.get_acados_p()
 
     # Constraints
-    constr = cd.vertcat(*constraints(modules, z, p, model, settings, 1))
+    constr = cd.vertcat(*constraints(modules, z, d, p, model, settings, 1))
 
     if constr.shape[0] == 0:
         print("No constraints specified")
         constr = cd.SX()
 
     # stage cost
-    cost_stage = objective(modules, z, p, model, settings, 1)
+    cost_stage = objective(modules, z, d, p, model, settings, 1)
 
     # terminal cost
-    cost_e = objective(modules, z, p, model, settings, settings["N"] - 1)
+    cost_e = objective(modules, z, d, p, model, settings, settings["N"] - 1)
 
     # Formulating acados ocp model
-    acados_model.x = model.get_x()
+    acados_model.x = model.get_acados_x()
     acados_model.u = model.get_acados_u()
+    # acados_model.z = model.get_acados_d() #algebraic variables are not supported by ERK module
     acados_model.f_expl_expr = dyn_f_expl
     acados_model.p = params.get_acados_parameters()
-
     acados_model.cost_expr_ext_cost = cost_stage
     acados_model.cost_expr_ext_cost_e = cost_e
     acados_model.con_h_expr = constr
@@ -69,6 +70,7 @@ def generate_solver(modules, model, settings=None):
     params.load_acados_parameters()
     settings["params"] = params
     solver_settings = settings["solver_settings"]
+    number_of_robots = settings["number_of_robots"]
 
     modules.print()
     params.print()
@@ -88,25 +90,29 @@ def generate_solver(modules, model, settings=None):
     ocp.cost.cost_type = "EXTERNAL"
     # ocp.cost.cost_type_e = "EXTERNAL"
 
+    # Number of inputs and states
+    nu = model.nu 
+    nx = model.nx
+    nlam = model.nlam
+    ns = model.ns
+
     # Set initial constraint
-    ocp.constraints.x0 = np.zeros(model.nx)
+    ocp.constraints.x0 = np.zeros(nx)
 
     # Set state bound
-    nx = model.nx
-    nu = model.nu
-    # ocp.constraints.lbx = np.array([model.lower_bound[nu : model.get_nvar()]]).flatten()
-    # ocp.constraints.ubx = np.array([model.upper_bound[nu : model.get_nvar()]]).flatten()
-    # ocp.constraints.idxbx = np.array(range(model.nx))
+    ocp.constraints.lbx = model.lower_bound_states.T.flatten()
+    ocp.constraints.ubx = model.upper_bound_states.T.flatten() 
+    ocp.constraints.idxbx = np.array(range(nx))
 
     # Set control input bound
-    ocp.constraints.lbu = np.array([model.lower_bound[:nu]]).flatten()
-    ocp.constraints.ubu = np.array([model.upper_bound[:nu]]).flatten()
-    ocp.constraints.idxbu = np.array(range(nu))
+    ocp.constraints.lbu = model.lower_bound_u.flatten()
+    ocp.constraints.ubu = model.upper_bound_u.flatten()
+    ocp.constraints.idxbu = np.array(range(nu + ns + nlam))
 
-    # Set path constraints bound
+    # Set path constraints bound 
     nc = ocp.model.con_h_expr.shape[0]
-    # ocp.constraints.lh = np.array(constraint_lower_bounds(modules))
-    # ocp.constraints.uh = np.array(constraint_upper_bounds(modules))
+    ocp.constraints.lh = np.array(constraint_lower_bounds(modules))
+    ocp.constraints.uh = np.array(constraint_upper_bounds(modules))
 
     # Slack for constraints
     add_slack = False
@@ -174,7 +180,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.qp_solver_iter_max = 50 # default = 50
+    ocp.solver_options.qp_solver_iter_max = 500 # default = 50
     ocp.solver_options.qp_solver_warm_start = 1  # cold start / 1 = warm, 2 = warm primal and dual
 
     # code generation options
@@ -208,23 +214,18 @@ def generate_solver(modules, model, settings=None):
     # Save other settings
     solver_settings = dict()
     solver_settings["N"] = settings["N"]
-    solver_settings["nx"] = model.nx
-    solver_settings["nu"] = model.nu
+    solver_settings["number_of_robots"] = settings["number_of_robots"]
+    solver_settings["nx"] = nx
+    solver_settings["nu"] = nu
+    solver_settings["nlam"] = nlam
+    solver_settings["ns"] = ns
+    solver_settings["nd"] = nlam + ns
+    solver_settings["nx_nu"] = model.get_nx_nu()
     solver_settings["nvar"] = model.get_nvar()
     solver_settings["npar"] = settings["params"].length()
 
     path = solver_settings_path()
     write_to_yaml(path, solver_settings)
-
-    # generate_cpp_code(settings, model)
-    # generate_parameter_cpp_code(settings, model)
-    # generate_module_header(modules)
-    # generate_module_definitions(modules)
-    # generate_module_cmake(modules)
-    # generate_module_packagexml(modules)
-    # generate_rqtreconfigure(settings)
-    # generate_ros2_rqtreconfigure(settings)
-    # generate_solver_cmake(settings)
 
     print_path("Solver", solver_path(settings), tab=True, end="")
     print_success(" -> generated")

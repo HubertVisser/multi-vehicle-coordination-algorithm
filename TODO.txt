@@ -18,3 +18,5 @@ self.omega_publisher = rospy.Publisher('omega_' + str(car_number), Float32, queu
 --DMPC:--
 self._state_sub = rospy.Subscriber("robot_state", PoseStamped, self.state_pose_callback, queue_size=1)
 self._path_sub = rospy.Subscriber("roadmap/reference", Path, lambda msg: self.path_callback(msg), queue_size=1)
+
+Try: not publishing the state from state_pose_callback

@@ -3,15 +3,15 @@ import casadi as cd
 
 class SplineSegment:
 
-    def __init__(self, param, name, spline_nr):
+    def __init__(self, param, name, spline_nr, robot_idx):
 
         # Retrieve spline values from the parameters (stored as multi parameter by name)
-        self.a = param.get(f"{name}{spline_nr}_a")
-        self.b = param.get(f"{name}{spline_nr}_b")
-        self.c = param.get(f"{name}{spline_nr}_c")
-        self.d = param.get(f"{name}{spline_nr}_d")
+        self.a = param.get(f"{name}{spline_nr}_a_{robot_idx}")
+        self.b = param.get(f"{name}{spline_nr}_b_{robot_idx}")
+        self.c = param.get(f"{name}{spline_nr}_c_{robot_idx}")
+        self.d = param.get(f"{name}{spline_nr}_d_{robot_idx}")
 
-        self.s_start = param.get(f"spline{spline_nr}_start")
+        self.s_start = param.get(f"spline{spline_nr}_start_{robot_idx}")
 
     def at(self, spline_index):
         s = spline_index - self.s_start
@@ -26,11 +26,11 @@ class SplineSegment:
         return 6 * self.a * s + 2 * self.b
 
 class Spline:
-    def __init__(self, params, name, num_segments, s):
+    def __init__(self, params, name, num_segments, s, robot_idx):
         self.splines = []  # Classes containing the splines
         self.lambdas = []  # Merges splines
         for i in range(num_segments):
-            self.splines.append(SplineSegment(params, f"{name}", i))
+            self.splines.append(SplineSegment(params, f"{name}", i, robot_idx))
 
             # No lambda for the first segment (it is not glued to anything prior)
             if i > 0:
@@ -59,9 +59,9 @@ class Spline:
 
 class Spline2D:
 
-    def __init__(self, params, num_segments, s):
-        self.spline_x = Spline(params, "spline_x", num_segments, s)
-        self.spline_y = Spline(params, "spline_y", num_segments, s)
+    def __init__(self, params, num_segments, s, robot_idx):
+        self.spline_x = Spline(params, "spline_x", num_segments, s, robot_idx)
+        self.spline_y = Spline(params, "spline_y", num_segments, s, robot_idx)
 
     def at(self, s):
         return self.spline_x.at(s), self.spline_y.at(s)

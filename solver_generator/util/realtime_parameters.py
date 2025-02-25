@@ -63,7 +63,7 @@ class RealTimeModel:
         self._N = settings["N"]
         self._nu = solver_settings["nu"]
         self._nx = solver_settings["nx"]
-        self._nvar = self._nu + self._nx
+        self._nvar = solver_settings["nvar"]
         self._vars = np.zeros((settings["N"], self._nvar))
 
     def get(self, k, var_name):
@@ -82,10 +82,10 @@ class AcadosRealTimeModel(RealTimeModel):
     def load(self, solver):
         # Load the solver data into a numpy array
         for k in range(self._settings["N"]):
-            for var in range(self._nu):
-                self._vars[k, var] = solver.get(k, 'u')[var]
-            for var in range(self._nu, self._nvar):
-                self._vars[k, var] = solver.get(k, 'x')[var - self._nu]
+            for var in range(self._nx):
+                self._vars[k, var] = solver.get(k, 'x')[var]
+            for var in range(self._nx, self._nvar):
+                self._vars[k, var] = solver.get(k, 'u')[var - self._nx]
 
     def get_trajectory(self, solver, mpc_x_plan, mpc_u_plan):
         # Retrieve the trajectory
@@ -93,5 +93,5 @@ class AcadosRealTimeModel(RealTimeModel):
             mpc_x_plan[:, k] = solver.get(k, 'x')
             mpc_u_plan[:, k] = solver.get(k, 'u')
 
-        return np.concatenate([mpc_u_plan, mpc_x_plan])
+        return np.concatenate([mpc_x_plan,mpc_u_plan])
   
