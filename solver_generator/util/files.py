@@ -56,6 +56,16 @@ def load_test_settings(setting_file_name="settings"):
     return settings
 
 
+def load_parameters(parameter_file_name="parameter_map", package="mpc_planner_solver"):
+    path = os.path.normpath(os.path.join(get_package_path(package), "config", f"{parameter_file_name}.yaml"))
+    print(path)
+    print_path("Parameters", path, end="")
+    with open(path, "r") as stream:
+        parameters = yaml.safe_load(stream)
+    print_success(f" -> loaded")
+    return parameters
+
+
 def default_solver_path(settings):
     return os.path.join(os.getcwd(), f"{solver_name(settings)}")
 
@@ -72,9 +82,8 @@ def acados_solver_path(settings):
     return os.path.join(get_solver_package_path(), f"acados")
 
 
-def parameter_map_path():
-    return os.path.join(save_config_path(), f"parameter_map.yaml")
-
+def parameter_map_path(parameter_map_name="parameter_map"):
+    return os.path.join(save_config_path(), f"{parameter_map_name}.yaml")
 
 def model_map_path():
     return os.path.join(save_config_path(), f"model_map.yaml")
@@ -111,7 +120,7 @@ def generated_parameter_include_file(settings):
 
 
 def solver_name(settings):
-    return settings["solver_name"]
+    return settings.get("solver_name", "Solver")
 
 
 def write_to_yaml(filename, data):

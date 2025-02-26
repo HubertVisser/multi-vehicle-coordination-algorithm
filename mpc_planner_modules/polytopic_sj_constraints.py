@@ -1,3 +1,4 @@
+
 """
 Polytopic Constraints (Minimum distance constraints between robots represented as polytopic sets using dual variables)
 """
@@ -10,33 +11,35 @@ import os
 
 sys.path.append(os.path.join(sys.path[0], "..", "solver_generator"))
 
-from util.math import rotation_matrix
+from util.math import get_A
 from control_modules import ConstraintModule
 
 
 class PolytopicSjdualConstraintModule(ConstraintModule):
 
-    def __init__(self, settings, robot_idx):
+    def __init__(self, settings, idx_i):
         super().__init__()
 
-        self.module_name = f"PolytopicConstraints_sj_{robot_idx}"  # c++ name of the module
+        self.module_name = f"PolytopicConstraints_sj_{idx_i}"  # c++ name of the module
         self.import_name = "polytopic_constraints.h"
 
-        self.constraints.append(PolytopicSjdualConstraints(n_robots=settings["number_of_robots"], length=settings["polytopic"]["length"], width=settings["polytopic"]["width"], robot_idx=robot_idx, use_slack=False))
+        self.constraints.append(PolytopicSjdualConstraints(settings, idx_i=idx_i, use_slack=False))
         self.description = "Polytopic set based collision avoidance constraints in dual formulation (constraint 5c)"
 
 
 # Constraints of the form A_j^T @ lam_ji - S_ji = 0
 class PolytopicSjdualConstraints:
 
-    def __init__(self, n_robots, length, width, robot_idx, use_slack=False):
-        self.n_robots = n_robots
-        self.length = length
-        self.width = width
-        self.robot_idx = robot_idx
-        self.n_constraints = (n_robots - self.robot_idx) * 2
+    def __init__(self, settings, idx_i, use_slack=False):
+        self.length = settings["polytopic"]["length"]
+        self.width = settings["polytopic"]["width"]
+        self.number_of_robots = settings["number_of_robots"]
+        self.decentralised = settings["decentralised"]
+        self.idx_i = idx_i
+        self.n_constraints = (self.number_of_robots - self.idx_i) * 2 if self.decentralised == False else (self.number_of_robots - 1) * 2
         self.nh = self.n_constraints
         self.use_slack = use_slack
+        self.solver_name = settings.get("solver_name", None)
 
     def define_parameters(self, params):
         pass
@@ -53,26 +56,33 @@ class PolytopicSjdualConstraints:
             upper_bound.append(0)
         return upper_bound
 
+    def get_theta_j(self, model, idx_j):
+        return model.get(f"theta_{idx_j}")
+    
+    def get_lam_ji(self, model, idx_j):
+        return cd.vertcat(  model.get(f"lam_{idx_j}_{self.idx_i}_0"), 
+                            model.get(f"lam_{idx_j}_{self.idx_i}_1"), 
+                            model.get(f"lam_{idx_j}_{self.idx_i}_2"), 
+                            model.get(f"lam_{idx_j}_{self.idx_i}_3"))
+        
+    def get_s_ij(self, model, idx_j):
+        return cd.vertcat(  model.get(f"s_{self.idx_i}_{idx_j}_0"), 
+                            model.get(f"s_{self.idx_i}_{idx_j}_1"))
+        
     def get_constraints(self, model, params, settings, stage_idx):
         constraints = []
 
         # Constraints from all neighbouring robots (j) to the ego robot (i)
-        for j in range(self.robot_idx, self.n_robots+1): 
-            if j != self.robot_idx:
+        for j in range(self.idx_i, self.n_robots+1): 
+            if j != self.idx_i:
 
-                theta_j = model.get(f"theta_{j}")            
-                
-                rot_mat_j = rotation_matrix(theta_j)
-                A_j = cd.vertcat(rot_mat_j.T, -rot_mat_j.T)
-                assert A_j.shape == (4, 2)
+                theta_j = self.get_theta_j(model, j)            
+                A_j = get_A(theta_j)
 
-                lam_ji = cd.vertcat(model.get(f"lam_{j}_{self.robot_idx}_0"), 
-                                    model.get(f"lam_{j}_{self.robot_idx}_1"), 
-                                    model.get(f"lam_{j}_{self.robot_idx}_2"), 
-                                    model.get(f"lam_{j}_{self.robot_idx}_3"))
-                s_ji = model.get(f"s_{j}_{self.robot_idx}")
+                lam_ji = self.get_lam_ji(model, j)
+                s_ij = self.get_s_ij(model, j)
 
-                constraint = A_j.T @ lam_ji - s_ji
+                constraint = A_j.T @ lam_ji - s_ij
                 constraints.append(constraint[0])
                 constraints.append(constraint[1])
 

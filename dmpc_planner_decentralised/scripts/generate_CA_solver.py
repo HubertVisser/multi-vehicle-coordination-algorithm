@@ -56,8 +56,9 @@ def configuration_basic(settings):
     return model, modules
 
 
-def generate():
+def generate(params, idx):
     settings = load_settings(package="dmpc_planner_decentralised")
+    settings["solver_name"] = f"solver_ca_{idx}"
     print(settings)
 
     model, modules = configuration_basic(settings)

@@ -1,11 +1,11 @@
 import casadi as cd
 import numpy as np
 
-n = 2
-num_lam = (n-1)
+dict1 = dict()
+dict2 = {'c': 3, 'd': 4}
 
-lam = np.array([[1,2]])
+# Using dictionary unpacking
+dict1.update(dict2)
 
-[print(i) for i in range(2,3)]
-    
+print(dict1)
 

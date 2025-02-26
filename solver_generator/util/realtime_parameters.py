@@ -4,13 +4,13 @@ For python real-time implementation of the controller (TODO)
 """
 import numpy as np
 
-from util.files import load_settings
+from util.files import load_parameters, load_settings
 
 # Python real-time
 class RealTimeParameters:
 
-    def __init__(self, settings, package=None):
-        self._map = load_settings("parameter_map", package=package)
+    def __init__(self, settings):
+        self._map = load_parameters()
         self._settings = settings
 
         self._num_p = self._map['num parameters']
@@ -53,6 +53,16 @@ class RealTimeParameters:
                 if key != "num parameters" and np.isnan(self._params[k, value]):
                     print(f"NaN detected for {key} at k = {k}: {self._params[k, value]}")
 
+
+class RealTimeGlobalParamters(RealTimeParameters):
+    def __init__(self, settings):
+        super().__init__(settings)
+        self._map = load_parameters("parameter_map_global")
+        self._settings = settings
+
+        self._num_p = self._map['num parameters']
+        self._params = np.zeros((settings["N"]+1, self._num_p))
+    
 
 # Python real-time
 class RealTimeModel:

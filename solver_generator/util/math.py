@@ -34,3 +34,17 @@ def sigmoid(x, a, b):
 # `b` is the transition point between the two functions
 def blended_function(x, a, b, f1, f2):
     return (1 - sigmoid(x, a, b)) * f1(x) + sigmoid(x, a, b) * f2(x)
+
+### --- Calulation polytopic constraints --- ###
+def get_A(theta):
+    assert theta.size1() == 1 and theta.size2() == 1, "theta must be a scalar CasADi symbol"
+    
+    rot_mat = rotation_matrix(theta)
+    return cd.vertcat(rot_mat.T, -rot_mat.T)
+
+def get_b(pos, theta, length, width):
+    assert pos.size1() == 2 and pos.size2() == 1, "pos must be a 2 by 1 CasADi vector"
+    
+    dim_vector = cd.DM([length/2, width/2, length/2, width/2])
+    _A = get_A(theta)
+    return dim_vector + _A @ pos

@@ -19,7 +19,7 @@ import solver_model
 def create_acados_model(settings, model, modules):
     # Create an acados ocp model
     acados_model = AcadosModel()
-    acados_model.name = solver_name(settings) # TODO: let solver name be dependent on settings and the caller of this script
+    acados_model.name = solver_name(settings) 
     
     # Dynamics
     z = model.acados_symbolics_z()
@@ -65,11 +65,15 @@ def generate_solver(modules, model, settings=None):
     print_header("Creating ACADOS" f"Solver: {settings['name']}_solver")
 
     params = AcadosParameters()
+
+    if settings["decentralised"]:
+        params.load_global_parameters()
+    
     define_parameters(modules, params, settings)
     params.load_acados_parameters()
+    
     settings["params"] = params
     solver_settings = settings["solver_settings"]
-    number_of_robots = settings["number_of_robots"]
 
     modules.print()
     params.print()

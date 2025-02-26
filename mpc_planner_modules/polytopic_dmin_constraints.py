@@ -10,36 +10,36 @@ import os
 
 sys.path.append(os.path.join(sys.path[0], "..", "solver_generator"))
 
-from util.math import rotation_matrix
+from util.math import get_b
 from control_modules import ConstraintModule
 
 
 class PolytopicDminConstraintModule(ConstraintModule):
 
-    def __init__(self, settings, robot_idx=None):
+    def __init__(self, settings, idx_i):
         super().__init__()
 
-        self.module_name = f"PolytopicConstraints_dmin"  # c++ name of the module
+        self.module_name = f"PolytopicConstraints_dmin_{idx_i}"  # c++ name of the module
         self.import_name = "polytopic_constraints.h"
 
-        self.constraints.append(PolytopicDminConstraints(settings,robot_idx=robot_idx, use_slack=False))
+        self.constraints.append(PolytopicDminConstraints(settings, idx_i=idx_i, use_slack=False))
         self.description = "Polytopic set based collision avoidance constraints in dual formulation (constraint 5a)"
 
 
 # Constraints of the form -b_i^T * lam_ij - b_j^T * lam_ji >= d_min
 class PolytopicDminConstraints:
 
-    def __init__(self, settings, robot_idx, use_slack=False):
-        self.n_robots = settings["number_of_robots"]
+    def __init__(self, settings, idx_i, use_slack=False):
         self.d_min = settings["polytopic"]["d_min"]
         self.length = settings["polytopic"]["length"]
         self.width = settings["polytopic"]["width"]
-        self.robot_idx = robot_idx
-        self.n_constraints = self.n_robots - 1
+        self.number_of_robots = settings["number_of_robots"]
+        self.idx_i = idx_i
+        self.n_constraints = self.number_of_robots - 1
         self.nh = self.n_constraints
         self.use_slack = use_slack
         self.decentralised = settings["decentralised"]
-        self.solver_name = settings["solver_name"]
+        self.solver_name = settings.get("solver_name", None)
 
     def define_parameters(self, params):
         pass
@@ -56,50 +56,84 @@ class PolytopicDminConstraints:
             upper_bound.append(1000)
         return upper_bound
 
+    def get_pos_theta_i(self, model, params):
+        if self.decentralised:
+            if self.solver_name.startswith("solver_nmpc"):
+                pos_x_i = model.get(f"x")
+                pos_y_i = model.get(f"y")
+                pos_i = cd.vertcat(pos_x_i, pos_y_i)   # Center of gravity
+                theta_i = model.get(f"theta")
+            elif self.solver_name.startswith("solver_ca"):
+                pos_x_i = params.get(f"x_{self.idx_i}")
+                pos_y_i = params.get(f"y_{self.idx_i}")
+                pos_i = cd.vertcat(pos_x_i, pos_y_i)   # Center of gravity
+                theta_i = params.get(f"theta_{self.idx_i}")
+            else:
+                raise IOError(f"Requested a position for solver `{self.solver_name}' that is not a valid solver name.")
+        else:
+            pos_x_i = model.get(f"x_{self.idx_i}")
+            pos_y_i = model.get(f"y_{self.idx_i}")
+            pos_i = cd.vertcat(pos_x_i, pos_y_i)
+            theta_i = model.get(f"theta_{self.idx_i}")
+        return pos_i, theta_i
+                
+    def get_pos_theta_j(self, model, params, idx_j):
+        if self.decentralised:
+            pos_x_j = params.get(f"x_{idx_j}")
+            pos_y_j = params.get(f"y_{idx_j}")
+            theta_j = params.get(f"theta_{idx_j}")
+            return cd.vertcat(pos_x_j, pos_y_j), theta_j   # Center of gravity
+        else:
+            pos_x_j = model.get(f"x_{idx_j}")
+            pos_y_j = model.get(f"y_{idx_j}")
+            theta_j = model.get(f"theta_{idx_j}")
+            return cd.vertcat(pos_x_j, pos_y_j), theta_j
+
+    def get_lam_ij(self, model, params, idx_j):
+        if self.decentralised:
+            if self.solver_name.startswith("solver_nmpc"):
+                return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
+                                    params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
+                                    params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
+                                    params.get(f"lam_{self.idx_i}_{idx_j}_3"))
+        else:
+            return cd.vertcat(  model.get(f"lam_{self.idx_i}_{idx_j}_0"), 
+                                model.get(f"lam_{self.idx_i}_{idx_j}_1"), 
+                                model.get(f"lam_{self.idx_i}_{idx_j}_2"), 
+                                model.get(f"lam_{self.idx_i}_{idx_j}_3"))
+    
+    def get_lam_ji(self, model, params, idx_j):
+        if self.decentralised:
+            if self.solver_name.startswith("solver_nmpc"):
+                return cd.vertcat(  params.get(f"lam_{idx_j}_{self.idx_i}_0"), 
+                                    params.get(f"lam_{idx_j}_{self.idx_i}_1"), 
+                                    params.get(f"lam_{idx_j}_{self.idx_i}_2"), 
+                                    params.get(f"lam_{idx_j}_{self.idx_i}_3"))
+        else:
+            return cd.vertcat(  model.get(f"lam_{idx_j}_{self.idx_i}_0"), 
+                                model.get(f"lam_{idx_j}_{self.idx_i}_1"), 
+                                model.get(f"lam_{idx_j}_{self.idx_i}_2"), 
+                                model.get(f"lam_{idx_j}_{self.idx_i}_3"))
+    
     def get_constraints(self, model, params, settings, stage_idx):
         constraints = []
 
         # States
-        pos_x = model.get(f"x_{self.robot_idx}")
-        pos_y = model.get(f"y_{self.robot_idx}")
-        pos = cd.vertcat(pos_x, pos_y)   # Center of gravity
-        theta = model.get(f"theta_{self.robot_idx}")
-
-        rot_mat_i = rotation_matrix(theta)
-        A_i = cd.vertcat(rot_mat_i.T, -rot_mat_i.T)
-        assert A_i.shape == (4, 2)
-
-        dim_vector = cd.DM([self.length/2, self.width/2, self.length/2, self.width/2])
-        b_i = dim_vector + A_i @ pos
-        assert b_i.shape == (4,1)
+        pos_i, theta_i = self.get_pos_theta_i(model, params)
+        b_i = get_b(pos_i, theta_i, self.length, self.width)
         
         # Constraints for all neighbouring robots (j)
-        for j in range(self.robot_idx, self.n_robots+1): # [1,2]
-            if j == self.robot_idx:
-                continue   
-            
-            pos_j_x = model.get(f"x_{j}")
-            pos_j_y = model.get(f"y_{j}")
-            pos_j = cd.vertcat(pos_j_x, pos_j_y)
+        start_idx = 1 if self.decentralised else self.idx_i
+        for j in range(start_idx, self.n_robots+1): 
+            if j != self.idx_i:
+    
+                pos_j, theta_j = self.get_pos_theta_j(model, params, j)
+                lam_ij = self.get_lam_ij(model, params, j)
+                lam_ji = self.get_lam_ji(model, params, j)
+                assert lam_ij.shape == (4,1)
 
-            theta_j = model.get(f"theta_{j}")
-            lam_ij = cd.vertcat(model.get(f"lam_{self.robot_idx}_{j}_0"), 
-                                model.get(f"lam_{self.robot_idx}_{j}_1"), 
-                                model.get(f"lam_{self.robot_idx}_{j}_2"), 
-                                model.get(f"lam_{self.robot_idx}_{j}_3"))
-            lam_ji = cd.vertcat(model.get(f"lam_{j}_{self.robot_idx}_0"), 
-                                model.get(f"lam_{j}_{self.robot_idx}_1"), 
-                                model.get(f"lam_{j}_{self.robot_idx}_2"), 
-                                model.get(f"lam_{j}_{self.robot_idx}_3"))
-            assert lam_ij.shape == (4,1)
+                b_j = get_b(pos_j, theta_j, self.length, self.width)
 
-            rot_mat_j = rotation_matrix(theta_j)
-            A_j = cd.vertcat(rot_mat_j.T, -rot_mat_j.T)
-            assert A_j.shape == (4, 2)
-
-            b_j = dim_vector + A_j @ pos_j
-            assert b_j.shape == (4,1)
-
-            constraints.append(- b_i.T @ lam_ij - b_j.T @ lam_ji)
+                constraints.append(- b_i.T @ lam_ij - b_j.T @ lam_ji)
 
         return constraints

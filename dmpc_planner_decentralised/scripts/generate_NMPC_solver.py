@@ -24,8 +24,8 @@ from s_2_norm_constraints import s2normConstraintModule
 from solver_model import BicycleModel2ndOrder
 
 
-def configuration_basic(settings):
-
+def configuration_basic(settings, idx):
+    
     modules = ModuleManager()
     model = BicycleModel2ndOrder()
 
@@ -37,12 +37,10 @@ def configuration_basic(settings):
     modules.add_module(ContouringModule(settings))
     modules.add_module(PathReferenceVelocityModule(settings))
     
-    modules.add_module(PolytopicDminConstraintModule(settings, n))
-    modules.add_module(PolytopicSidualConstraintModule(settings, n))
-    modules.add_module(PolytopicSjdualConstraintModule(settings, n))
-    
-    # modules.add_module(s2normConstraintModule(settings))
-        
+    modules.add_module(PolytopicDminConstraintModule(settings, idx))
+    modules.add_module(PolytopicSidualConstraintModule(settings, idx))
+    modules.add_module(PolytopicSjdualConstraintModule(settings, idx))
+            
     return model, modules
 
 
@@ -52,9 +50,10 @@ def generate(idx):
     settings["idx"] = idx
     # print(settings)
 
-    model, modules = configuration_basic(settings)
+    model, modules = configuration_basic(settings, idx)
 
     solver, simulator = generate_solver(modules, model, settings)
+    
     return solver, simulator
 
 if __name__ == "__main__":
