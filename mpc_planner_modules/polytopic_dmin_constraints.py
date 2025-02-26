@@ -124,7 +124,7 @@ class PolytopicDminConstraints:
         
         # Constraints for all neighbouring robots (j)
         start_idx = 1 if self.decentralised else self.idx_i
-        for j in range(start_idx, self.n_robots+1): 
+        for j in range(start_idx, self.number_of_robots+1): 
             if j != self.idx_i:
     
                 pos_j, theta_j = self.get_pos_theta_j(model, params, j)

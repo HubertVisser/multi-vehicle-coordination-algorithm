@@ -80,6 +80,7 @@ def generate_solver(modules, model, settings=None):
 
     npar = params.length()
 
+    model.load_settings(settings)
     model_acados = create_acados_model(settings, model, modules)
 
     # Create an acados ocp object
@@ -103,8 +104,8 @@ def generate_solver(modules, model, settings=None):
     ocp.constraints.x0 = np.zeros(nx)
 
     # Set state bound
-    ocp.constraints.lbx = model.lower_bound_states.T.flatten()
-    ocp.constraints.ubx = model.upper_bound_states.T.flatten() 
+    ocp.constraints.lbx = model.lower_bound_states.flatten()
+    ocp.constraints.ubx = model.upper_bound_states.flatten() 
     ocp.constraints.idxbx = np.array(range(nx))
 
     # Set control input bound

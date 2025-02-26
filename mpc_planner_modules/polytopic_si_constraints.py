@@ -92,7 +92,7 @@ class PolytopicSidualConstraints:
         A_i = get_A(theta_i)
 
         start_idx = 1 if self.decentralised else self.idx_i
-        for j in range(start_idx, self.n_robots+1):  
+        for j in range(start_idx, self.number_of_robots+1):  
             if j != self.idx_i:
                 lam_ij = self.get_lam_ij(model, params, j)
                 s_ij = self.get_s_ij(model, params, j)

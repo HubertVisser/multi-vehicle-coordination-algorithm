@@ -57,4 +57,4 @@ def generate(idx):
     return solver, simulator
 
 if __name__ == "__main__":
-    generate()
+    generate(1)

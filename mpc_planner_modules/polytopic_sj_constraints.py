@@ -73,7 +73,7 @@ class PolytopicSjdualConstraints:
         constraints = []
 
         # Constraints from all neighbouring robots (j) to the ego robot (i)
-        for j in range(self.idx_i, self.n_robots+1): 
+        for j in range(self.idx_i, self.number_of_robots+1): 
             if j != self.idx_i:
 
                 theta_j = self.get_theta_j(model, j)            

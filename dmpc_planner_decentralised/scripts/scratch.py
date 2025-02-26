@@ -9,3 +9,5 @@ dict1.update(dict2)
 
 print(dict1)
 
+s = cd.SX.sym('s', 0)
+print(s)

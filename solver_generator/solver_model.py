@@ -12,6 +12,8 @@ class DynamicsModel:
     def __init__(self):
         self.nu = 0  # number of control variables
         self.nx = 0  # number of states
+        self.nlam = 0 # number of dual variable lambda
+        self.ns = 0 # number of dual variable s
 
         self.states = []
         self.inputs = []
@@ -25,6 +27,9 @@ class DynamicsModel:
 
     def model_discrete_dynamics(self, z, integrated_states, **kwargs):
         return integrated_states
+    
+    def get_nx_nu(self):
+        return self.nx + self.nu
 
     def get_nvar(self):
         return self.nu + self.nx
@@ -36,9 +41,12 @@ class DynamicsModel:
         x = cd.SX.sym("x", self.nx)  # [x, y, omega, vx, vy, w]
         u = cd.SX.sym("u", self.nu)  # [throttle, steering]
         z = cd.vertcat(u, x)
-        self.load(z)
+        self.load_z(z)
         return z
 
+    def acados_symbolics_d(self):
+        return 
+    
     def get_acados_dynamics(self):
         f_expl = self.continuous_model(self._z[self.nu :], self._z[: self.nu])
         return f_expl
@@ -55,15 +63,21 @@ class DynamicsModel:
     def get_acados_u(self):
         return self._z[: self.nu]
 
-    def load(self, z):
+    def load_z(self, z):
         self._z = z
+    
+    def load_d(self, d):
+        self._d = d
 
     def load_settings(self, settings):
         self.params = settings["params"]
         self.settings = settings
 
     def save_map(self):
-        file_path = model_map_path()
+        
+        solver_name = self.settings.get("solver_name") # (TODO: This is not a good way to do this)
+        model_map_name = "nmpc_model_map" if solver_name.startswith("solver_nmpc") else "ca_model_map"
+        file_path = model_map_path() if solver_name is None else model_map_path(model_map_name)
 
         map = dict()
         for idx, state in enumerate(self.states):
@@ -293,6 +307,12 @@ class BicycleModel2ndOrder(DynamicsModel):
 
         self.lower_bound = [0.0, -1.0, -5.1, -10.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, 0.0] # [u, x]
         self.upper_bound = [1.0, 1.0, 1000.0, 10.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
+
+        self.lower_bound_states = self.lower_bound[self.nu:]
+        self.upper_bound_states = self.upper_bound[self.nu:]
+
+        self.lower_bound_u = self.lower_bound[:self.nu]
+        self.upper_bound_u = self.upper_bound[:self.nu]
     
     def model_parameters(self):
         lr_reference = 0.115  #0.11650    # (measureing it wit a tape measure it's 0.1150) reference point location taken by the vicon system measured from the rear wheel
@@ -422,8 +442,8 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
                 self.inputs = np.hstack((self.inputs, sublist_inputs.reshape(-1, 1)))
         
         # Bounds on states and inputs
-        self.lower_bound_states = np.tile(np.array([[-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0]]).T, (1, n))
-        self.upper_bound_states = np.tile(np.array([[1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000]]).T, (1, n))
+        self.lower_bound_states = np.tile(np.array([[-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0]]).T, (1, n)).T
+        self.upper_bound_states = np.tile(np.array([[1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000]]).T, (1, n)).T
         
         self.lower_bound_inputs = np.tile([[0.0],[-1.0]], (1, n)) 
         self.upper_bound_inputs = np.tile([[1.0], [1.0]], (1, n))
@@ -556,21 +576,17 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
 
 if __name__ == "__main__":
 
-    model = BicycleModel2ndOrderMultiRobot(2)
+    model = BicycleModel2ndOrder()
     model.acados_symbolics_z()
-    model.acados_symbolics_d()
     model.get_acados_dynamics()
     model.save_map()
     # print("inputs",model.inputs)
     # print("states",model.states)
-    # print("duals",model.duals)
-    print("xdot", model.get_acados_dynamics().shape)
+
     
     
-    print(model.s)
-    print(model.idx_s)
-    print(model.get_s())
-    print(model.get("s_1_2"))
+
+    print(model.get("theta"))
     # print("lam_1_2", slice_1_2[0], slice_1_2[1], slice_1_2[2], slice_1_2[3])
     # print("lower_bound_u_acados", model.lower_bound_inputs)
     # print("upper_bound_inputs flatten", model.upper_bound_u.flatten())

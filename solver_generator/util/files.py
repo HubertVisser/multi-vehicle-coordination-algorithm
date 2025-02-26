@@ -85,8 +85,8 @@ def acados_solver_path(settings):
 def parameter_map_path(parameter_map_name="parameter_map"):
     return os.path.join(save_config_path(), f"{parameter_map_name}.yaml")
 
-def model_map_path():
-    return os.path.join(save_config_path(), f"model_map.yaml")
+def model_map_path(model_map_name="model_map"):
+    return os.path.join(save_config_path(), f"{model_map_name}.yaml")
 
 
 def solver_settings_path():
