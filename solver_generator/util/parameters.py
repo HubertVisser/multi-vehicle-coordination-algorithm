@@ -68,8 +68,14 @@ class Parameters:
     def load(self, p):
         self._p = p
 
-    def save_map(self):
-        file_path = parameter_map_path()
+    def save_map(self, settings):
+        solver_name = settings.get("solver_name", None)
+        if solver_name and solver_name.startswith("solver_nmpc"):
+            file_path = parameter_map_path("parameter_map_nmpc")
+        elif solver_name and solver_name.startswith("solver_ca"):
+            file_path = parameter_map_path("parameter_map_ca")
+        else:
+            file_path = parameter_map_path()
 
         map = self._params
         map["num parameters"] = self._param_idx
@@ -81,8 +87,8 @@ class Parameters:
     def get(self, parameter):
         if self._p is None:
             print("Load parameters before requesting them!")
-
-        return self._p[self._params[parameter]]
+        
+        return self._p[list(sorted(self._params.keys())).index(parameter)]
 
     def print(self):
         print_header("Parameters")
@@ -117,14 +123,15 @@ class AcadosParameters(Parameters):
         super().__init__()
 
     def load_global_parameters(self):
-        self._global_params = load_parameters("parameter_map_global", package="mpc_planner_solver")
-        self._param_idx = self._global_params["num parameters"]
-        self._params.update(self._global_params)
+        global_params = load_parameters("parameter_map_global", package="mpc_planner_solver")
+        self._param_idx = global_params["num parameters"]
+        self._params.update(global_params)
 
+        
     def load_acados_parameters(self):
        
         self._p = []
-        for param in self._params.keys():
+        for param in sorted(self._params.keys()):
             par = cd.SX.sym(param, 1)
             self._p.append(par)
 
@@ -132,7 +139,7 @@ class AcadosParameters(Parameters):
 
     def get_acados_parameters(self):
         result = None
-        for param in self._params.keys():
+        for param in sorted(self._params.keys()):
             if result is None:
                 result = self.get(param)
             else:
@@ -142,6 +149,14 @@ class AcadosParameters(Parameters):
 
     def get_acados_p(self):
         return self._p
+
+    def pop_model_vars(self, model):
+
+        keys_to_pop = set(model.states + model.inputs)
+        for key in list(self._params.keys()):  # Use list to avoid modifying the dictionary while iterating
+            if key in keys_to_pop:
+                self._params.pop(key)
+                self._param_idx -= 1
 
 class GlobalParameters(Parameters):
 

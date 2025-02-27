@@ -68,6 +68,8 @@ def generate_solver(modules, model, settings=None):
 
     if settings["decentralised"]:
         params.load_global_parameters()
+        params.pop_model_vars(model)
+
     
     define_parameters(modules, params, settings)
     params.load_acados_parameters()
@@ -111,7 +113,7 @@ def generate_solver(modules, model, settings=None):
     # Set control input bound
     ocp.constraints.lbu = model.lower_bound_u.flatten()
     ocp.constraints.ubu = model.upper_bound_u.flatten()
-    ocp.constraints.idxbu = np.array(range(nu + ns + nlam))
+    ocp.constraints.idxbu = np.array(range(nu)) if settings["decentralised"] else np.array(range(nu + ns + nlam))
 
     # Set path constraints bound 
     nc = ocp.model.con_h_expr.shape[0]
@@ -207,12 +209,12 @@ def generate_solver(modules, model, settings=None):
         simulator = AcadosSimSolver(ocp, json_file=json_file_name)
         print_header("Output")
 
-        if os.path.exists(acados_solver_path(settings)) and os.path.isdir(acados_solver_path(settings)):
-            shutil.rmtree(acados_solver_path(settings))
+        if os.path.exists(os.path.join(acados_solver_path(settings), f"{model_acados.name}")) and os.path.isdir(os.path.join(acados_solver_path(settings), f"{model_acados.name}")):
+            shutil.rmtree(os.path.join(acados_solver_path(settings), f"{model_acados.name}"))
 
-        shutil.move(default_acados_solver_path(settings), acados_solver_path(settings))  # Move the solver to this directory
+        shutil.move(default_acados_solver_path(settings), os.path.join(acados_solver_path(settings), f"{model_acados.name}"))  # Move the solver to this directory
 
-    settings["params"].save_map()
+    settings["params"].save_map(settings)
     model.save_map()
 
     # Save other settings
@@ -228,7 +230,13 @@ def generate_solver(modules, model, settings=None):
     solver_settings["nvar"] = model.get_nvar()
     solver_settings["npar"] = settings["params"].length()
 
-    path = solver_settings_path()
+    if model_acados.name.startswith("solver_nmpc"):
+        path = solver_settings_path("solver_settings_nmpc")
+    elif model_acados.name.startswith("solver_ca"):
+        path = solver_settings_path("solver_settings_ca")        
+    else:
+        path = solver_settings_path()
+    
     write_to_yaml(path, solver_settings)
 
     print_path("Solver", solver_path(settings), tab=True, end="")

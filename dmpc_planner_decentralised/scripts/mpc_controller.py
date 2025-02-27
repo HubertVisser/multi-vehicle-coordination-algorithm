@@ -11,6 +11,7 @@ import numpy as np
 import math
 
 import generate_NMPC_solver
+import generate_CA_solver
 from solver_model import BicycleModel2ndOrder
 from acados_template import AcadosModel
 from acados_template import AcadosOcp, AcadosOcpSolver, AcadosSimSolver
@@ -31,47 +32,59 @@ class MPCPlanner:
         self._braking_acceleration = self._settings["braking_acceleration"]
         self._number_of_robots = self._settings["number_of_robots"]
         self._dart_simulator = self._settings["dart_simulator"]
-        self._dmin = self._settings["polytopic"]["d_min"]
         self._idx = idx
 
-        self._projection_func = lambda trajectory: trajectory # No projection
+        self.init_nmpc_solver()
+        self.init_ca_solver()
 
-        self.init_acados_solver()
+        self._mpc_feasible = False
+        self.time_tracker = TimeTracker(self._settings["solver_settings"]) # NOTE: For every controller another timer??
 
-        self._mpc_feasible = True
-        self.time_tracker = TimeTracker(self._settings["solver_settings"])
+        print_header(f"Starting MPC {idx}")
 
-        print_header("Starting MPC with DART simulator") if self._dart_simulator else print_header("Starting MPC without simulator")
-
-    def init_acados_solver(self):
+    def init_nmpc_solver(self):
         # The generation software
-        if hasattr(self, "_solver"):
-            del self._solver, self._simulator, self._solver_settings
+        if hasattr(self, "_solver_nmpc"):
+            del self._solver_nmpc, self._solver_settings_nmpc
         if hasattr(self, "_mpc_x_plan"):
             del self._mpc_x_plan, self._mpc_u_plan
 
-        self._solver, self._simulator = generate_NMPC_solver.generate(self._idx)
-        self._solver_settings = load_settings("solver_settings", package="mpc_planner_solver")
+        self._solver_nmpc, _ = generate_NMPC_solver.generate(self._idx)
+        self._solver_settings_nmpc = load_settings("solver_settings_nmpc", package="mpc_planner_solver")
 
-        # acados_ocp = AcadosOcp(acados_path=acados_path)
-        # self._solver = AcadosOcpSolver(acados_ocp)
         self._model = AcadosRealTimeModel(self._settings, self._solver_settings, package="mpc_planner_solver")
         self._dynamic_model = BicycleModel2ndOrder(self._number_of_robots)
         self.reference_velocity = self._settings["weights"]["reference_velocity"]
 
-        self._nx = self._solver_settings["nx"]
-        self._nu = self._solver_settings["nu"]
-        self._nd = self._solver_settings["nd"]
-        self._nlam = self._solver_settings["nlam"]
-        self._nvar = self._solver_settings["nvar"]
-        self._nx_one_robot = self._nx // self._number_of_robots
+        self._nx_nmpc = self._solver_settings_nmpc["nx"]
+        self._nu_nmpc = self._solver_settings_nmpc["nu"]
+        self._nvar_nmpc = self._solver_settings_nmpc["nvar"]
 
-        self._prev_trajectory = np.zeros((self._N, self._nvar)) 
+        self._prev_trajectory_nmpc = np.zeros((self._N, self._nvar_nmpc)) 
 
-        print_success("Acados solver generated")
+        print_success(f"NMPC {self._idx} solver generated")
+    
+    def init_ca_solver(self):
+        # The generation software
+        if hasattr(self, "_solver_ca"):
+            del self._solver_ca, self._solver_settings_ca
 
-    def solve(self, xinit, p):
-        if not hasattr(self, "_solver"):
+        self._solver_ca, _ = generate_CA_solver.generate(self._idx)
+        self._solver_settings_ca = load_settings("solver_settings_ca", package="mpc_planner_solver")
+
+        self._model_ca = AcadosRealTimeModel(self._settings, self._solver_settings_ca, package="mpc_planner_solver")
+
+        self._nx_ca = self._solver_settings_ca["nx"]
+        self._nu_ca = self._solver_settings_ca["nu"]
+        self._nlam_ca = self._solver_settings_ca["nlam"]
+        self._nvar_ca = self._solver_settings_ca["nvar"]
+
+        self._prev_solution_ca = np.zeros((self._N, self._nvar_ca)) 
+
+        print_success("CA {self._idx} solver generated")
+
+    def solve_nmpc(self, xinit, p):
+        if not hasattr(self, "_solver_nmpc"):
             output = dict()
             self.set_infeasible(output)
             print("Solver is being regenerated...")
@@ -81,7 +94,7 @@ class MPCPlanner:
         if not hasattr(self, "_mpc_x_plan"):
             self._mpc_x_plan = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
             self.set_initial_x_plan_1(xinit)
-            self.set_initial_x_plan_2(xinit) if self._number_of_robots > 1 else None
+            self.set_initial_x_plan_2(xinit)
 
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu + self._nd, self._N))
@@ -90,18 +103,8 @@ class MPCPlanner:
         self._x_traj_init =  self._mpc_x_plan
         self._u_traj_init = self._mpc_u_plan
 
-        if self._mpc_feasible:
+        if not self._mpc_feasible:
             pass
-            # Shifted
-            # self._x_traj_init = np.concatenate((self._mpc_x_plan[:, 1:], self._mpc_x_plan[:, -1:]), axis=1)
-            # self._u_traj_init = np.concatenate((self._mpc_u_plan[:, 1:], self._mpc_u_plan[:, -1:]), axis=1)            
-
-            # Not shifted
-        else:
-            pass
-            # Brake (model specific)
-            # self._x_traj_init = self.get_braking_trajectory(xinit)
-            # self._x_traj_init = self._projection_func(self._x_traj_init)
 
             # Xinit everywhere (could be infeasible)
             self._x_traj_init = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))

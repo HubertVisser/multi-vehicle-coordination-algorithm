@@ -25,18 +25,12 @@ class PathReferenceVelocityObjective:
 
         return params
 
-    def get_v(self):
-        if self._decentralised:
-            return self.model.get("vx")
-        else:
-            return self.model.get(f"vx_{self._idx}")
-
     def get_value(self, model, params, settings, stage_idx):
 
         # # The cost is computed in the contouring cost when using CA-MPC
         # return 0.0
         
-        v = self.get_v()
+        v = model.get(f"vx_{self._idx}")
         # s = model.get("s")
 
         # path_velocity = Spline(params, "spline_v", self.num_segments, s)
@@ -60,9 +54,9 @@ class PathReferenceVelocityObjective:
 
 class PathReferenceVelocityModule(ObjectiveModule):
 
-    def __init__(self, settings, robot_idx=None):
+    def __init__(self, settings, robot_idx=0):
         super().__init__()
-        self.module_name = f"PathReferenceVelocity"
+        self.module_name = f"PathReferenceVelocity_{robot_idx}"
         self.import_name = "path_reference_velocity.h"
         self.type = "objective"
         self.description = "Tracks a velocity in the direction of a 2D path"

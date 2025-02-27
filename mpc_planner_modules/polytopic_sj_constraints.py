@@ -56,7 +56,9 @@ class PolytopicSjdualConstraints:
             upper_bound.append(0)
         return upper_bound
 
-    def get_theta_j(self, model, idx_j):
+    def get_theta_j(self, model, params, idx_j):
+        if self.decentralised and self.solver_name.startswith("solver_ca"):
+            return params.get(f"theta_{idx_j}")
         return model.get(f"theta_{idx_j}")
     
     def get_lam_ji(self, model, idx_j):
@@ -76,7 +78,7 @@ class PolytopicSjdualConstraints:
         for j in range(self.idx_i, self.number_of_robots+1): 
             if j != self.idx_i:
 
-                theta_j = self.get_theta_j(model, j)            
+                theta_j = self.get_theta_j(model, params, j)            
                 A_j = get_A(theta_j)
 
                 lam_ji = self.get_lam_ji(model, j)

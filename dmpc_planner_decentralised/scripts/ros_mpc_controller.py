@@ -42,8 +42,8 @@ from pyplot import plot_x_traj, plot_splines
 
 
 class ROSMPCPlanner:
-    def __init__(self):
-        self._settings = load_settings(package="dmpc_planner_decentralised")
+    def __init__(self, settings=None):
+        self._settings = settings
         self._N = self._settings["N"]
         self._integrator_step = self._settings["integrator_step"]
         self._braking_acceleration = self._settings["braking_acceleration"]

@@ -55,6 +55,8 @@ class ROSMPCCoordinator:
         self.define_global_params()
         self._global_params.save_map()
 
+        
+
     
     def define_global_params(self):
         for i in range(1, self._number_of_robots+1):

@@ -15,58 +15,55 @@ from mpc_base import MPCBaseModule
 from contouring import ContouringModule
 from goal_module import GoalModule
 from path_reference_velocity import PathReferenceVelocityModule
+from ca_distance import MinimizeCollisionAvoidanceModule
 from polytopic_dmin_constraints import PolytopicDminConstraintModule
 from polytopic_si_constraints import PolytopicSidualConstraintModule
 from polytopic_sj_constraints import PolytopicSjdualConstraintModule
 from s_2_norm_constraints import s2normConstraintModule
 
 # Import solver models that you want to use
-from solver_model import BicycleModel2ndOrderMultiRobot
+from solver_model import CollisionAvoidanceModel
 
 
-def configuration_basic(settings):
+def configuration_basic(settings, idx):
     num_robots = settings["number_of_robots"]
 
     modules = ModuleManager()
-    model = BicycleModel2ndOrderMultiRobot(num_robots)
+    model = CollisionAvoidanceModel(num_robots, idx)
 
-    for n in range(1,num_robots+1):
-        # Penalize ||steering||_2^2
-        base_module = modules.add_module(MPCBaseModule(settings, n))
-        base_module.weigh_variable(var_name=f"steering_{n}", weight_names="steering")
-        base_module.weigh_variable(var_name=f"throttle_{n}", weight_names="throttle")
-        for j in range(1,num_robots+1):
-            if j != n:
-                base_module.weigh_variable(var_name=f"lam_{n}_{j}_0", weight_names="lambda",)
-                base_module.weigh_variable(var_name=f"lam_{n}_{j}_1", weight_names="lambda",)
-                base_module.weigh_variable(var_name=f"lam_{n}_{j}_2", weight_names="lambda",)
-                base_module.weigh_variable(var_name=f"lam_{n}_{j}_3", weight_names="lambda",)
-                base_module.weigh_variable(var_name=f"s_{n}_{j}", weight_names="s_dual",
-                                           cost_function=lambda x, w: w[0] * x.T @ x)
-        
-        modules.add_module(ContouringModule(settings, n))
-        modules.add_module(PathReferenceVelocityModule(settings, n))
-        
-        modules.add_module(PolytopicDminConstraintModule(settings, n))
-        modules.add_module(PolytopicSidualConstraintModule(settings, n))
-        modules.add_module(PolytopicSjdualConstraintModule(settings, n))
+    # Penalize ||steering||_2^2
+    base_module = modules.add_module(MPCBaseModule(settings))
+    for j in range(1,num_robots+1):
+        if j != idx:
+            base_module.weigh_variable(var_name=f"lam_{idx}_{j}_0", weight_names="lambda",)
+            base_module.weigh_variable(var_name=f"lam_{idx}_{j}_1", weight_names="lambda",)
+            base_module.weigh_variable(var_name=f"lam_{idx}_{j}_2", weight_names="lambda",)
+            base_module.weigh_variable(var_name=f"lam_{idx}_{j}_3", weight_names="lambda",)
+            base_module.weigh_variable(var_name=f"s_{idx}_{j}_0", weight_names="s_dual",)
+            base_module.weigh_variable(var_name=f"s_{idx}_{j}_1", weight_names="s_dual",)
     
-    # modules.add_module(s2normConstraintModule(settings))
-        
+    modules.add_module(MinimizeCollisionAvoidanceModule(settings, idx))
+    
+    modules.add_module(PolytopicDminConstraintModule(settings, idx))
+    modules.add_module(PolytopicSidualConstraintModule(settings, idx))
+    modules.add_module(PolytopicSjdualConstraintModule(settings, idx))
+    
+    # TODO: add norm_2 for s_ij, atm numerically unstable
+
     return model, modules
 
 
-def generate(params, idx):
+def generate(idx):
     settings = load_settings(package="dmpc_planner_decentralised")
     settings["solver_name"] = f"solver_ca_{idx}"
     settings["idx"] = idx
-    print(settings)
+    # print(settings)
 
-    model, modules = configuration_basic(settings)
-    model.load_settings(settings)
+    model, modules = configuration_basic(settings, idx)
 
     solver, simulator = generate_solver(modules, model, settings)
+    
     return solver, simulator
 
 if __name__ == "__main__":
-    generate()
+    generate(idx=1)

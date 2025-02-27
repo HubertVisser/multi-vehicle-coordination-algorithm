@@ -27,19 +27,18 @@ from solver_model import BicycleModel2ndOrder
 def configuration_basic(settings, idx):
     
     modules = ModuleManager()
-    model = BicycleModel2ndOrder()
+    model = BicycleModel2ndOrder(idx)
 
     # Penalize ||steering||_2^2
     base_module = modules.add_module(MPCBaseModule(settings))
-    base_module.weigh_variable(var_name=f"steering", weight_names="steering")
-    base_module.weigh_variable(var_name=f"throttle", weight_names="throttle")
+    base_module.weigh_variable(var_name=f"steering_{idx}", weight_names="steering")
+    base_module.weigh_variable(var_name=f"throttle_{idx}", weight_names="throttle")
     
-    modules.add_module(ContouringModule(settings))
-    modules.add_module(PathReferenceVelocityModule(settings))
+    modules.add_module(ContouringModule(settings, idx))
+    modules.add_module(PathReferenceVelocityModule(settings, idx))
     
     modules.add_module(PolytopicDminConstraintModule(settings, idx))
     modules.add_module(PolytopicSidualConstraintModule(settings, idx))
-    modules.add_module(PolytopicSjdualConstraintModule(settings, idx))
             
     return model, modules
 
@@ -57,4 +56,4 @@ def generate(idx):
     return solver, simulator
 
 if __name__ == "__main__":
-    generate(1)
+    generate(idx=1)

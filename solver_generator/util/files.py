@@ -89,8 +89,8 @@ def model_map_path(model_map_name="model_map"):
     return os.path.join(save_config_path(), f"{model_map_name}.yaml")
 
 
-def solver_settings_path():
-    return os.path.join(save_config_path(), f"solver_settings.yaml")
+def solver_settings_path(solver_settings_name="solver_settings"):
+    return os.path.join(save_config_path(), f"{solver_settings_name}.yaml")
 
 
 def generated_src_file(settings):

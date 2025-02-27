@@ -57,25 +57,18 @@ class PolytopicDminConstraints:
         return upper_bound
 
     def get_pos_theta_i(self, model, params):
-        if self.decentralised:
-            if self.solver_name.startswith("solver_nmpc"):
-                pos_x_i = model.get(f"x")
-                pos_y_i = model.get(f"y")
-                pos_i = cd.vertcat(pos_x_i, pos_y_i)   # Center of gravity
-                theta_i = model.get(f"theta")
-            elif self.solver_name.startswith("solver_ca"):
-                pos_x_i = params.get(f"x_{self.idx_i}")
-                pos_y_i = params.get(f"y_{self.idx_i}")
-                pos_i = cd.vertcat(pos_x_i, pos_y_i)   # Center of gravity
-                theta_i = params.get(f"theta_{self.idx_i}")
-            else:
-                raise IOError(f"Requested a position for solver `{self.solver_name}' that is not a valid solver name.")
+        if self.decentralised and self.solver_name.startswith("solver_ca"):
+            pos_x_i = params.get(f"x_{self.idx_i}")
+            pos_y_i = params.get(f"y_{self.idx_i}")
+            pos_i = cd.vertcat(pos_x_i, pos_y_i)   # Center of gravity
+            theta_i = params.get(f"theta_{self.idx_i}")
+            return pos_i, theta_i
         else:
             pos_x_i = model.get(f"x_{self.idx_i}")
             pos_y_i = model.get(f"y_{self.idx_i}")
             pos_i = cd.vertcat(pos_x_i, pos_y_i)
             theta_i = model.get(f"theta_{self.idx_i}")
-        return pos_i, theta_i
+            return pos_i, theta_i
                 
     def get_pos_theta_j(self, model, params, idx_j):
         if self.decentralised:
@@ -90,12 +83,11 @@ class PolytopicDminConstraints:
             return cd.vertcat(pos_x_j, pos_y_j), theta_j
 
     def get_lam_ij(self, model, params, idx_j):
-        if self.decentralised:
-            if self.solver_name.startswith("solver_nmpc"):
-                return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
-                                    params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
-                                    params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
-                                    params.get(f"lam_{self.idx_i}_{idx_j}_3"))
+        if self.decentralised and self.solver_name.startswith("solver_nmpc"):
+            return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
+                                params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
+                                params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
+                                params.get(f"lam_{self.idx_i}_{idx_j}_3"))
         else:
             return cd.vertcat(  model.get(f"lam_{self.idx_i}_{idx_j}_0"), 
                                 model.get(f"lam_{self.idx_i}_{idx_j}_1"), 
@@ -103,12 +95,11 @@ class PolytopicDminConstraints:
                                 model.get(f"lam_{self.idx_i}_{idx_j}_3"))
     
     def get_lam_ji(self, model, params, idx_j):
-        if self.decentralised:
-            if self.solver_name.startswith("solver_nmpc"):
-                return cd.vertcat(  params.get(f"lam_{idx_j}_{self.idx_i}_0"), 
-                                    params.get(f"lam_{idx_j}_{self.idx_i}_1"), 
-                                    params.get(f"lam_{idx_j}_{self.idx_i}_2"), 
-                                    params.get(f"lam_{idx_j}_{self.idx_i}_3"))
+        if self.decentralised and self.solver_name.startswith("solver_nmpc"):
+            return cd.vertcat(  params.get(f"lam_{idx_j}_{self.idx_i}_0"), 
+                                params.get(f"lam_{idx_j}_{self.idx_i}_1"), 
+                                params.get(f"lam_{idx_j}_{self.idx_i}_2"), 
+                                params.get(f"lam_{idx_j}_{self.idx_i}_3"))
         else:
             return cd.vertcat(  model.get(f"lam_{idx_j}_{self.idx_i}_0"), 
                                 model.get(f"lam_{idx_j}_{self.idx_i}_1"), 

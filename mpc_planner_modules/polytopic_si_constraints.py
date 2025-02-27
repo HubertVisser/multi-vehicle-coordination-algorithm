@@ -56,19 +56,17 @@ class PolytopicSidualConstraints:
         return upper_bound
 
     def get_theta_i(self, model, params):
-        if self.decentralised:
-            if self.solver_name.startswith("solver_ca"):
-                return params.get(f"theta_{self.idx_i}")
+        if self.decentralised and self.solver_name.startswith("solver_ca"):
+            return params.get(f"theta_{self.idx_i}")
         else:
             return model.get(f"theta_{self.idx_i}")
     
     def get_lam_ij(self, model, params, idx_j):
-        if self.decentralised:
-            if self.solver_name.startswith("solver_nmpc"):
-                return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
-                                    params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
-                                    params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
-                                    params.get(f"lam_{self.idx_i}_{idx_j}_3"))
+        if self.decentralised and self.solver_name.startswith("solver_nmpc"):
+            return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
+                                params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
+                                params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
+                                params.get(f"lam_{self.idx_i}_{idx_j}_3"))
         else:
             return cd.vertcat(  model.get(f"lam_{self.idx_i}_{idx_j}_0"), 
                                 model.get(f"lam_{self.idx_i}_{idx_j}_1"), 
@@ -76,10 +74,9 @@ class PolytopicSidualConstraints:
                                 model.get(f"lam_{self.idx_i}_{idx_j}_3"))
         
     def get_s_ij(self, model, params, idx_j):
-        if self.decentralised:
-            if self.solver_name.startswith("solver_nmpc"):
-                return cd.vertcat(  params.get(f"s_{self.idx_i}_{idx_j}_0"), 
-                                    params.get(f"s_{self.idx_i}_{idx_j}_1"))
+        if self.decentralised and self.solver_name.startswith("solver_nmpc"):
+            return cd.vertcat(  params.get(f"s_{self.idx_i}_{idx_j}_0"), 
+                                params.get(f"s_{self.idx_i}_{idx_j}_1"))
         else:
             return cd.vertcat(  model.get(f"s_{self.idx_i}_{idx_j}_0"), 
                                 model.get(f"s_{self.idx_i}_{idx_j}_1"))

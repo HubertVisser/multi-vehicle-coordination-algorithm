@@ -10,8 +10,8 @@ from spline import Spline2D
 class DynamicsModel:
 
     def __init__(self):
-        self.nu = 0  # number of control variables
         self.nx = 0  # number of states
+        self.nu = 0  # number of control variables
         self.nlam = 0 # number of dual variable lambda
         self.ns = 0 # number of dual variable s
 
@@ -23,6 +23,9 @@ class DynamicsModel:
         self.upper_bound = []
 
         self.params = None
+        self.settings = None
+        self.idx = None
+        self.solver_name = None
         self.nx_integrate = None
 
     def model_discrete_dynamics(self, z, integrated_states, **kwargs):
@@ -32,15 +35,15 @@ class DynamicsModel:
         return self.nx + self.nu
 
     def get_nvar(self):
-        return self.nu + self.nx
+        return self.nx + self.nu
 
     def get_xinit(self):
-        return range(self.nu, self.get_nvar())
+        return range(self.get_nvar()-self.nu)
 
     def acados_symbolics_z(self):
         x = cd.SX.sym("x", self.nx)  # [x, y, omega, vx, vy, w]
         u = cd.SX.sym("u", self.nu)  # [throttle, steering]
-        z = cd.vertcat(u, x)
+        z = cd.vertcat(x, u)
         self.load_z(z)
         return z
 
@@ -48,20 +51,20 @@ class DynamicsModel:
         return 
     
     def get_acados_dynamics(self):
-        f_expl = self.continuous_model(self._z[self.nu :], self._z[: self.nu])
+        f_expl = self.continuous_model(self._z[: self.nx], self._z[self.nx :])
         return f_expl
 
     def get_x(self):
-        return self._z[self.nu :]
+        return self._z[: self.nx]
 
     def get_u(self):
-        return self._z[: self.nu]
+        return self._z[self.nx :]
 
-    def get_acados_x_dot(self):
-        return self._x_dot
-
+    def get_acados_x(self):
+        return self._z[: self.nx]
+    
     def get_acados_u(self):
-        return self._z[: self.nu]
+        return self._z[self.nx :]
 
     def load_z(self, z):
         self._z = z
@@ -70,14 +73,19 @@ class DynamicsModel:
         self._d = d
 
     def load_settings(self, settings):
-        self.params = settings["params"]
         self.settings = settings
-
+        self.params = settings["params"]
+    
     def save_map(self):
         
-        solver_name = self.settings.get("solver_name") # (TODO: This is not a good way to do this)
-        model_map_name = "nmpc_model_map" if solver_name.startswith("solver_nmpc") else "ca_model_map"
-        file_path = model_map_path() if solver_name is None else model_map_path(model_map_name)
+        if self.settings is not None:
+            self.solver_name = self.settings.get("solver_name", None)
+            if self.solver_name and self.solver_name.startswith("solver_nmpc"):
+                model_map_name = "model_map_nmpc"
+            else:
+                model_map_name = "model_map_ca"
+        
+        file_path = model_map_path(model_map_name) if self.solver_name else model_map_path()
 
         map = dict()
         for idx, state in enumerate(self.states):
@@ -97,10 +105,10 @@ class DynamicsModel:
     def get(self, state_or_input):
         if state_or_input in self.states:
             i = self.states.index(state_or_input)
-            return self._z[self.nu + i]
+            return self._z[i]
         elif state_or_input in self.inputs:
             i = self.inputs.index(state_or_input)
-            return self._z[i]
+            return self._z[self.nx + i]
         else:
             raise IOError(f"Requested a state or input `{state_or_input}' that was neither a state nor an input for the selected model")
 
@@ -113,16 +121,16 @@ class DynamicsModel:
         if state_or_input in self.states:
             i = self.states.index(state_or_input)
             return (
-                self.lower_bound[self.nu + i],
-                self.upper_bound[self.nu + i],
-                self.upper_bound[self.nu + i] - self.lower_bound[self.nu + i],
+                self.lower_bound.item([self.nu + i][0]),
+                self.upper_bound.item([self.nu + i][0]),
+                self.upper_bound.item([self.nu + i][0]) - self.lower_bound.item([self.nu + i][0]),
             )
         elif state_or_input in self.inputs:
             i = self.inputs.index(state_or_input)
             return (
-                self.lower_bound[i],
-                self.upper_bound[i],
-                self.upper_bound[i] - self.lower_bound[i],
+                self.lower_bound.item([i][0]),
+                self.upper_bound.item([i][0]),
+                self.upper_bound.item([i][0]) - self.lower_bound.item([i][0]),
             )
         else:
             raise IOError(f"Requested a state or input `{state_or_input}' that was neither a state nor an input for the selected model")
@@ -139,6 +147,14 @@ class DynamicsModel:
         lower_bound, upper_bound, range = self.get_bounds(state_or_input)
 
         return ((var - tracking_value) / range) ** 2
+    
+    def get_idx(self):
+        if self.idx is None:
+            try:
+                self.idx = self.settings["idx"]
+            except KeyError:
+                raise KeyError("Robot index not defined in settings")
+        return self.idx
 
 class MultiRobotDynamicsModel():
     def __init__(self):
@@ -297,22 +313,23 @@ class MultiRobotDynamicsModel():
 # Bicycle model
 class BicycleModel2ndOrder(DynamicsModel):
 
-    def __init__(self):
+    def __init__(self, idx):
         super().__init__()
-        self.nu = 2
         self.nx = 7     
+        self.nu = 2
+        self.idx = idx # robot index
 
-        self.inputs = ["throttle", "steering"] #, "slack"]
-        self.states = ["x", "y", "theta", "vx", "vy", "w", "s"]
+        self.states = [f"x_{idx}", f"y_{idx}", f"theta_{idx}", f"vx_{idx}", f"vy_{idx}", f"w_{idx}", f"s_{idx}"]
+        self.inputs = [f"throttle_{idx}", f"steering_{idx}"] #, "slack"]
 
-        self.lower_bound = [0.0, -1.0, -5.1, -10.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, 0.0] # [u, x]
-        self.upper_bound = [1.0, 1.0, 1000.0, 10.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0] # [u, x]
+        self.lower_bound = np.array([-5.1, -10.0, -1000.0, -1000.0, -1000.0, -1000.0, 0.0, 0.0, -1.0]) # [u, x]
+        self.upper_bound = np.array([1000.0, 10.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1.0, 1.0]) # [u, x]
 
-        self.lower_bound_states = self.lower_bound[self.nu:]
-        self.upper_bound_states = self.upper_bound[self.nu:]
+        self.lower_bound_states = self.lower_bound[:self.nx]
+        self.upper_bound_states = self.upper_bound[:self.nx]
 
-        self.lower_bound_u = self.lower_bound[:self.nu]
-        self.upper_bound_u = self.upper_bound[:self.nu]
+        self.lower_bound_u = self.lower_bound[self.nx:]
+        self.upper_bound_u = self.upper_bound[self.nx:]
     
     def model_parameters(self):
         lr_reference = 0.115  #0.11650    # (measureing it wit a tape measure it's 0.1150) reference point location taken by the vicon system measured from the rear wheel
@@ -409,7 +426,9 @@ class BicycleModel2ndOrder(DynamicsModel):
 
 # Bicycle model multiple robots
 class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
-
+    """
+    Dynamics model for multiple robots in centralised coordination
+    """
     def __init__(self, n):
         super().__init__()
         self.n = n
@@ -571,22 +590,60 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
     def get_mass(self):
         return self.model_parameters()[1]
 
+class CollisionAvoidanceModel(DynamicsModel):
+    def __init__(self, n, idx):
+        super().__init__()
+        self.num_of_robots = n
+        self.idx = idx # robot index
+        self.nx = 1
+        self.nlam = (self.num_of_robots-1) *4 *2 # lambda variables
+        self.ns = (self.num_of_robots-1) *2 # s variables
+        self.nu = self.nlam + self.ns
+
+        self.states = [f"unused_x_{idx}"]
+        for j in range(1, n+1):
+            if idx != j:
+                self.inputs.extend([f"lam_{idx}_{j}_0", f"lam_{idx}_{j}_1", f"lam_{idx}_{j}_2", f"lam_{idx}_{j}_3"])
+                self.inputs.extend([f"lam_{j}_{idx}_0", f"lam_{j}_{idx}_1", f"lam_{j}_{idx}_2", f"lam_{j}_{idx}_3"])
+        for i in range(1, n+1):
+            for j in range(i, n+1):
+                if i != j and (i == idx or j == idx):
+                    self.inputs.extend([f"s_{i}_{j}_0", f"s_{i}_{j}_1"])
+
+        self.lower_bound = np.array([0.0] + [0.0]* self.nlam + [-1.0]* self.ns ) # [x, u]
+        self.upper_bound = np.array([0.0] + [1000.0]* self.nlam + [1.0]* self.ns ) # [x, u]
+
+        self.lower_bound_states = self.lower_bound[:self.nx]
+        self.upper_bound_states = self.upper_bound[:self.nx]
+
+        self.lower_bound_u = self.lower_bound[self.nx:]
+        self.upper_bound_u = self.upper_bound[self.nx:]
+
+    def continuous_model(self, x, u):
+        return x
+    
+
+
 
 
 
 if __name__ == "__main__":
 
-    model = BicycleModel2ndOrder()
-    model.acados_symbolics_z()
-    model.get_acados_dynamics()
-    model.save_map()
+    model = CollisionAvoidanceModel(3, 2)
+    model_1 = BicycleModel2ndOrder(1)
+    print(model_1.get_bounds("steering_1")[0])
+    print(model_1.get_bounds("x_1")[0])
+    # model.acados_symbolics_z()
+    # model.get_acados_dynamics()
+    model_1.save_map()
     # print("inputs",model.inputs)
     # print("states",model.states)
 
     
     
 
-    print(model.get("theta"))
+    print(model.lower_bound)
+    print(model.lower_bound_u)
     # print("lam_1_2", slice_1_2[0], slice_1_2[1], slice_1_2[2], slice_1_2[3])
     # print("lower_bound_u_acados", model.lower_bound_inputs)
     # print("upper_bound_inputs flatten", model.upper_bound_u.flatten())
