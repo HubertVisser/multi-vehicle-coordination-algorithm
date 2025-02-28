@@ -225,10 +225,8 @@ def generate_solver(modules, model, settings=None):
     solver_settings["nvar"] = model.get_nvar()
     solver_settings["npar"] = settings["params"].length()
 
-    if model_acados.name.startswith("solver_nmpc"):
-        path = solver_settings_path("solver_settings_nmpc")
-    elif model_acados.name.startswith("solver_ca"):
-        path = solver_settings_path("solver_settings_ca")        
+    if model_acados.name.startswith("solver"):
+        path = solver_settings_path("solver_settings"+ model_acados.name[len("solver"):])   
     else:
         path = solver_settings_path()
     

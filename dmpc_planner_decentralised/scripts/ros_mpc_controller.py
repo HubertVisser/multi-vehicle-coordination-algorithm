@@ -63,8 +63,8 @@ class ROSMPCPlanner:
         self._solver_settings_ca = load_settings("solver_settings_ca", package="mpc_planner_solver")
 
         # Tied to the solver
-        self._params_nmpc = RealTimeParameters(self._settings, parameter_map_name="parameter_map_nmpc", package="mpc_planner_solver")  
-        self._params_ca = RealTimeParameters(self._settings, parameter_map_name="parameter_map_ca", package="mpc_planner_solver")  
+        self._params_nmpc = RealTimeParameters(self._settings, parameter_map_name=f"parameter_map_nmpc_{idx}", package="mpc_planner_solver")  
+        self._params_ca = RealTimeParameters(self._settings, parameter_map_name=f"parameter_map_ca_{idx}", package="mpc_planner_solver")  
         self._weights = self._settings["weights"]
 
         self._nx_nmpc = self._solver_settings_nmpc["nx"]

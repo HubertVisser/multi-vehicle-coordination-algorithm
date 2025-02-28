@@ -50,9 +50,9 @@ class MPCPlanner:
             del self._mpc_x_plan, self._mpc_u_plan
 
         self._solver_nmpc, _ = generate_NMPC_solver.generate(self._idx)
-        self._solver_settings_nmpc = load_settings("solver_settings_nmpc", package="mpc_planner_solver")
+        self._solver_settings_nmpc = load_settings(f"solver_settings_nmpc_{self._idx}", package="mpc_planner_solver")
 
-        self._model_nmpc = AcadosRealTimeModel(self._settings, self._solver_settings_nmpc, model_map_name="model_map_nmpc", package="mpc_planner_solver")
+        self._model_nmpc = AcadosRealTimeModel(self._settings, self._solver_settings_nmpc, model_map_name=f"model_map_nmpc_{self._idx}", package="mpc_planner_solver")
         self._dynamic_model = BicycleModel2ndOrder(self._number_of_robots)
         self.reference_velocity = self._settings["weights"]["reference_velocity"]
 
@@ -70,9 +70,9 @@ class MPCPlanner:
             del self._solver_ca, self._solver_settings_ca
 
         self._solver_ca, _ = generate_CA_solver.generate(self._idx)
-        self._solver_settings_ca = load_settings("solver_settings_ca", package="mpc_planner_solver")
+        self._solver_settings_ca = load_settings(f"solver_settings_ca_{self._idx}", package="mpc_planner_solver")
 
-        self._model_ca = AcadosRealTimeModel(self._settings, self._solver_settings_ca, model_map_name="model_map_ca", package="mpc_planner_solver")
+        self._model_ca = AcadosRealTimeModel(self._settings, self._solver_settings_ca, model_map_name=f"model_map_ca_{self._idx}", package="mpc_planner_solver")
 
         self._nx_ca = self._solver_settings_ca["nx"]
         self._nu_ca = self._solver_settings_ca["nu"]

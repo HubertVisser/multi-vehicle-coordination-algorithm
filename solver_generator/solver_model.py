@@ -80,11 +80,9 @@ class DynamicsModel:
         
         if self.settings is not None:
             self.solver_name = self.settings.get("solver_name", None)
-            if self.solver_name and self.solver_name.startswith("solver_nmpc"):
-                model_map_name = "model_map_nmpc"
-            else:
-                model_map_name = "model_map_ca"
-        
+            if self.solver_name:
+                model_map_name = "model_map"+ self.solver_name[len("solver"):]
+            
         file_path = model_map_path(model_map_name) if self.solver_name else model_map_path()
 
         map = dict()

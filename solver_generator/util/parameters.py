@@ -70,10 +70,8 @@ class Parameters:
 
     def save_map(self, settings):
         solver_name = settings.get("solver_name", None)
-        if solver_name and solver_name.startswith("solver_nmpc"):
-            file_path = parameter_map_path("parameter_map_nmpc")
-        elif solver_name and solver_name.startswith("solver_ca"):
-            file_path = parameter_map_path("parameter_map_ca")
+        if solver_name:
+            file_path = parameter_map_path("parameter_map"+ solver_name[len("solver"):])
         else:
             file_path = parameter_map_path()
 
