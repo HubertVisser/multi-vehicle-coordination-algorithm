@@ -52,7 +52,7 @@ class MPCPlanner:
         self._solver_nmpc, _ = generate_NMPC_solver.generate(self._idx)
         self._solver_settings_nmpc = load_settings("solver_settings_nmpc", package="mpc_planner_solver")
 
-        self._model = AcadosRealTimeModel(self._settings, self._solver_settings, package="mpc_planner_solver")
+        self._model_nmpc = AcadosRealTimeModel(self._settings, self._solver_settings_nmpc, model_map_name="model_map_nmpc", package="mpc_planner_solver")
         self._dynamic_model = BicycleModel2ndOrder(self._number_of_robots)
         self.reference_velocity = self._settings["weights"]["reference_velocity"]
 
@@ -72,7 +72,7 @@ class MPCPlanner:
         self._solver_ca, _ = generate_CA_solver.generate(self._idx)
         self._solver_settings_ca = load_settings("solver_settings_ca", package="mpc_planner_solver")
 
-        self._model_ca = AcadosRealTimeModel(self._settings, self._solver_settings_ca, package="mpc_planner_solver")
+        self._model_ca = AcadosRealTimeModel(self._settings, self._solver_settings_ca, model_map_name="model_map_ca", package="mpc_planner_solver")
 
         self._nx_ca = self._solver_settings_ca["nx"]
         self._nu_ca = self._solver_settings_ca["nu"]
@@ -93,11 +93,10 @@ class MPCPlanner:
         # Initialize the initial guesses
         if not hasattr(self, "_mpc_x_plan"):
             self._mpc_x_plan = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
-            self.set_initial_x_plan_1(xinit)
-            self.set_initial_x_plan_2(xinit)
+
 
         if not hasattr(self, "_mpc_u_plan"):
-            self._mpc_u_plan = np.zeros((self._nu + self._nd, self._N))
+            self._mpc_u_plan = np.zeros((self._nu_nmpc, self._N))
             self.set_initial_u_plan()
 
         self._x_traj_init =  self._mpc_x_plan
@@ -108,32 +107,31 @@ class MPCPlanner:
 
             # Xinit everywhere (could be infeasible)
             self._x_traj_init = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
-            self._u_traj_init = np.zeros((self._nu + self._nd, self._N))
-            self._solver.reset(reset_qp_solver_mem=1)
-            self._solver.options_set('warm_start_first_qp', False)
+            self._u_traj_init = np.zeros((self._nu_nmpc, self._N))
+            self._solver_nmpc.reset(reset_qp_solver_mem=1)
+            self._solver_nmpc.options_set('warm_start_first_qp', False)
 
    
-        return self.solve_acados(xinit, p)
+        return self.solve_acados_nmpc(xinit, p)
 
-    def solve_acados(self, xinit, p):
+    def solve_acados_nmpc(self, xinit, p):
         try:
             # Set initial state
-            self._solver.constraints_set(0, 'lbx', np.array(xinit))
-            self._solver.constraints_set(0, 'ubx', np.array(xinit))
-
+            self._solver_nmpc.constraints_set(0, 'lbx', np.array(xinit))
+            self._solver_nmpc.constraints_set(0, 'ubx', np.array(xinit))
+            
             npar = int(len(p) / (self._N + 1))
             for k in range(0, self._N):
-                self._solver.set(k, 'x', self._x_traj_init[:, k])
-                self._solver.set(k, 'u', self._u_traj_init[:, k]) 
-                # print(f"u_{k}: {self._u_traj_init[:, k]}")
-                self._solver.set(k, 'p', np.array(p[k*npar:(k+1)*npar])) # params for the current stage
+                self._solver_nmpc.set(k, 'x', self._x_traj_init[:, k])
+                self._solver_nmpc.set(k, 'u', self._u_traj_init[:, k]) 
+                self._solver_nmpc.set(k, 'p', np.array(p[k*npar:(k+1)*npar])) # params for the current stage
 
-            self._solver.set(self._N, 'p', np.array(p[self._N*npar:(self._N + 1)*npar])) # Repeats the final set of parameters
+            self._solver_nmpc.set(self._N, 'p', np.array(p[self._N*npar:(self._N + 1)*npar])) # Repeats the final set of parameters
 
             solve_time = 0.
             for it in range(self._settings["solver_settings"]["iterations"]):
-                status = self._solver.solve()
-                solve_time += float(self._solver.get_stats('time_tot')) * 1000.
+                status = self._solver_nmpc.solve()
+                solve_time += float(self._solver_nmpc.get_stats('time_tot')) * 1000.
            
             output = dict()
             if status != 0: #and status != 2: # infeasible
@@ -143,21 +141,69 @@ class MPCPlanner:
                 return output, False, []
 
             self._mpc_feasible = True
-            self._model.load(self._solver)
+            self._model_nmpc.load(self._solver_nmpc)
+
+            output = dict()
+
+            output[f"x_{self._idx}"] = self._model_nmpc.get(1, f"x_{self._idx}")
+            output[f"y_{self._idx}"] = self._model_nmpc.get(1, f"y_{self._idx}")
+            output[f"theta_{self._idx}"] = self._model_nmpc.get(1, f"theta_{self._idx}")
+            output[f"vx_{self._idx}"] = self._model_nmpc.get(1, f"vx_{self._idx}")
+            output[f"vy_{self._idx}"] = self._model_nmpc.get(1, f"vy_{self._idx}")
+            output[f"w_{self._idx}"] = self._model_nmpc.get(1, f"w_{self._idx}")
+            output[f"s_{self._idx}"] = self._model_nmpc.get(1, f"s_{self._idx}")
+            
+            output[f"throttle_{self._idx}"] = self._model_nmpc.get(0, f"throttle_{self._idx}")
+            output[f"steering_{self._idx}"] = self._model_nmpc.get(0, f"steering_{self._idx}")
+            
+            self.time_tracker.add(solve_time)
+
+            print_value(f"Current cost (nmpc {self._idx}):", f"{self.get_cost_acados():.2f}")
+            self._prev_trajectory = self._model_nmpc.get_trajectory(self._solver_nmpc, self._mpc_x_plan, self._mpc_u_plan)
+        except AttributeError:
+            output = dict()
+            self.set_infeasible(output)
+            print("Solver is being regenerated...")
+            return output, False, []
+
+        return output, True, self._prev_trajectory
+   
+    def solve_ca(self, p): # check the content of p
+
+        if not hasattr(self, "_x_init"):
+            self._x_init = np.zeros((self._nx_ca, self._N))
+        if not hasattr(self, "_u_init"):
+            self._u_init = np.zeros((self._nu_ca, self._N))
+
+        try:
+            # Set initial state
+            self._solver_ca.constraints_set(0, 'lbx', 0)
+            self._solver_ca.constraints_set(0, 'ubx', 0)
+
+            npar = int(len(p) / (self._N + 1))
+            for k in range(0, self._N):
+                self._solver_ca.set(k, 'x', self._x_init[:, k])
+                self._solver_ca.set(k, 'u', self._u_init[:, k]) 
+                self._solver_ca.set(k, 'p', np.array(p[k*npar:(k+1)*npar])) # params for the current stage
+
+            self._solver_ca.set(self._N, 'p', np.array(p[self._N*npar:(self._N + 1)*npar])) # Repeats the final set of parameters
+
+            solve_time = 0.
+            for it in range(self._settings["solver_settings"]["iterations"]):
+                status = self._solver_ca.solve()
+                solve_time += float(self._solver_ca.get_stats('time_tot')) * 1000.
+           
+            output = dict()
+            if status != 0: #and status != 2: # infeasible
+                print_warning(f"Optimization was infeasible (exitflag = {status})")
+                
+                return output, False, []
+
+            self._mpc_feasible = True
+            self._model.load(self._solver_ca)
 
             output = dict()
             for n in range(1, self._number_of_robots+1):
-
-                output[f"x_{n}"] = self._model.get(1, f"x_{n}")
-                output[f"y_{n}"] = self._model.get(1, f"y_{n}")
-                output[f"theta_{n}"] = self._model.get(1, f"theta_{n}")
-                output[f"vx_{n}"] = self._model.get(1, f"vx_{n}")
-                output[f"vy_{n}"] = self._model.get(1, f"vy_{n}")
-                output[f"w_{n}"] = self._model.get(1, f"w_{n}")
-                output[f"s_{n}"] = self._model.get(1, f"s_{n}")
-                
-                output[f"throttle_{n}"] = self._model.get(0, f"throttle_{n}")
-                output[f"steering_{n}"] = self._model.get(0, f"steering_{n}")
                 for j in range(1, self._number_of_robots+1):
                     if j != n:
                         output[f"lam_{n}_{j}_0"] = self._model.get(1, f"lam_{n}_{j}_0")
@@ -171,63 +217,14 @@ class MPCPlanner:
             
             self.time_tracker.add(solve_time)
 
-            print_value("Current cost", f"{self.get_cost_acados():.2f}")
-            self._prev_trajectory = self._model.get_trajectory(self._solver, self._mpc_x_plan, self._mpc_u_plan)
+            print_value("Current cost (ca {self._idx}):", f"{self.get_cost_acados():.2f}")
+            self._prev_solution_ca = self._model_ca.get_solution_ca(self._solver_ca, self._x_init, self._u_init)
         except AttributeError:
             output = dict()
-            self.set_infeasible(output)
             print("Solver is being regenerated...")
             return output, False, []
 
-        return output, True, self._prev_trajectory
-
-    def set_initial_x_plan_1(self, xinit):
-        # x = x y theta vx vy w s
-        #     2 3   4   5  6  7 8
-
-        # assign initial guess for the states by forward euler integration on the reference path
-        # refinement for first guess needs to be higher because the forward euler is a bit lame
-        N_0 = 1000
-
-        s_0_vec = np.linspace(0, 0 + self.reference_velocity * 1.5, N_0+1)
-        x_ref_0 = np.ones(N_0+1) * xinit[0]
-        y_ref_0 = np.ones(N_0+1) * xinit[1]
-        theta_ref_0 = np.ones(N_0+1) * xinit[2]
-
-        for i in range(1,N_0+1):
-            x_ref_0[i] = x_ref_0[i-1] + self.reference_velocity * self._dt * np.cos(theta_ref_0[i-1])
-            y_ref_0[i] = y_ref_0[i-1] + self.reference_velocity * self._dt * np.sin(theta_ref_0[i-1])
-            # theta_ref_0[i] = theta_ref_0[i-1] + k_0_vals[i-1] * self.reference_velocity * self._dt
-        
-        # now down sample to the N points
-        self._mpc_x_plan[0,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), x_ref_0)
-        self._mpc_x_plan[1,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), y_ref_0)
-        self._mpc_x_plan[3,:] = self.reference_velocity
-        self._mpc_x_plan[6,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), s_0_vec) 
-        
-    def set_initial_x_plan_2(self, xinit):
-        # x = x y theta vx vy w s
-        #     2 3   4   5  6  7 8
-
-        # assign initial guess for the states by forward euler integration on the reference path
-        # refinement for first guess needs to be higher because the forward euler is a bit lame
-        N_0 = 1000
-
-        s_0_vec = np.linspace(0, 0 + self.reference_velocity * 1.5, N_0+1)
-        x_ref_0 = np.ones(N_0+1) * xinit[0 + self._nx_one_robot]
-        y_ref_0 = np.ones(N_0+1) * xinit[1 + self._nx_one_robot]
-        theta_ref_0 = np.ones(N_0+1) * xinit[2 + self._nx_one_robot]
-
-        for i in range(1,N_0+1):
-            x_ref_0[i] = x_ref_0[i-1] + self.reference_velocity * self._dt * np.cos(theta_ref_0[i-1])
-            y_ref_0[i] = y_ref_0[i-1] + self.reference_velocity * self._dt * np.sin(theta_ref_0[i-1])
-            # theta_ref_0[i] = theta_ref_0[i-1] + k_0_vals[i-1] * self.reference_velocity * self._dt
-        
-        # now down sample to the N points
-        self._mpc_x_plan[0 + self._nx_one_robot,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), x_ref_0)
-        self._mpc_x_plan[1 + self._nx_one_robot,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), y_ref_0)
-        self._mpc_x_plan[3 + self._nx_one_robot,:] = self.reference_velocity
-        self._mpc_x_plan[6 + self._nx_one_robot,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), s_0_vec)
+        return output, True, self._prev_solution_ca
     
     def set_initial_u_plan(self):
         # Evaluate throttle to keep the constant velocity
@@ -246,32 +243,9 @@ class MPCPlanner:
 
     def set_infeasible(self, output):
         self._mpc_feasible = False
-        for n in range(1, self._number_of_robots+1):
-            output[f"vx_{n}"] = 0.
-            output[f"throttle_{n}"] = 0.
-            output[f"steering_{n}"] = 0.
-
-    def get_braking_trajectory(self, state):    # Not adjusted for multi robot
-        x = state[0]
-        y = state[1]
-        theta = state[2]
-        v = state[3]
-        spline = state[4]
-
-        result = np.zeros((5, self._N))
-        result[:, 0] = np.array([x, y, theta, v, spline])
-        for k in range(1, self._N):
-            x += v * self._dt * math.cos(theta)
-            y += v * self._dt * math.sin(theta)
-            spline += v * self._dt
-            v -= self._braking_acceleration * self._dt
-            v = np.max([v, 0.])
-            result[:, k] = np.array([x, y, theta, v, spline])
-        return result
-
-
-    def set_projection(self, projection_func):  # # Not adjusted for multi robot
-        self._projection_func = projection_func
+        output[f"vx_{self._idx}"] = 0.
+        output[f"throttle_{self._idx}"] = 0.
+        output[f"steering_{self._idx}"] = 0.
 
     def get_solver(self):
         return self._solver

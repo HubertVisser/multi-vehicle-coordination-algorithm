@@ -88,7 +88,7 @@ class Parameters:
         if self._p is None:
             print("Load parameters before requesting them!")
         
-        return self._p[list(sorted(self._params.keys())).index(parameter)]
+        return self._p[self._params[parameter]]
 
     def print(self):
         print_header("Parameters")
@@ -131,7 +131,7 @@ class AcadosParameters(Parameters):
     def load_acados_parameters(self):
        
         self._p = []
-        for param in sorted(self._params.keys()):
+        for param in self._params.keys():
             par = cd.SX.sym(param, 1)
             self._p.append(par)
 
@@ -139,7 +139,7 @@ class AcadosParameters(Parameters):
 
     def get_acados_parameters(self):
         result = None
-        for param in sorted(self._params.keys()):
+        for param in self._params.keys():
             if result is None:
                 result = self.get(param)
             else:

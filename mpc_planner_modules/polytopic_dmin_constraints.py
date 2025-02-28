@@ -42,7 +42,23 @@ class PolytopicDminConstraints:
         self.solver_name = settings.get("solver_name", None)
 
     def define_parameters(self, params):
-        pass
+        if self.decentralised and self.solver_name.startswith("solver_nmpc"):
+            for i in range(1, self.number_of_robots+1):
+                for j in range(1, self.number_of_robots+1):
+                    if i != j and (j == self.idx_i or i == self.idx_i):
+                        params.add(f"lam_{i}_{j}_0")
+                        params.add(f"lam_{i}_{j}_1")
+                        params.add(f"lam_{i}_{j}_2")
+                        params.add(f"lam_{i}_{j}_3")
+                if i != self.idx_i:
+                    params.add(f"x_{i}")
+                    params.add(f"y_{i}")
+                    params.add(f"theta_{i}")
+        if self.decentralised and self.solver_name.startswith("solver_ca"):
+            for i in range(1, self.number_of_robots+1):
+                params.add(f"x_{i}")
+                params.add(f"y_{i}")
+                params.add(f"theta_{i}")
 
     def get_lower_bound(self):
         lower_bound = []

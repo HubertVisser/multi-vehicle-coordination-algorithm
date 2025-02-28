@@ -42,67 +42,61 @@ from pyplot import plot_x_traj, plot_splines
 
 
 class ROSMPCPlanner:
-    def __init__(self, settings=None):
+    def __init__(self, idx, settings=None):
         self._settings = settings
         self._N = self._settings["N"]
         self._integrator_step = self._settings["integrator_step"]
         self._braking_acceleration = self._settings["braking_acceleration"]
         self._number_of_robots = self._settings["number_of_robots"]
+        self._idx = idx
 
         self._verbose = self._settings["verbose"]
         self._debug_visuals = self._settings["debug_visuals"]
         self._dart_simulator = self._settings["dart_simulator"]
 
-        self._planner = MPCPlanner(self._settings)
+        self._planner = MPCPlanner(self._settings, idx)
         # self._planner.set_projection(lambda trajectory: self.project_to_safety(trajectory))
 
-        self._spline_fitter_1 = SplineFitter(self._settings)
-        self._spline_fitter_2 = SplineFitter(self._settings)
+        self._spline_fitter = SplineFitter(self._settings)
 
-        self._solver_settings = load_settings(
-            "solver_settings", package="mpc_planner_solver"
-        )
+        self._solver_settings_nmpc = load_settings("solver_settings_nmpc", package="mpc_planner_solver")
+        self._solver_settings_ca = load_settings("solver_settings_ca", package="mpc_planner_solver")
 
         # Tied to the solver
-        self._params = RealTimeParameters(
-            self._settings, package="mpc_planner_solver"
-        )  # This maps to parameters used in the solver by name
+        self._params_nmpc = RealTimeParameters(self._settings, parameter_map_name="parameter_map_nmpc", package="mpc_planner_solver")  
+        self._params_ca = RealTimeParameters(self._settings, parameter_map_name="parameter_map_ca", package="mpc_planner_solver")  
         self._weights = self._settings["weights"]
 
-        self._nx = self._solver_settings["nx"]
-        self._nu = self._solver_settings["nu"]
-        self._nx_one_robot = self._nx // self._number_of_robots
-        self._nu_one_robot = self._nu // self._number_of_robots
+        self._nx_nmpc = self._solver_settings_nmpc["nx"]
+        self._nu_nmpc = self._solver_settings_nmpc["nu"]
+        self._nvar_nmpc = self._solver_settings_nmpc["nvar"]
+        self._nx_ca = self._solver_settings_ca["nx"]
+        self._nu_ca = self._solver_settings_ca["nu"]
+        self._nvar_ca = self._solver_settings_ca["nvar"]
 
         self._state = np.zeros((self._nx,))
-        for n in range(1, self._number_of_robots+1):
-            self._state[(n-1)*self._nx_one_robot: 3 + (n-1)*self._nx_one_robot] = [self._settings[f"robot_{n}"]["start_x"], \
-                                                                                 self._settings[f"robot_{n}"]["start_y"], \
-                                                                                 self._settings[f"robot_{n}"]["start_theta"] * np.pi]
+        self._state[: 3] = [self._settings[f"robot_{self._idx}"]["start_x"], \
+                            self._settings[f"robot_{self._idx}"]["start_y"], \
+                            self._settings[f"robot_{self._idx}"]["start_theta"] * np.pi]
 
         self._visuals = ROSMarkerPublisher("mpc_visuals", 100)
         self._path_visual = ROSMarkerPublisher("reference_path", 10)
         self._debug_visuals_pub = ROSMarkerPublisher("mpc_planner_py/debug", 10)
 
-        self._state_msg_1 = None
-        self._state_msg_2 = None
+        self._state_msg = None
 
-        self._path_msg_1 = None
-        self._path_msg_2 = None
+        self._path_msg = None
 
         self._trajectory = None
 
-        self._states_save_1 = []
-        self._states_save_2 = []
-        self._outputs_save_1 = []
-        self._outputs_save_2 = []
+        self._states_save = []
+        self._outputs_save = []
         self._save_output = []
         self._save_s = np.array([])
         self._save_lam = np.array([])
 
 
-        self._neighbour_pos_1 = np.array([])
-        self._neighbour_pos_2 = np.array([])
+        self._neighbour_pos = np.array([])
 
         self._enable_output = False
         self._mpc_feasible = True
@@ -120,40 +114,31 @@ class ROSMPCPlanner:
     def initialize_publishers_and_subscribers(self):
 
         # Subscribers
-        self._state_sub_1 = rospy.Subscriber("vicon/jetracer1", PoseStamped, self.state_pose_callback_1, queue_size=1)
-        self._vy_sub_1 = rospy.Subscriber("vy_1", Float32, self.vy_pose_callback_1, queue_size=1)
-        self._w_sub_1 = rospy.Subscriber("omega_1", Float32, self.w_pose_callback_1, queue_size=1)
-        self._state_sub_2 = rospy.Subscriber("vicon/jetracer2", PoseStamped, self.state_pose_callback_2, queue_size=1)
-        self._vy_sub_2 = rospy.Subscriber("vy_2", Float32, self.vy_pose_callback_2, queue_size=1)
-        self._w_sub_2 = rospy.Subscriber("omega_2", Float32, self.w_pose_callback_2, queue_size=1)
+        self._state_sub = rospy.Subscriber(f"vicon/jetracer{self._idx}", PoseStamped, self.state_pose_callback, queue_size=1)
+        self._vy_sub = rospy.Subscriber(f"vy_{self._idx}", Float32, self.vy_pose_callback, queue_size=1)
+        self._w_sub = rospy.Subscriber(f"omega_{self._idx}", Float32, self.w_pose_callback, queue_size=1)
 
-        self._path_sub_1 = rospy.Subscriber("roadmap/reference_1", Path, lambda msg: self.path_callback_1(msg), queue_size=1)
-        self._path_sub_2 = rospy.Subscriber("roadmap/reference_2", Path, lambda msg: self.path_callback_2(msg), queue_size=1)
+        self._path_sub = rospy.Subscriber(f"roadmap/reference_{self._idx}", Path, lambda msg: self.path_callback(msg), queue_size=1)
 
         # Publishers
-        self._th_pub_1 = rospy.Publisher("throttle_1", Float32, queue_size=1) # Throttle publisher
-        self._st_pub_1 = rospy.Publisher("steering_1", Float32, queue_size=1) # Steering publisher
-        self._th_pub_2 = rospy.Publisher("throttle_2", Float32, queue_size=1)
-        self._st_pub_2 = rospy.Publisher("steering_2", Float32, queue_size=1)
+        self._th_pub = rospy.Publisher(f"throttle_{self._idx}", Float32, queue_size=1) # Throttle publisher
+        self._st_pub = rospy.Publisher(f"steering_{self._idx}", Float32, queue_size=1) # Steering publisher
 
-    def run(self, timer):
+    def run_nmpc(self, timer):
         # Check if splines exist
-        if not self._spline_fitter_1._splines:
-            rospy.logwarn("Splines have not been computed yet. Waiting for splines to be available.")
-            return
-        if self._number_of_robots > 1 and not self._spline_fitter_2._splines:
+        if not self._spline_fitter._splines:
             rospy.logwarn("Splines have not been computed yet. Waiting for splines to be available.")
             return
         
         timer = Timer("loop")
         
-        self.set_parameters()
+        self.set_nmpc_parameters()
         # self._params.print()
         # self._params.check_for_nan()
 
-        mpc_timer = Timer("MPC")
-        output, self._mpc_feasible, self._trajectory = self._planner.solve( 
-            self._state, self._params.get_solver_params()
+        mpc_timer = Timer("NMPC")
+        output, self._mpc_feasible, self._trajectory = self._planner.solve_nmpc( 
+            self._state, self._params_nmpc.get_solver_params()
         )
         del mpc_timer
 
@@ -161,64 +146,83 @@ class ROSMPCPlanner:
             time = timer.stop_and_print()
 
         if self._mpc_feasible:
-            lam = np.array([])
-            for i in range(1, self._number_of_robots + 1): 
-                if self._dart_simulator == False:
-                    output_keys = [f"x_{i}", f"y_{i}", f"theta_{i}", f"vx_{i}", f"vy_{i}", f"w_{i}", f"s_{i}"]
-                    self._state[(i-1) * self._nx_one_robot : self._nx_one_robot * (i)] = [output[key] for key in output_keys]
-                    getattr(self, f'_states_save_{i}').append(deepcopy(self._state[(i-1)*self._nx_one_robot : i*self._nx_one_robot ]))
-                
-                getattr(self, f'_outputs_save_{i}').append([output[f"throttle_{i}"], output[f"steering_{i}"]])
-                for j in range(1, self._number_of_robots+1):
-                    if i != j:
-                        lam = np.concatenate((lam, np.array([output[f"lam_{i}_{j}_0"], output[f"lam_{i}_{j}_1"], output[f"lam_{i}_{j}_2"], output[f"lam_{i}_{j}_3"]])))
-                        if i < j:
-                            self._save_s = np.vstack((self._save_s, np.array([output[f"s_{i}_{j}"], output[f"s_{j}_{i}"]]))) if self._save_s.size else np.array([[output[f"s_{i}_{j}"], output[f"s_{j}_{i}"]]])
-                
-            self._save_lam = np.vstack((self._save_lam, lam)) if self._save_lam.size else lam
+            if self._dart_simulator == False:
+                output_keys = [f"x_{self._idx}", f"y_{self._idx}", f"theta_{self._idx}", f"vx_{self._idx}", f"vy_{self._idx}", f"w_{self._idx}", f"s_{self._idx}"]
+                self._state = [output[key] for key in output_keys]
+                getattr(self, f'_states_save').append(deepcopy(self._state))
+            
+            getattr(self, f'_outputs_save').append([output[f"throttle_{self._idx}"], output[f"steering_{self._idx}"]])
             
             # self.plot_pred_traj() # slows down the simulation
 
         self.publish_throttle(output, self._mpc_feasible) if self._dart_simulator else None
         self.publish_steering(output, self._mpc_feasible) if self._dart_simulator else None
+    
+    def run_ca(self, timer):
+        # Check if splines exist
+        
+        timer = Timer("loop")
+        
+        self.set_ca_parameters()
+        # self._params.print()
+        # self._params.check_for_nan()
+
+        ca_timer = Timer("CA")
+        output, self._mpc_feasible, self._ca_solution = self._planner.solve_ca(self._params_ca.get_solver_params())
+        del ca_timer
+
+        if self._verbose:
+            time = timer.stop_and_print()
+
+        if self._mpc_feasible:
+            lam = np.array([])
+            for i in range(1, self._number_of_robots+1):
+                for j in range(1, self._number_of_robots+1):
+                    if i != j and (j == self._idx or i == self._idx):
+                        lam = np.concatenate((lam, np.array([output[f"lam_{i}_{j}_0"], 
+                                                             output[f"lam_{i}_{j}_1"], 
+                                                             output[f"lam_{i}_{j}_2"], 
+                                                             output[f"lam_{i}_{j}_3"]])))
+                for j in range(i, self._number_of_robots+1):
+                    if i != j and (j == self._idx or i == self._idx):
+                        self._save_s = np.vstack((self._save_s, np.array([output[f"s_{i}_{j}_0"], output[f"s_{i}_{j}_1"]]))) if self._save_s.size else np.array([output[f"s_{i}_{j}_0"], output[f"s_{i}_{j}_1"]])
             
-        self.visualize()
-        # self.publish_robot_state() # Not used in simulator.rviz
+            self._save_lam = np.vstack((self._save_lam, lam)) if self._save_lam.size else lam
+            
+            # self.plot_pred_traj() # slows down the simulation
 
-    def set_parameters(self):
-        for n in range(1, self._number_of_robots + 1):
-            path_msg = getattr(self, f'_path_msg_{n}')
-            spline_fitter = getattr(self, f'_spline_fitter_{n}')
 
-            splines = None
-            if path_msg is not None and spline_fitter.ready():
-                splines = spline_fitter.get_active_splines(
-                    np.array([ self._state[ 0 + (n-1) * self._nx_one_robot ], self._state[1 + (n-1) * self._nx_one_robot ]])
-                )
-                self._state[n * self._nx_one_robot-1] = spline_fitter.find_closest_s(
-                    np.array([ self._state[ 0 + (n-1) * self._nx_one_robot ], self._state[1 + (n-1) * self._nx_one_robot ]])
-                )
+    def set_nmpc_parameters(self):
+        
+        splines = None
+        if self._path_msg is not None and self._spline_fitter.ready():
+            splines = self._spline_fitter.get_active_splines(np.array([self._state[0], self._state[1]]))
+            self._state[-1] = self._spline_fitter.find_closest_s(np.array([self._state[0], self._state[1]]))
 
-            # Set parameters for all k
-            for k in range(self._N + 1):
+        # Set parameters for all k
+        for k in range(self._N + 1):
 
-                # Tuning parameters
-                for weight, value in self._weights.items():
-                    self._params.set(k, weight, value)
+            # Tuning parameters
+            for weight, value in self._weights.items():
+                self._params.set(k, weight, value)
 
-                if splines is not None:
-                    for i in range(self._settings["contouring"]["num_segments"]):
-                        self._params.set(k, f"spline_x{i}_a_{n}", splines[i]["a_x"])
-                        self._params.set(k, f"spline_x{i}_b_{n}", splines[i]["b_x"])
-                        self._params.set(k, f"spline_x{i}_c_{n}", splines[i]["c_x"])
-                        self._params.set(k, f"spline_x{i}_d_{n}", splines[i]["d_x"])
+            if splines is not None:
+                for i in range(self._settings["contouring"]["num_segments"]):
+                    self._params.set(k, f"spline_x{i}_a_{n}", splines[i]["a_x"])
+                    self._params.set(k, f"spline_x{i}_b_{n}", splines[i]["b_x"])
+                    self._params.set(k, f"spline_x{i}_c_{n}", splines[i]["c_x"])
+                    self._params.set(k, f"spline_x{i}_d_{n}", splines[i]["d_x"])
 
-                        self._params.set(k, f"spline_y{i}_a_{n}", splines[i]["a_y"])
-                        self._params.set(k, f"spline_y{i}_b_{n}", splines[i]["b_y"])
-                        self._params.set(k, f"spline_y{i}_c_{n}", splines[i]["c_y"])
-                        self._params.set(k, f"spline_y{i}_d_{n}", splines[i]["d_y"])
+                    self._params.set(k, f"spline_y{i}_a_{n}", splines[i]["a_y"])
+                    self._params.set(k, f"spline_y{i}_b_{n}", splines[i]["b_y"])
+                    self._params.set(k, f"spline_y{i}_c_{n}", splines[i]["c_y"])
+                    self._params.set(k, f"spline_y{i}_d_{n}", splines[i]["d_y"])
 
-                        self._params.set(k, f"spline{i}_start_{n}", splines[i]["s"])
+                    self._params.set(k, f"spline{i}_start_{n}", splines[i]["s"])
+
+    def set_ca_parameters(self):
+
+        
 
     def publish_throttle(self, output, exit_flag):
         for n in range(1, self._number_of_robots + 1):

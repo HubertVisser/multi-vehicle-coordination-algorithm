@@ -26,7 +26,7 @@ class PolytopicSidualConstraintModule(ConstraintModule):
         self.description = "Polytopic set based collision avoidance constraints in dual formulation (constraint 5b)"
 
 
-# Constraints of the form A_i^T @ lam_ij + S_ij = 0
+# Constraints of the form A_i^T @ lam_ij + s_ij = 0
 class PolytopicSidualConstraints:
 
     def __init__(self, settings, idx_i, use_slack=False):
@@ -41,7 +41,12 @@ class PolytopicSidualConstraints:
         self.solver_name = settings.get("solver_name", None)
 
     def define_parameters(self, params):
-        pass
+        if self.decentralised and self.solver_name.startswith("solver_nmpc"):
+            for i in range(1, self.number_of_robots+1):
+                for j in range(i, self.number_of_robots+1):
+                        if i != j and (i == self.idx_i or j == self.idx_i):
+                            params.add(f"s_{i}_{j}_0")
+                            params.add(f"s_{i}_{j}_1")
 
     def get_lower_bound(self):
         lower_bound = []

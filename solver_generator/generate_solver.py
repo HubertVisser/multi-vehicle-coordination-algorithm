@@ -66,11 +66,6 @@ def generate_solver(modules, model, settings=None):
 
     params = AcadosParameters()
 
-    if settings["decentralised"]:
-        params.load_global_parameters()
-        params.pop_model_vars(model)
-
-    
     define_parameters(modules, params, settings)
     params.load_acados_parameters()
     

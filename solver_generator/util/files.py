@@ -56,8 +56,8 @@ def load_test_settings(setting_file_name="settings"):
     return settings
 
 
-def load_parameters(parameter_file_name="parameter_map", package="mpc_planner_solver"):
-    path = os.path.normpath(os.path.join(get_package_path(package), "config", f"{parameter_file_name}.yaml"))
+def load_parameters(parameter_map_name="parameter_map", package="mpc_planner_solver"):
+    path = os.path.normpath(os.path.join(get_package_path(package), "config", f"{parameter_map_name}.yaml"))
     print(path)
     print_path("Parameters", path, end="")
     with open(path, "r") as stream:

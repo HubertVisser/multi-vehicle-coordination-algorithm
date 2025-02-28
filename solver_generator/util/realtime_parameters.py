@@ -9,8 +9,8 @@ from util.files import load_parameters, load_settings
 # Python real-time
 class RealTimeParameters:
 
-    def __init__(self, settings):
-        self._map = load_parameters()
+    def __init__(self, settings, parameter_map_name="parameter_map"):
+        self._map = load_parameters(parameter_map_name=parameter_map_name)
         self._settings = settings
 
         self._num_p = self._map['num parameters']
@@ -54,9 +54,8 @@ class RealTimeParameters:
                     print(f"NaN detected for {key} at k = {k}: {self._params[k, value]}")
 
 
-class RealTimeGlobalParamters(RealTimeParameters):
+class RealTimeGlobalParameters(RealTimeParameters):
     def __init__(self, settings):
-        super().__init__(settings)
         self._map = load_parameters("parameter_map_global")
         self._settings = settings
 
@@ -66,8 +65,8 @@ class RealTimeGlobalParamters(RealTimeParameters):
 
 # Python real-time
 class RealTimeModel:
-    def __init__(self, settings, solver_settings, package=None):
-        self._map = load_settings("model_map", package=package)
+    def __init__(self, settings, solver_settings, model_map_name="model_map", package=None):
+        self._map = load_settings(model_map_name, package=package)
         self._settings = settings
 
         self._N = settings["N"]
@@ -86,8 +85,8 @@ class RealTimeModel:
 # Python real-time
 class AcadosRealTimeModel(RealTimeModel):
 
-    def __init__(self, settings, solver_settings, package=None):
-        super().__init__(settings, solver_settings, package)
+    def __init__(self, settings, solver_settings, model_map_name="model_map", package=None):
+        super().__init__(settings, solver_settings, model_map_name, package)
 
     def load(self, solver):
         # Load the solver data into a numpy array
@@ -104,4 +103,12 @@ class AcadosRealTimeModel(RealTimeModel):
             mpc_u_plan[:, k] = solver.get(k, 'u')
 
         return np.concatenate([mpc_x_plan,mpc_u_plan])
+   
+    def get_solution_ca(self, solver, x_init, u_init):
+        # Retrieve the trajectory
+        for k in range(0, self._N):
+            x_init[:, k] = solver.get(k, 'x')
+            u_init[:, k] = solver.get(k, 'u')
+
+        return np.concatenate([x_init, u_init])
   

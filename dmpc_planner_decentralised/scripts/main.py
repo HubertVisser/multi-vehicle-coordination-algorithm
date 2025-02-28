@@ -26,7 +26,7 @@ import math
 import matplotlib.pyplot as plt
 
 from util.files import load_settings
-from util.realtime_parameters import RealTimeParameters
+from util.realtime_parameters import RealTimeGlobalParameters
 from util.convertion import quaternion_to_yaw
 from util.logging import print_value 
 from util.parameters import GlobalParameters
@@ -50,7 +50,7 @@ class ROSMPCCoordinator:
         self._number_of_robots = self._settings["number_of_robots"]
 
         self._global_params = GlobalParameters()
-        self._global_params_realtime = RealTimeParameters(self._settings)
+        self._global_params_realtime = RealTimeGlobalParameters(self._settings)
 
         self.define_global_params()
         self._global_params.save_map()
