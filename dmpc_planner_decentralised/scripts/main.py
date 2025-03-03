@@ -35,7 +35,7 @@ from spline import Spline, Spline2D
 
 from contouring_spline import SplineFitter
 # from static_constraints import StaticConstraints
-from mpc_controller import MPCPlanner
+from ros_mpc_controller import ROSMPCPlanner
 from ros_visuals import ROSMarkerPublisher
 from project_trajectory import project_trajectory_to_safety
 from pyplot import plot_x_traj, plot_splines
@@ -49,52 +49,70 @@ class ROSMPCCoordinator:
         self._integrator_step = self._settings["integrator_step"]
         self._number_of_robots = self._settings["number_of_robots"]
 
-        self._global_params = GlobalParameters()
-        self._global_params_realtime = RealTimeGlobalParameters(self._settings)
+        self._robots = []
+        for i in range(1, self._number_of_robots + 1):
+            robot = ROSMPCPlanner(i, self._settings)
+            self._robots.append(robot)
 
-        self.define_global_params()
-        self._global_params.save_map()
+        self._trajectory_counter = 0
+        self._trajectory_lock = threading.Lock()
+        self._trajectory_condition = threading.Condition(self._trajectory_lock)
+
+        self.initialize_subscribers()
+
+    def initialize_subscribers(self):
+        for i in range(1, self._number_of_robots + 1):
+            rospy.Subscriber(f"trajectory_{i}", Path, self.trajectory_callback, callback_args=i)
+
+    def trajectory_callback(self, msg, robot_idx):
+        # Update the trajectory for the robot
+        self._robots[robot_idx - 1].trajectory_callback(msg)
+
+        with self._trajectory_lock:
+            self._trajectory_counter += 1
+            if self._trajectory_counter == self._number_of_robots:
+                self._trajectory_condition.notify_all()
+
+    def run_ca_for_all_robots(self):
+        with self._trajectory_condition:
+            while self._trajectory_counter < self._number_of_robots:
+                self._trajectory_condition.wait()
+
+            for robot in self._robots:
+                robot.run_ca()
+
+            self._trajectory_counter = 0
 
         
 
-    
-    def define_global_params(self):
-        for i in range(1, self._number_of_robots+1):
-            self._global_params.add(f"x_{i}")
-            self._global_params.add(f"y_{i}")
-            self._global_params.add(f"theta_{i}")
-
-            for j in range(1, self._number_of_robots+1):
-                if i != j:
-                    self._global_params.add(f"lam_{i}_{j}_0")
-                    self._global_params.add(f"lam_{i}_{j}_1")
-                    self._global_params.add(f"lam_{i}_{j}_2")
-                    self._global_params.add(f"lam_{i}_{j}_3")
-            for j in range(i,self._number_of_robots+1):
-                if i != j:
-                    self._global_params.add(f"s_{i}_{j}_0")
-                    self._global_params.add(f"s_{i}_{j}_1")
-
-       
-        
         
 
 if __name__ == "__main__":
-    # rospy.loginfo("Initializing MPC")
-    # rospy.init_node("dmpc_planner", anonymous=False)
+    try:
+        rospy.loginfo("Initializing MPC")
+        rospy.init_node("dmpc_planner_coordinator", anonymous=False)
+    
+        #vehicle           #x y theta vx vy w
+        initial_state_1 = [0., 3., 0, 0, 0, 0]
+        initial_state_2 = [5.0, 0.0, 0.5 * np.pi, 0, 0, 0]
 
-    mpc = ROSMPCCoordinator()
+        coordinator = ROSMPCCoordinator()
 
-    # while not rospy.is_shutdown():
-    #     rospy.spin()
+        # Run NMPC for each robot
+        for robot in coordinator._robots:
+            robot.run_nmpc(None)
+
+        # Run CA for all robots after all trajectories are received
+        coordinator.run_ca_for_all_robots()
+
+        while not rospy.is_shutdown():
+            rospy.spin()
+    
+    except rospy.ROSInterruptException:
+        pass
+   
         
-    # # mpc.plot_outputs()
-    # mpc.plot_states()
-    # mpc.plot_duals()
-    # mpc.plot_min_distance()
-    # # mpc.plot_pred_traj()
-    # mpc.print_stats()
-
+    
     
     # try:
     #     rospy.init_node('Vehicles_Integrator_node' , anonymous=True)

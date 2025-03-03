@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 
 from util.files import load_settings
 from util.realtime_parameters import RealTimeParameters
-from util.convertion import quaternion_to_yaw
+from util.convertion import quaternion_to_yaw, yaw_to_quaternion
 from util.logging import print_value 
 from timer import Timer
 from spline import Spline, Spline2D
@@ -113,12 +113,16 @@ class ROSMPCPlanner:
 
     def initialize_publishers_and_subscribers(self):
 
-        # Subscribers
+        # Subscribers DART
         self._state_sub = rospy.Subscriber(f"vicon/jetracer{self._idx}", PoseStamped, self.state_pose_callback, queue_size=1)
         self._vy_sub = rospy.Subscriber(f"vy_{self._idx}", Float32, self.vy_pose_callback, queue_size=1)
         self._w_sub = rospy.Subscriber(f"omega_{self._idx}", Float32, self.w_pose_callback, queue_size=1)
 
+        # Subscriber path generator
         self._path_sub = rospy.Subscriber(f"roadmap/reference_{self._idx}", Path, lambda msg: self.path_callback(msg), queue_size=1)
+
+        # Trajectory publisher
+        setattr(self, f"_traj_pub_{self._idx}") = rospy.Publisher(f"trajectory_{self._idx}", Path, queue_size=1)
 
         # Publishers
         self._th_pub = rospy.Publisher(f"throttle_{self._idx}", Float32, queue_size=1) # Throttle publisher
@@ -157,6 +161,7 @@ class ROSMPCPlanner:
 
         self.publish_throttle(output, self._mpc_feasible) if self._dart_simulator else None
         self.publish_steering(output, self._mpc_feasible) if self._dart_simulator else None
+        self.publish_trajectory(self._trajectory) 
     
     def run_ca(self, timer):
         # Check if splines exist
@@ -191,7 +196,6 @@ class ROSMPCPlanner:
             
             # self.plot_pred_traj() # slows down the simulation
 
-
     def set_nmpc_parameters(self):
         
         splines = None
@@ -204,25 +208,21 @@ class ROSMPCPlanner:
 
             # Tuning parameters
             for weight, value in self._weights.items():
-                self._params.set(k, weight, value)
+                self._params_nmpc.set(k, weight, value)
 
             if splines is not None:
                 for i in range(self._settings["contouring"]["num_segments"]):
-                    self._params.set(k, f"spline_x{i}_a_{n}", splines[i]["a_x"])
-                    self._params.set(k, f"spline_x{i}_b_{n}", splines[i]["b_x"])
-                    self._params.set(k, f"spline_x{i}_c_{n}", splines[i]["c_x"])
-                    self._params.set(k, f"spline_x{i}_d_{n}", splines[i]["d_x"])
+                    self._params_nmpc.set(k, f"spline_x{i}_a_{self._idx}", splines[i]["a_x"])
+                    self._params_nmpc.set(k, f"spline_x{i}_b_{self._idx}", splines[i]["b_x"])
+                    self._params_nmpc.set(k, f"spline_x{i}_c_{self._idx}", splines[i]["c_x"])
+                    self._params_nmpc.set(k, f"spline_x{i}_d_{self._idx}", splines[i]["d_x"])
+                
+                    self._params_nmpc.set(k, f"spline_y{i}_a_{self._idx}", splines[i]["a_y"])
+                    self._params_nmpc.set(k, f"spline_y{i}_b_{self._idx}", splines[i]["b_y"])
+                    self._params_nmpc.set(k, f"spline_y{i}_c_{self._idx}", splines[i]["c_y"])
+                    self._params_nmpc.set(k, f"spline_y{i}_d_{self._idx}", splines[i]["d_y"])
 
-                    self._params.set(k, f"spline_y{i}_a_{n}", splines[i]["a_y"])
-                    self._params.set(k, f"spline_y{i}_b_{n}", splines[i]["b_y"])
-                    self._params.set(k, f"spline_y{i}_c_{n}", splines[i]["c_y"])
-                    self._params.set(k, f"spline_y{i}_d_{n}", splines[i]["d_y"])
-
-                    self._params.set(k, f"spline{i}_start_{n}", splines[i]["s"])
-
-    def set_ca_parameters(self):
-
-        
+                    self._params_nmpc.set(k, f"spline{i}_start_{self._idx}", splines[i]["s"])        
 
     def publish_throttle(self, output, exit_flag):
         for n in range(1, self._number_of_robots + 1):
@@ -258,7 +258,28 @@ class ROSMPCPlanner:
         pose.pose.position.z = self._state[3]
         self._ped_robot_state_pub.publish(pose)
     
-    def visualize(self):
+    def publish_trajectory(self, trajectory):
+        if trajectory is not None:
+            traj_msg = Path()
+            traj_msg.header.stamp = rospy.Time.now()
+            traj_msg.header.frame_id = "map"
+            for k in range(1, self._N):
+                pose = PoseStamped()
+                pose.header.stamp = rospy.Time.now()
+                pose.header.frame_id = "map"
+                if k != self._N - 1:
+                    pose.pose.position.x = trajectory[k, 0]
+                    pose.pose.position.y = trajectory[k, 1]
+                    pose.pose.orientation = yaw_to_quaternion(trajectory[k, 2])
+                elif k == self._N - 1:
+                    pose.pose.position.x = trajectory[k, 0] + (trajectory[k, 0] - trajectory[k - 1, 0])
+                    pose.pose.position.y = trajectory[k, 1] + (trajectory[k, 1] - trajectory[k - 1, 1])
+                    pose.pose.orientation = yaw_to_quaternion(trajectory[k, 2] + (trajectory[k, 2] - trajectory[k - 1, 2]))
+                traj_msg.poses.append(pose)
+            
+            getattr(self, f"_traj_pub_{self._idx}").publish(traj_msg)
+    
+    def visualize(self): #TODO change to one vehicle
         for n in range(1, self._number_of_robots+1):
             state_msg = getattr(self, f'_state_msg_{n}')
             splineFitter = getattr(self, f'_spline_fitter_{n}')
@@ -324,9 +345,9 @@ class ROSMPCPlanner:
         self._visuals.publish()
     
     # Callback functions
-    def state_pose_callback_1(self, msg):
+    def state_pose_callback(self, msg):
         if self._dart_simulator:
-            self._state_msg_1 = msg
+            self._state_msg = msg
             self._state[0] = msg.pose.position.x
             self._state[1] = msg.pose.position.y
 
@@ -336,64 +357,44 @@ class ROSMPCPlanner:
             # Velocity is in the local frame, x is the forward velocity
             self._state[3] = msg.pose.position.z
 
-            self._states_save_1.append(deepcopy(self._state[:self._nx_one_robot]))
+            self._states_save.append(deepcopy(self._state[:self._nx_one_robot]))
             # print("-------- State ----------")
             # print(f"x = {self._state[0]:.2f}")
             # print(f"y = {self._state[1]:.2f}")
             # print(f"theta = {self._state[2]:.2f}")
-            # print(f"vx = {self._state[3]:.2f}")
-    
-    def state_pose_callback_2(self, msg):
-        if self._dart_simulator and self._number_of_robots > 1:
-            self._state_msg_2 = msg
-            self._state[7] = msg.pose.position.x
-            self._state[8] = msg.pose.position.y
+            # print(f"vx = {self._state[3]:.2f}"))
 
-            # Extract yaw angle (rotation around the Z-axis)
-            self._state[9] = quaternion_to_yaw(msg.pose.orientation)
-
-            # Velocity is in the local frame, x is the forward velocity
-            self._state[10] = msg.pose.position.z
-
-            self._states_save_2.append(deepcopy(self._state[self._nx_one_robot:]))
-
-    def vy_pose_callback_1(self, msg):
+    def vy_pose_callback(self, msg):
         if self._dart_simulator:
             self._state[4] = msg.data
 
-    def vy_pose_callback_2(self, msg):
-        if self._dart_simulator and self._number_of_robots > 1:
-            self._state[11] = msg.data
     
-    def w_pose_callback_1(self, msg):
+    def w_pose_callback(self, msg):
         if self._dart_simulator:
             self._state[5] = msg.data
     
-    def w_pose_callback_2(self, msg):
-        if self._dart_simulator and self._number_of_robots > 1:
-            self._state[12] = msg.data
-
-    def path_callback_1(self, msg):
+    def path_callback(self, msg):
 
         # Filter equal paths
-        if self._path_msg_1 is not None and len(self._path_msg_1.poses) == len(msg.poses):
+        if self._path_msg is not None and len(self._path_msg.poses) == len(msg.poses):
             return
 
-        self._path_msg_1 = msg
-        self._spline_fitter_1.fit_path(msg)
-        # plot_splines(self._spline_fitter_1._splines)
+        self._path_msg = msg
+        self._spline_fitter.fit_path(msg)
+        # plot_splines(self._spline_fitter._splines)
         self.plot_path()
-    
-    def path_callback_2(self, msg):
 
-        # Filter equal paths
-        if self._path_msg_2 is not None and len(self._path_msg_2.poses) == len(msg.poses) or self._number_of_robots < 1:
+    def trajectory_callback(self, traj_msg):
+        idx = rospy.get_name()[-1]
+
+        if not traj_msg.poses:
+            rospy.logwarn(f"Received empty path robot {idx}")
             return
-
-        self._path_msg_2 = msg
-        self._spline_fitter_2.fit_path(msg)
-        # plot_splines(self._spline_fitter_2._splines)
-        self.plot_path()
+        
+        for k, pose in enumerate(traj_msg.poses):
+            self._params_ca.set(k, f"x_{idx}", pose.pose.position.x)
+            self._params_ca.set(k, f"y_{idx}", pose.pose.position.y)
+            self._params_ca.set(k, f"theta_{idx}", quaternion_to_yaw(pose.pose.orientation))
 
     # For debugging purposes
     def plot_warmstart(self): 
