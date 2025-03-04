@@ -60,7 +60,7 @@ class MPCPlanner:
         self._nu_nmpc = self._solver_settings_nmpc["nu"]
         self._nvar_nmpc = self._solver_settings_nmpc["nvar"]
 
-        self._prev_trajectory_nmpc = np.zeros((self._N, self._nvar_nmpc)) 
+        self._prev_trajectory = np.zeros((self._N, self._nvar_nmpc)) 
 
         print_success(f"NMPC {self._idx} solver generated")
     
@@ -88,7 +88,7 @@ class MPCPlanner:
             output = dict()
             self.set_infeasible(output)
             print("Solver is being regenerated...")
-            return output, False, []
+            return output, False, None
 
         # Initialize the initial guesses
         if not hasattr(self, "_mpc_x_plan"):
@@ -99,17 +99,17 @@ class MPCPlanner:
             self._mpc_u_plan = np.zeros((self._nu_nmpc, self._N))
             self.set_initial_u_plan()
 
-        self._x_traj_init =  self._mpc_x_plan
+        self._x_traj_init = self._mpc_x_plan
         self._u_traj_init = self._mpc_u_plan
 
         if not self._mpc_feasible:
             pass
 
             # Xinit everywhere (could be infeasible)
-            self._x_traj_init = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
-            self._u_traj_init = np.zeros((self._nu_nmpc, self._N))
-            self._solver_nmpc.reset(reset_qp_solver_mem=1)
-            self._solver_nmpc.options_set('warm_start_first_qp', False)
+            # self._x_traj_init = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
+            # self._u_traj_init = np.zeros((self._nu_nmpc, self._N))
+            # self._solver_nmpc.reset(reset_qp_solver_mem=1)
+            # self._solver_nmpc.options_set('warm_start_first_qp', False)
 
    
         return self.solve_acados_nmpc(xinit, p)
@@ -138,7 +138,7 @@ class MPCPlanner:
                 print_warning(f"Optimization was infeasible (exitflag = {status})")
                 
                 self.set_infeasible(output)
-                return output, False, []
+                return output, False, None
 
             self._mpc_feasible = True
             self._model_nmpc.load(self._solver_nmpc)
@@ -164,16 +164,16 @@ class MPCPlanner:
             output = dict()
             self.set_infeasible(output)
             print("Solver is being regenerated...")
-            return output, False, []
+            return output, False, None
 
         return output, True, self._prev_trajectory
    
     def solve_ca(self, p): 
 
-        if not hasattr(self, "_x_init"):
-            self._x_init = np.zeros((self._nx_ca, self._N))
-        if not hasattr(self, "_u_init"):
-            self._u_init = np.zeros((self._nu_ca, self._N))
+        if not hasattr(self, "_x_init_ca"):
+            self._x_init_ca = np.zeros((self._nx_ca, self._N))
+        if not hasattr(self, "_u_init_ca"):
+            self._u_init_ca = np.zeros((self._nu_ca, self._N))
 
         try:
             # Set initial state
@@ -182,8 +182,8 @@ class MPCPlanner:
 
             npar = int(len(p) / (self._N + 1))
             for k in range(0, self._N):
-                self._solver_ca.set(k, 'x', self._x_init[:, k])
-                self._solver_ca.set(k, 'u', self._u_init[:, k]) 
+                self._solver_ca.set(k, 'x', self._x_init_ca[:, k])
+                self._solver_ca.set(k, 'u', self._u_init_ca[:, k]) 
                 self._solver_ca.set(k, 'p', np.array(p[k*npar:(k+1)*npar])) # params for the current stage
 
             self._solver_ca.set(self._N, 'p', np.array(p[self._N*npar:(self._N + 1)*npar])) # Repeats the final set of parameters
@@ -193,16 +193,14 @@ class MPCPlanner:
                 status = self._solver_ca.solve()
                 solve_time += float(self._solver_ca.get_stats('time_tot')) * 1000.
            
+
             output = dict()
             if status != 0: #and status != 2: # infeasible
                 print_warning(f"Optimization was infeasible (exitflag = {status})")
                 
-                return output, False, []
+                return output, False, None
 
-            self._mpc_feasible = True
             self._model_ca.load(self._solver_ca)
-
-            output = dict()
 
             for j in range(1, self._number_of_robots+1):
                 if j != self._idx:
@@ -221,11 +219,11 @@ class MPCPlanner:
             self.time_tracker.add(solve_time)
 
             print_value(f"Current cost (ca {self._idx}):", f"{self.get_cost_ca():.2f}")
-            self._prev_solution_ca = self._model_ca.get_solution_ca(self._solver_ca, self._x_init, self._u_init)
+            self._prev_solution_ca = self._model_ca.get_solution_ca(self._solver_ca, self._x_init_ca, self._u_init_ca)
         except AttributeError:
             output = dict()
             print("Solver is being regenerated...")
-            return output, False, []
+            return output, False, None
 
         return output, True, self._prev_solution_ca
     

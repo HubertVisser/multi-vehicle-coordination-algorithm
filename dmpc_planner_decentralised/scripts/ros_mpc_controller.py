@@ -91,6 +91,7 @@ class ROSMPCPlanner:
 
         self._enable_output = False
         self._mpc_feasible = True
+        self._ca_feasible = True
 
         self._callbacks_enabled = False
         self.initialize_publishers_and_subscribers()
@@ -140,9 +141,9 @@ class ROSMPCPlanner:
             if self._dart_simulator == False:
                 output_keys = [f"x_{self._idx}", f"y_{self._idx}", f"theta_{self._idx}", f"vx_{self._idx}", f"vy_{self._idx}", f"w_{self._idx}", f"s_{self._idx}"]
                 self._state = [output[key] for key in output_keys]
-                getattr(self, f'_states_save').append(deepcopy(self._state))
+                self._states_save.append(deepcopy(self._state))
             
-            getattr(self, f'_outputs_save').append([output["throttle"], output["steering"]])
+            self._outputs_save.append([output["throttle"], output["steering"]])
             
             # self.plot_pred_traj() # slows down the simulation
 
@@ -161,13 +162,13 @@ class ROSMPCPlanner:
         # self._params.check_for_nan()
 
         ca_timer = Timer("CA")
-        output, self._mpc_feasible, self._ca_solution = self._planner.solve_ca(self._params_ca.get_solver_params())
+        output, self._ca_feasible, self._ca_solution = self._planner.solve_ca(self._params_ca.get_solver_params())
         del ca_timer
 
         if self._verbose:
             time = timer.stop_and_print()
 
-        if self._mpc_feasible:
+        if self._ca_feasible:
             lam = np.array([])
             for i in range(1, self._number_of_robots+1):
                 for j in range(1, self._number_of_robots+1):
@@ -182,7 +183,6 @@ class ROSMPCPlanner:
             
             self._save_lam = np.vstack((self._save_lam, lam)) if self._save_lam.size else lam
             
-            # self.plot_pred_traj() # slows down the simulation
 
     def set_nmpc_parameters(self):
         

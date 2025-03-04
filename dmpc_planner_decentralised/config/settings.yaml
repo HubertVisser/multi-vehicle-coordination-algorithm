@@ -5,14 +5,14 @@ integrator_step: 0.3
 n_discs: 0
 track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
 
-number_of_robots: 1
+number_of_robots: 2
 robot_1:
-  start_x: -3.0
+  start_x: -4.0
   start_y: 0.0
   start_theta: 0.0  # in radians
 robot_2:
-  start_x: 0.0
-  start_y: -3.0
+  start_x: 1.0
+  start_y: -4.0
   start_theta: 0.5  # radians
 
 verbose: false
@@ -41,7 +41,7 @@ weights:
   steering: .1
   lambda: .1
   s_dual: .1
-  velocity: 1.0
+  velocity: 0.5
   reference_velocity: 0.4
   lag: 0.8
   contour: 0.8
