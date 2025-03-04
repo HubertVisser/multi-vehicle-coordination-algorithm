@@ -337,7 +337,15 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /mpc_visuals
+      Marker Topic: /mpc_visuals_1
+      Name: MarkerArray
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /mpc_visuals_2
       Name: MarkerArray
       Namespaces:
         "": true
@@ -390,16 +398,32 @@ Visualization Manager:
       Value: false
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /reference_path
-      Name: Reference Path
+      Marker Topic: /reference_path_1
+      Name: Reference Path 1
       Namespaces:
         {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /mpc_planner_py/debug
-      Name: Py Planner Debug
+      Marker Topic: /reference_path_2
+      Name: Reference Path 2
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /mpc_planner_py/debug_1
+      Name: Py Planner Debug 1
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /mpc_planner_py/debug_2
+      Name: Py Planner Debug 2
       Namespaces:
         {}
       Queue Size: 100

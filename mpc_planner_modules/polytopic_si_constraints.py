@@ -80,12 +80,20 @@ class PolytopicSidualConstraints:
         
     def get_s_ij(self, model, params, idx_j):
         if self.decentralised and self.solver_name.startswith("solver_nmpc"):
-            return cd.vertcat(  params.get(f"s_{self.idx_i}_{idx_j}_0"), 
-                                params.get(f"s_{self.idx_i}_{idx_j}_1"))
+            if self.idx_i > idx_j:
+                return cd.vertcat(  params.get(f"s_{idx_j}_{self.idx_i}_0"), 
+                                    params.get(f"s_{idx_j}_{self.idx_i}_1"))
+            else:
+                return cd.vertcat(  params.get(f"s_{self.idx_i}_{idx_j}_0"), 
+                                    params.get(f"s_{self.idx_i}_{idx_j}_1"))
         else:
-            return cd.vertcat(  model.get(f"s_{self.idx_i}_{idx_j}_0"), 
-                                model.get(f"s_{self.idx_i}_{idx_j}_1"))
-
+            if self.idx_i > idx_j:
+                return cd.vertcat(  model.get(f"s_{idx_j}_{self.idx_i}_0"), 
+                                    model.get(f"s_{idx_j}_{self.idx_i}_1"))
+            else:
+                return cd.vertcat(  model.get(f"s_{self.idx_i}_{idx_j}_0"), 
+                                    model.get(f"s_{self.idx_i}_{idx_j}_1"))
+            
     def get_constraints(self, model, params, settings, stage_idx):
         constraints = []
 

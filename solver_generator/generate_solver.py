@@ -62,7 +62,7 @@ def generate_solver(modules, model, settings=None):
     if settings is None:
         settings = load_settings()
 
-    print_header("Creating ACADOS" f"Solver: {settings['name']}_solver")
+    print_header("Creating ACADOS" f"Solver: {settings['solver_name']}_solver") if settings["decentralised"] else print_header("Creating ACADOS" f"Solver: {settings['name']}_solver")
 
     params = AcadosParameters()
 

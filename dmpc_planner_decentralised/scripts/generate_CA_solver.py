@@ -39,8 +39,12 @@ def configuration_basic(settings, idx):
             base_module.weigh_variable(var_name=f"lam_{idx}_{j}_1", weight_names="lambda",)
             base_module.weigh_variable(var_name=f"lam_{idx}_{j}_2", weight_names="lambda",)
             base_module.weigh_variable(var_name=f"lam_{idx}_{j}_3", weight_names="lambda",)
-            base_module.weigh_variable(var_name=f"s_{idx}_{j}_0", weight_names="s_dual",)
-            base_module.weigh_variable(var_name=f"s_{idx}_{j}_1", weight_names="s_dual",)
+            if idx > j:
+                base_module.weigh_variable(var_name=f"s_{j}_{idx}_0", weight_names="s_dual",)
+                base_module.weigh_variable(var_name=f"s_{j}_{idx}_1", weight_names="s_dual",)
+            else:
+                base_module.weigh_variable(var_name=f"s_{idx}_{j}_0", weight_names="s_dual",)
+                base_module.weigh_variable(var_name=f"s_{idx}_{j}_1", weight_names="s_dual",)
     
     modules.add_module(MinimizeCollisionAvoidanceModule(settings, idx))
     
@@ -66,4 +70,4 @@ def generate(idx):
     return solver, simulator
 
 if __name__ == "__main__":
-    generate(idx=1)
+    generate(idx=2)

@@ -68,14 +68,19 @@ class PolytopicSjdualConstraints:
                             model.get(f"lam_{idx_j}_{self.idx_i}_3"))
         
     def get_s_ij(self, model, idx_j):
-        return cd.vertcat(  model.get(f"s_{self.idx_i}_{idx_j}_0"), 
-                            model.get(f"s_{self.idx_i}_{idx_j}_1"))
+        if self.idx_i > idx_j:
+            return cd.vertcat(  model.get(f"s_{idx_j}_{self.idx_i}_0"), 
+                                model.get(f"s_{idx_j}_{self.idx_i}_1"))
+        else:
+            return cd.vertcat(  model.get(f"s_{self.idx_i}_{idx_j}_0"), 
+                                model.get(f"s_{self.idx_i}_{idx_j}_1"))
         
     def get_constraints(self, model, params, settings, stage_idx):
         constraints = []
 
         # Constraints from all neighbouring robots (j) to the ego robot (i)
-        for j in range(self.idx_i, self.number_of_robots+1): 
+        start_idx = 1 if self.decentralised else self.idx_i
+        for j in range(start_idx, self.number_of_robots+1): 
             if j != self.idx_i:
 
                 theta_j = self.get_theta_j(model, params, j)            

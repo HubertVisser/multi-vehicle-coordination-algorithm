@@ -81,7 +81,7 @@ class MPCPlanner:
 
         self._prev_solution_ca = np.zeros((self._N, self._nvar_ca)) 
 
-        print_success("CA {self._idx} solver generated")
+        print_success(f"CA {self._idx} solver generated")
 
     def solve_nmpc(self, xinit, p):
         if not hasattr(self, "_solver_nmpc"):
@@ -153,12 +153,12 @@ class MPCPlanner:
             output[f"w_{self._idx}"] = self._model_nmpc.get(1, f"w_{self._idx}")
             output[f"s_{self._idx}"] = self._model_nmpc.get(1, f"s_{self._idx}")
             
-            output[f"throttle_{self._idx}"] = self._model_nmpc.get(0, f"throttle_{self._idx}")
-            output[f"steering_{self._idx}"] = self._model_nmpc.get(0, f"steering_{self._idx}")
+            output[f"throttle"] = self._model_nmpc.get(0, f"throttle_{self._idx}")
+            output[f"steering"] = self._model_nmpc.get(0, f"steering_{self._idx}")
             
             self.time_tracker.add(solve_time)
 
-            print_value(f"Current cost (nmpc {self._idx}):", f"{self.get_cost_acados():.2f}")
+            print_value(f"Current cost (nmpc {self._idx}):", f"{self.get_cost_nmpc():.2f}")
             self._prev_trajectory = self._model_nmpc.get_trajectory(self._solver_nmpc, self._mpc_x_plan, self._mpc_u_plan)
         except AttributeError:
             output = dict()
@@ -168,7 +168,7 @@ class MPCPlanner:
 
         return output, True, self._prev_trajectory
    
-    def solve_ca(self, p): # check the content of p
+    def solve_ca(self, p): 
 
         if not hasattr(self, "_x_init"):
             self._x_init = np.zeros((self._nx_ca, self._N))
@@ -200,24 +200,27 @@ class MPCPlanner:
                 return output, False, []
 
             self._mpc_feasible = True
-            self._model.load(self._solver_ca)
+            self._model_ca.load(self._solver_ca)
 
             output = dict()
-            for n in range(1, self._number_of_robots+1):
-                for j in range(1, self._number_of_robots+1):
-                    if j != n:
-                        output[f"lam_{n}_{j}_0"] = self._model.get(1, f"lam_{n}_{j}_0")
-                        output[f"lam_{n}_{j}_1"] = self._model.get(1, f"lam_{n}_{j}_1")
-                        output[f"lam_{n}_{j}_2"] = self._model.get(1, f"lam_{n}_{j}_2")
-                        output[f"lam_{n}_{j}_3"] = self._model.get(1, f"lam_{n}_{j}_3")
-                for j in range(n, self._number_of_robots+1):
-                    if j != n:
-                        output[f"s_{n}_{j}"] = self._model.get(1, f"s_{n}_{j}")
-                        output[f"s_{j}_{n}"] = self._model.get(1, f"s_{j}_{n}")
+
+            for j in range(1, self._number_of_robots+1):
+                if j != self._idx:
+                    output[f"lam_{self._idx}_{j}_0"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_0")
+                    output[f"lam_{self._idx}_{j}_1"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_1")
+                    output[f"lam_{self._idx}_{j}_2"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_2")
+                    output[f"lam_{self._idx}_{j}_3"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_3")
+                    if self._idx > j:
+                        output[f"s_{j}_{self._idx}_0"] = self._model_ca.get(1, f"s_{j}_{self._idx}_0")
+                        output[f"s_{j}_{self._idx}_1"] = self._model_ca.get(1, f"s_{j}_{self._idx}_1")
+                    else:    
+                        output[f"s_{self._idx}_{j}_0"] = self._model_ca.get(1, f"s_{self._idx}_{j}_0")
+                        output[f"s_{self._idx}_{j}_1"] = self._model_ca.get(1, f"s_{self._idx}_{j}_1")
+                        
             
             self.time_tracker.add(solve_time)
 
-            print_value("Current cost (ca {self._idx}):", f"{self.get_cost_acados():.2f}")
+            print_value(f"Current cost (ca {self._idx}):", f"{self.get_cost_ca():.2f}")
             self._prev_solution_ca = self._model_ca.get_solution_ca(self._solver_ca, self._x_init, self._u_init)
         except AttributeError:
             output = dict()
@@ -234,12 +237,12 @@ class MPCPlanner:
         acceleration_x = fx / mass_vehicle
         throttle_initial_guess = throttle_search[np.argmin(np.abs(acceleration_x))]
         self._mpc_u_plan[0, :] = throttle_initial_guess
-        if self._number_of_robots == 2 : 
-            self._mpc_u_plan[2, :] = throttle_initial_guess
-            self._mpc_u_plan[-self._nlam+4:-self._nlam+12, :] = self._dmin
 
-    def get_cost_acados(self):
-        return self._solver.get_cost()
+    def get_cost_nmpc(self):
+        return self._solver_nmpc.get_cost()
+    
+    def get_cost_ca(self):
+        return self._solver_ca.get_cost()
 
     def set_infeasible(self, output):
         self._mpc_feasible = False
@@ -247,14 +250,20 @@ class MPCPlanner:
         output[f"throttle_{self._idx}"] = 0.
         output[f"steering_{self._idx}"] = 0.
 
+    def get_solver_nmpc(self):
+        return self._solver_nmpc
+    
     def get_solver(self):
-        return self._solver
+        return self._solver_ca
 
     def get_simulator(self):
         return self._simulator
 
-    def get_model(self):
-        return self._model
+    def get_model_nmpc(self):
+        return self._model_nmpc
+    
+    def get_model_ca(self):
+        return self._model_ca
 
     def get_initial_guess(self):
         return self._u_traj_init, self._x_traj_init
