@@ -33,8 +33,6 @@ class MPCPlanner:
         self._dart_simulator = self._settings["dart_simulator"]
         self._dmin = self._settings["polytopic"]["d_min"]
 
-        self._projection_func = lambda trajectory: trajectory # No projection
-
         self.init_acados_solver()
 
         self._mpc_feasible = True
@@ -79,7 +77,7 @@ class MPCPlanner:
         # Initialize the initial guesses
         if not hasattr(self, "_mpc_x_plan"):
             self._mpc_x_plan = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
-            self.set_initial_x_plan_1(xinit)
+            # self.set_initial_x_plan_1(xinit)
             # self.set_initial_x_plan_2(xinit) if self._number_of_robots > 1 else None
 
         if not hasattr(self, "_mpc_u_plan"):
@@ -161,9 +159,12 @@ class MPCPlanner:
                         output[f"lam_{n}_{j}_2"] = self._model.get(1, f"lam_{n}_{j}_2")
                         output[f"lam_{n}_{j}_3"] = self._model.get(1, f"lam_{n}_{j}_3")
                 for j in range(n, self._number_of_robots+1):
-                    if j != n:
-                        output[f"s_{n}_{j}"] = self._model.get(1, f"s_{n}_{j}")
-                        output[f"s_{j}_{n}"] = self._model.get(1, f"s_{j}_{n}")
+                    if j != n and n > j:
+                        output[f"s_{j}_{n}_0"] = self._model.get(1, f"s_{j}_{n}_0")
+                        output[f"s_{j}_{n}_1"] = self._model.get(1, f"s_{j}_{n}_1")
+                    elif j != n and n < j:
+                        output[f"s_{n}_{j}_0"] = self._model.get(1, f"s_{n}_{j}_0")
+                        output[f"s_{n}_{j}_1"] = self._model.get(1, f"s_{n}_{j}_1")
             
             self.time_tracker.add(solve_time)
 

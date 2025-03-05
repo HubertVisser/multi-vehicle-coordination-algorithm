@@ -35,7 +35,7 @@ class ROSMPCCoordinator:
         self._number_of_robots = self._settings["number_of_robots"]
 
         self._robots = []
-        for i in range(1, self._number_of_robots ):
+        for i in range(1, self._number_of_robots+1):
             robot = ROSMPCPlanner(i, self._settings)
             self._robots.append(robot)
 
@@ -122,7 +122,7 @@ if __name__ == "__main__":
 
         coordinator._robots[0].plot_states()
     except rospy.ROSInterruptException:
-        pass
+        rospy.logerr("ROS Interrupt Exception! Just shutting down to be safe.")
    
         
     

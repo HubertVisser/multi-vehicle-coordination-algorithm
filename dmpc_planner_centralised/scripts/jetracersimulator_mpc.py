@@ -171,7 +171,7 @@ class ROSMPCPlanner:
                     if i != j:
                         lam = np.concatenate((lam, np.array([output[f"lam_{i}_{j}_0"], output[f"lam_{i}_{j}_1"], output[f"lam_{i}_{j}_2"], output[f"lam_{i}_{j}_3"]])))
                         if i < j:
-                            self._save_s = np.vstack((self._save_s, np.array([output[f"s_{i}_{j}"], output[f"s_{j}_{i}"]]))) if self._save_s.size else np.array([[output[f"s_{i}_{j}"], output[f"s_{j}_{i}"]]])
+                            self._save_s = np.vstack((self._save_s, np.array([output[f"s_{i}_{j}_0"], output[f"s_{i}_{j}_1"]]))) if self._save_s.size else np.array([output[f"s_{i}_{j}_0"], output[f"s_{i}_{j}_1"]])
                 
             self._save_lam = np.vstack((self._save_lam, lam)) if self._save_lam.size else lam
             

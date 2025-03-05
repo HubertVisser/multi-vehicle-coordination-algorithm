@@ -210,7 +210,7 @@ class ROSMPCPlanner:
                     self._params_nmpc.set(k, f"spline_y{i}_c_{self._idx}", splines[i]["c_y"])
                     self._params_nmpc.set(k, f"spline_y{i}_d_{self._idx}", splines[i]["d_y"])
 
-                    self._params_nmpc.set(k, f"spline{i}_start_{self._idx}", splines[i]["s"])        
+                    self._params_nmpc.set(k, f"spline{i}_start_{self._idx}", splines[i]["s"])
 
     def publish_throttle(self, output, exit_flag):
         throttle = Float32()

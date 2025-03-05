@@ -16,11 +16,11 @@ robot_2:
   start_theta: 0.5  # radians
 
 verbose: false
-debug_visuals: false
+debug_visuals: true
 dart_simulator: false
 
 solver_settings:
-  iterations: 2 #2 # 1
+  iterations: 1 #2 
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 10.0
