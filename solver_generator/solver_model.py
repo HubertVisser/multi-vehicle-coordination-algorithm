@@ -460,8 +460,8 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
                 self.inputs = np.hstack((self.inputs, sublist_inputs.reshape(-1, 1)))
         
         # Bounds on states and inputs
-        self.lower_bound_states = np.tile(np.array([[-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0]]).T, (1, n)).T
-        self.upper_bound_states = np.tile(np.array([[1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000]]).T, (1, n)).T
+        self.lower_bound_states = np.tile(np.array([[-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0]]).T, (1, n))
+        self.upper_bound_states = np.tile(np.array([[1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000]]).T, (1, n))
         
         self.lower_bound_inputs = np.tile([[0.0],[-1.0]], (1, n)) 
         self.upper_bound_inputs = np.tile([[1.0], [1.0]], (1, n))

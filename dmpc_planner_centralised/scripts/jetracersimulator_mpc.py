@@ -64,9 +64,7 @@ class ROSMPCPlanner:
         )
 
         # Tied to the solver
-        self._params = RealTimeParameters(
-            self._settings, package="mpc_planner_solver"
-        )  # This maps to parameters used in the solver by name
+        self._params = RealTimeParameters(self._settings)  # This maps to parameters used in the solver by name
         self._weights = self._settings["weights"]
 
         self._nx = self._solver_settings["nx"]

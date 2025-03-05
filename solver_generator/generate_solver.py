@@ -106,8 +106,8 @@ def generate_solver(modules, model, settings=None):
     ocp.constraints.idxbx = np.array(range(nx))
 
     # Set control input bound
-    ocp.constraints.lbu = model.lower_bound_u.flatten()
-    ocp.constraints.ubu = model.upper_bound_u.flatten()
+    ocp.constraints.lbu = model.lower_bound_u.flatten() if settings["decentralised"] else model.lower_bound_u.T.flatten()
+    ocp.constraints.ubu = model.upper_bound_u.flatten() if settings["decentralised"] else model.lower_bound_u.T.flatten()
     ocp.constraints.idxbu = np.array(range(nu)) if settings["decentralised"] else np.array(range(nu + ns + nlam))
 
     # Set path constraints bound 

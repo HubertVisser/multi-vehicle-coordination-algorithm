@@ -80,7 +80,7 @@ class MPCPlanner:
         if not hasattr(self, "_mpc_x_plan"):
             self._mpc_x_plan = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
             self.set_initial_x_plan_1(xinit)
-            self.set_initial_x_plan_2(xinit) if self._number_of_robots > 1 else None
+            # self.set_initial_x_plan_2(xinit) if self._number_of_robots > 1 else None
 
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu + self._nd, self._N))
@@ -103,10 +103,10 @@ class MPCPlanner:
             # self._x_traj_init = self._projection_func(self._x_traj_init)
 
             # Xinit everywhere (could be infeasible)
-            self._x_traj_init = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
-            self._u_traj_init = np.zeros((self._nu + self._nd, self._N))
-            self._solver.reset(reset_qp_solver_mem=1)
-            self._solver.options_set('warm_start_first_qp', False)
+            # self._x_traj_init = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
+            # self._u_traj_init = np.zeros((self._nu + self._nd, self._N))
+            # self._solver.reset(reset_qp_solver_mem=1)
+            # self._solver.options_set('warm_start_first_qp', False)
 
    
         return self.solve_acados(xinit, p)

@@ -30,19 +30,18 @@ class ContouringObjective:
         params.add("terminal_lag", add_to_rqt_reconfigure=True)
         params.add("terminal_contour", add_to_rqt_reconfigure=True)
 
-        if self.decentralised:
-            for i in range(self.num_segments):
-                params.add(f"spline_x{i}_a_{self.idx}", bundle_name=f"spline_x_a_{self.idx}")
-                params.add(f"spline_x{i}_b_{self.idx}", bundle_name=f"spline_x_b_{self.idx}")
-                params.add(f"spline_x{i}_c_{self.idx}", bundle_name=f"spline_x_c_{self.idx}")
-                params.add(f"spline_x{i}_d_{self.idx}", bundle_name=f"spline_x_d_{self.idx}")
+        for i in range(self.num_segments):
+            params.add(f"spline_x{i}_a_{self.idx}", bundle_name=f"spline_x_a_{self.idx}")
+            params.add(f"spline_x{i}_b_{self.idx}", bundle_name=f"spline_x_b_{self.idx}")
+            params.add(f"spline_x{i}_c_{self.idx}", bundle_name=f"spline_x_c_{self.idx}")
+            params.add(f"spline_x{i}_d_{self.idx}", bundle_name=f"spline_x_d_{self.idx}")
 
-                params.add(f"spline_y{i}_a_{self.idx}", bundle_name=f"spline_y_a_{self.idx}")
-                params.add(f"spline_y{i}_b_{self.idx}", bundle_name=f"spline_y_b_{self.idx}")
-                params.add(f"spline_y{i}_c_{self.idx}", bundle_name=f"spline_y_c_{self.idx}")
-                params.add(f"spline_y{i}_d_{self.idx}", bundle_name=f"spline_y_d_{self.idx}")
+            params.add(f"spline_y{i}_a_{self.idx}", bundle_name=f"spline_y_a_{self.idx}")
+            params.add(f"spline_y{i}_b_{self.idx}", bundle_name=f"spline_y_b_{self.idx}")
+            params.add(f"spline_y{i}_c_{self.idx}", bundle_name=f"spline_y_c_{self.idx}")
+            params.add(f"spline_y{i}_d_{self.idx}", bundle_name=f"spline_y_d_{self.idx}")
 
-                params.add(f"spline{i}_start_{self.idx}", bundle_name=f"spline_start_{self.idx}")
+            params.add(f"spline{i}_start_{self.idx}", bundle_name=f"spline_start_{self.idx}")
         return params
 
     def get_value(self, model, params, settings, stage_idx):
