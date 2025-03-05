@@ -41,9 +41,13 @@ def configuration_basic(settings):
                 base_module.weigh_variable(var_name=f"lam_{n}_{j}_1", weight_names="lambda",)
                 base_module.weigh_variable(var_name=f"lam_{n}_{j}_2", weight_names="lambda",)
                 base_module.weigh_variable(var_name=f"lam_{n}_{j}_3", weight_names="lambda",)
-                base_module.weigh_variable(var_name=f"s_{n}_{j}", weight_names="s_dual",
-                                           cost_function=lambda x, w: w[0] * x.T @ x)
-        
+                if n > j:
+                    base_module.weigh_variable(var_name=f"s_{j}_{n}_0", weight_names="s_dual",)
+                    base_module.weigh_variable(var_name=f"s_{j}_{n}_1", weight_names="s_dual",)
+                else:
+                    base_module.weigh_variable(var_name=f"s_{n}_{j}_0", weight_names="s_dual",)
+                    base_module.weigh_variable(var_name=f"s_{n}_{j}_1", weight_names="s_dual",)
+            
         modules.add_module(ContouringModule(settings, n))
         modules.add_module(PathReferenceVelocityModule(settings, n))
         

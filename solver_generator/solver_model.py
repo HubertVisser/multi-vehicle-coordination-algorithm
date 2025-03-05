@@ -263,9 +263,7 @@ class MultiRobotDynamicsModel():
             return self.get_lam()[i]     # This slice takes a copy from the original array
         elif np.any(self.s == input_state_or_dual):
             i = np.where(self.s == input_state_or_dual)
-            if i[0][0] > i[1][0]:
-                return cd.vertcat(self.get_s()[i[1][0], i[0][0]], self.get_s()[i])
-            return cd.vertcat(self.get_s()[i], self.get_s()[i[1][0], i[0][0]])
+            return self.get_s()[i]
         else:
             raise IOError(f"Requested a state or input `{input_state_or_dual}' that was neither a state nor an input for the selected model")
 
@@ -446,7 +444,10 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
             sublist_inputs = np.array([f"{input}_{i+1}" for input in ["throttle", "steering"]])
             for j in range(n):
                 self.lams[i*4:(i+1)*4,j] = [f"lam_{i+1}_{j+1}_0", f"lam_{i+1}_{j+1}_1", f"lam_{i+1}_{j+1}_2", f"lam_{i+1}_{j+1}_3"]             
-                self.s[i,j] = f"s_{i+1}_{j+1}"        
+                if i > j:
+                    self.s[i,j] = f"s_{j+1}_{i+1}_1"
+                elif i <= j:
+                    self.s[i,j] = f"s_{i+1}_{j+1}_0"
 
             if len(self.states) == 0:
                 self.states = sublist_states.reshape(-1, 1)
@@ -627,7 +628,7 @@ class CollisionAvoidanceModel(DynamicsModel):
 
 if __name__ == "__main__":
 
-    model = CollisionAvoidanceModel(3, 2)
+    model = BicycleModel2ndOrderMultiRobot(2)
     model_1 = BicycleModel2ndOrder(1)
     print(model_1.get_bounds("steering_1")[0])
     print(model_1.get_bounds("x_1")[0])
