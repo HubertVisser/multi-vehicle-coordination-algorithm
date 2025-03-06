@@ -65,10 +65,8 @@ def generate_solver(modules, model, settings=None):
     print_header("Creating ACADOS" f"Solver: {settings['solver_name']}_solver") if settings["decentralised"] else print_header("Creating ACADOS" f"Solver: {settings['name']}_solver")
 
     params = AcadosParameters()
-
     define_parameters(modules, params, settings)
     params.load_acados_parameters()
-    
     settings["params"] = params
     solver_settings = settings["solver_settings"]
 
@@ -101,13 +99,13 @@ def generate_solver(modules, model, settings=None):
     ocp.constraints.x0 = np.zeros(nx)
 
     # Set state bound
-    ocp.constraints.lbx = model.lower_bound_states.flatten()
-    ocp.constraints.ubx = model.upper_bound_states.flatten() 
+    ocp.constraints.lbx = model.lower_bound_states.T.flatten()
+    ocp.constraints.ubx = model.upper_bound_states.T.flatten() 
     ocp.constraints.idxbx = np.array(range(nx))
 
     # Set control input bound
-    ocp.constraints.lbu = model.lower_bound_u.flatten() if settings["decentralised"] else model.lower_bound_u.T.flatten()
-    ocp.constraints.ubu = model.upper_bound_u.flatten() if settings["decentralised"] else model.lower_bound_u.T.flatten()
+    ocp.constraints.lbu = model.lower_bound_u.flatten() 
+    ocp.constraints.ubu = model.upper_bound_u.flatten() 
     ocp.constraints.idxbu = np.array(range(nu)) if settings["decentralised"] else np.array(range(nu + ns + nlam))
 
     # Set path constraints bound 
@@ -181,7 +179,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.qp_solver_iter_max = 50 # default = 50
+    ocp.solver_options.qp_solver_iter_max = 500 # default = 50
     ocp.solver_options.qp_solver_warm_start = 1  # cold start / 1 = warm, 2 = warm primal and dual
 
     # code generation options

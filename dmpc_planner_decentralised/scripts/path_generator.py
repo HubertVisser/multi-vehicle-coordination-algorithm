@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from util.files import load_settings
 
 
-def raw_track(choice, start_x, start_y):
+def raw_track(choice, start_x, start_y, positive_track):
     n_checkpoints = 10
     if choice == 't_junction' and len(start_x) == 2:
         
@@ -32,40 +32,33 @@ def raw_track(choice, start_x, start_y):
         checkpoints_x_straight2 = np.linspace(-2, -4, 4)
         checkpoints_y_straight2 = np.ones(4) 
         
+        
         # Concatenate the segments
         checkpoints_x_2 = np.concatenate((checkpoints_x_straight1[:-1], checkpoints_x_turn[:-1], checkpoints_x_straight2))
         checkpoints_y_2 = np.concatenate((checkpoints_y_straight1[:-1], checkpoints_y_turn[:-1], checkpoints_y_straight2))
         
         checkpoints_x_1 = np.linspace(start_x[0], 5, n_checkpoints)
-        checkpoints_y_1 = np.zeros(n_checkpoints) * start_y[0]
+        checkpoints_y_1 = np.ones(n_checkpoints) * start_y[0]
 
-        return checkpoints_x_1, checkpoints_y_1, checkpoints_x_2, checkpoints_y_2
+        if positive_track:
+            return checkpoints_x_1 + 5, checkpoints_y_1 + 5, checkpoints_x_2 + 5, checkpoints_y_2 + 5
+        else:
+            return checkpoints_x_1, checkpoints_y_1, checkpoints_x_2, checkpoints_y_2
     
     elif choice == 'straight_line' or len(start_x) == 1:
         checkpoints_x_1 = np.linspace(start_x[0], 5, n_checkpoints)
         checkpoints_y_1 = np.zeros(n_checkpoints)
         
+        if positive_track:
+            return checkpoints_x_1 + 5, checkpoints_y_1 + 5
         return checkpoints_x_1, checkpoints_y_1
 
-    elif choice == 'sinus' and len(start_x) == 1:
-        # Straight line segment from x = -5 at y = 0
-        checkpoints_x_straight = np.linspace(start_x[0], start_x[0]+3, 4)
-        checkpoints_y_straight = np.zeros(4)
-        
-        # Sinusoidal segment to x = 20 completing one period
-        checkpoints_x_sinus = np.linspace(start_x[0] + 3, start_x[0] + 11, n_checkpoints-4)
-        checkpoints_y_sinus = 1 * np.sin(2 * np.pi * (checkpoints_x_sinus + 3) / 8 )  # One period with length 15
-        
-        # Concatenate the two segments
-        checkpoints_x_1 = np.concatenate((checkpoints_x_straight[:-1], checkpoints_x_sinus))
-        checkpoints_y_1 = np.concatenate((checkpoints_y_straight[:-1], checkpoints_y_sinus))
-
-        return checkpoints_x_1, checkpoints_y_1
 
 def generate_path_msg():
         settings = load_settings(package="dmpc_planner_decentralised")
         track_choice = settings["track_choice"]
         num_robot = settings["number_of_robots"]
+        positive_track = settings["positive_track"]
         start_x = []
         start_y = []
         paths = []
@@ -74,7 +67,7 @@ def generate_path_msg():
             start_x.extend([settings[f"robot_1"]["start_x"], settings[f"robot_2"]["start_x"]])
             start_y.extend([settings[f"robot_1"]["start_y"], settings[f"robot_2"]["start_y"]])
                 
-            checkpoints_x_1, checkpoints_y_1, checkpoints_x_2, checkpoints_y_2 = raw_track(track_choice, start_x, start_y)
+            checkpoints_x_1, checkpoints_y_1, checkpoints_x_2, checkpoints_y_2 = raw_track(track_choice, start_x, start_y, positive_track)
 
             path_1 = Path()
             path_1.header.frame_id = "map"
@@ -110,7 +103,7 @@ def generate_path_msg():
             start_x.append(settings[f"robot_1"]["start_x"])
             start_y.append(settings[f"robot_1"]["start_y"])
                 
-            checkpoints_x_1, checkpoints_y_1 = raw_track(track_choice, start_x, start_y)
+            checkpoints_x_1, checkpoints_y_1 = raw_track(track_choice, start_x, start_y, positive_track)
 
             path_1 = Path()
             path_1.header.frame_id = "map"
@@ -145,7 +138,7 @@ if __name__ == '__main__':
     # choice = 't_junction'
     # start_x = [-4, 1]
     # start_y = [0, -4]
-    # raw_track = raw_track(choice, start_x, start_y)
+    # raw_track = raw_track(choice, start_x, start_y, positive_track=False)
     # plt.plot(raw_track[0], raw_track[1])
     # plt.plot(raw_track[2], raw_track[3])
     # plt.show()

@@ -2,6 +2,6 @@
 
 <launch>
 
-  <node name="dmpc_planner_coordinator" pkg="dmpc_planner_decentralised" type="main.py" output="screen"/>
+  <node name="dmpc_planner_node" pkg="dmpc_planner_decentralised" type="main.py" output="screen"/>
 
 </launch>  

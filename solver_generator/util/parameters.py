@@ -148,14 +148,6 @@ class AcadosParameters(Parameters):
     def get_acados_p(self):
         return self._p
 
-    def pop_model_vars(self, model):
-
-        keys_to_pop = set(model.states + model.inputs)
-        for key in list(self._params.keys()):  # Use list to avoid modifying the dictionary while iterating
-            if key in keys_to_pop:
-                self._params.pop(key)
-                self._param_idx -= 1
-
 class GlobalParameters(Parameters):
 
     def __init__(self):

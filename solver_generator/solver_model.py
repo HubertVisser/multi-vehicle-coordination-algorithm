@@ -318,8 +318,8 @@ class BicycleModel2ndOrder(DynamicsModel):
         self.states = [f"x_{idx}", f"y_{idx}", f"theta_{idx}", f"vx_{idx}", f"vy_{idx}", f"w_{idx}", f"s_{idx}"]
         self.inputs = [f"throttle_{idx}", f"steering_{idx}"] #, "slack"]
 
-        self.lower_bound = np.array([-5.1, -10.0, -1000.0, -1000.0, -1000.0, -1000.0, 0.0, 0.0, -1.0]) # [u, x]
-        self.upper_bound = np.array([1000.0, 10.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1.0, 1.0]) # [u, x]
+        self.lower_bound = np.array([-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, 0.0, -1.0]) # [x, u]
+        self.upper_bound = np.array([1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1.0, 1.0]) # [x, u]
 
         self.lower_bound_states = self.lower_bound[:self.nx]
         self.upper_bound_states = self.upper_bound[:self.nx]
@@ -629,9 +629,9 @@ class CollisionAvoidanceModel(DynamicsModel):
 if __name__ == "__main__":
 
     model = BicycleModel2ndOrderMultiRobot(2)
-    model_1 = BicycleModel2ndOrder(1)
-    print("upper","lower", "range", model.get_bounds("steering_1"))
-    print("upper","lower", "range",model.get_bounds("x_1"))
+    model_b = BicycleModel2ndOrder(1)
+    # print("upper","lower", "range", model.get_bounds("steering_1"))
+    # print("upper","lower", "range",model.get_bounds("x_1"))
     # model.acados_symbolics_z()
     # model.get_acados_dynamics()
     model.save_map()
@@ -642,21 +642,28 @@ if __name__ == "__main__":
     
 
     # print(model.lower_bound)
-    print(model.lower_bound_u)
+    # print(model.lower_bound_u)
     # print("lam_1_2", slice_1_2[0], slice_1_2[1], slice_1_2[2], slice_1_2[3])
-    print("lower_bound_u_acados", model.lower_bound_inputs)
-    print("upper_bound_inputs flatten", model.upper_bound_u.flatten())
+    # print("lower_bound_u_acados flatten", model.lower_bound_inputs)
     print("upper_bound_inputs", model.upper_bound_inputs)
-    print("upper_bound_inputs flatten", model.upper_bound_u.T.flatten())
-    print("lower_bound_inputs flatten", model.lower_bound_u.T.flatten())
-    print("acados_x",model.get_acados_x())
+    print("upper_bound_u flatten", model.upper_bound_u.flatten())
+    print("lower_bound_u flatten", model.lower_bound_u.flatten())
+    # print("acados_x",model.get_acados_x())
     print("lower_bound_states", model.lower_bound_states)
     print("lower_bound_states flatten", model.lower_bound_states.T.flatten())
     print("upper_bound_states flatten", model.upper_bound_states.T.flatten())
-    print("acados_d",model.get_acados_d())
-    print("lower_bound_duals", model.lower_bound_duals)
-    print("lower_bound_duals flatten", model.lower_bound_duals.T.flatten())
-    print("upper_bound_duals flatten", model.upper_bound_duals.T.flatten())
+    print()
+    # print("lower_bound_u_acados flatten", model_b.lower_bound_inputs)
+    print("upper_bound_u flatten", model_b.upper_bound_u.flatten())
+    print("lower_bound_u flatten", model_b.lower_bound_u.flatten())
+    # print("acados_x",model_b.get_acados_x())
+    print("lower_bound_states", model_b.lower_bound_states)
+    print("lower_bound_states flatten", model_b.lower_bound_states.T.flatten())
+    print("upper_bound_states flatten", model_b.upper_bound_states.T.flatten())
+    # print("acados_d",model.get_acados_d())
+    # print("lower_bound_duals", model.lower_bound_duals)
+    # print("lower_bound_duals flatten", model.lower_bound_duals.T.flatten())
+    # print("upper_bound_duals flatten", model.upper_bound_duals.T.flatten())
     
     # print(model.get('steering_2'))
 

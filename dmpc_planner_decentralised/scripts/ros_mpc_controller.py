@@ -69,9 +69,11 @@ class ROSMPCPlanner:
         self._nvar_ca = self._solver_settings_ca["nvar"]
 
         self._state = np.zeros((self._nx_nmpc,))
-        self._state[: 3] = [self._settings[f"robot_{self._idx}"]["start_x"], \
-                            self._settings[f"robot_{self._idx}"]["start_y"], \
-                            self._settings[f"robot_{self._idx}"]["start_theta"] * np.pi]
+        self._state[: 3] = [self._settings[f"robot_2"]["start_x"], \
+                            self._settings[f"robot_2"]["start_y"], \
+                            self._settings[f"robot_2"]["start_theta"] * np.pi]
+        
+        self._state[:2] += 5 if self._settings["positive_track"] else 0
 
         self._visuals = ROSMarkerPublisher(f"mpc_visuals_{self._idx}", 100)
         self._path_visual = ROSMarkerPublisher(f"reference_path_{self._idx}", 10)
@@ -84,8 +86,8 @@ class ROSMPCPlanner:
         self._states_save = []
         self._outputs_save = []
         self._save_output = []
-        self._save_s = np.array([])
-        self._save_lam = np.array([])
+        self._save_lam = []
+        self._save_s = []
 
         self._neighbour_pos = np.array([])
 
@@ -107,7 +109,7 @@ class ROSMPCPlanner:
         self._w_sub = rospy.Subscriber(f"omega_{self._idx}", Float32, self.w_pose_callback, queue_size=1)
 
         # Subscriber path generator
-        self._path_sub = rospy.Subscriber(f"roadmap/reference_{self._idx}", Path, lambda msg: self.path_callback(msg), queue_size=1)
+        self._path_sub = rospy.Subscriber(f"roadmap/reference_2", Path, lambda msg: self.path_callback(msg), queue_size=1)
 
         # Trajectory publisher
         self._traj_pub = rospy.Publisher(f"trajectory_{self._idx}", Path, queue_size=1)
@@ -169,19 +171,18 @@ class ROSMPCPlanner:
             time = timer.stop_and_print()
 
         if self._ca_feasible:
-            lam = np.array([])
-            for i in range(1, self._number_of_robots+1):
-                for j in range(1, self._number_of_robots+1):
-                    if i != j and (j == self._idx or i == self._idx):
-                        lam = np.concatenate((lam, np.array([output[f"lam_{i}_{j}_0"], 
-                                                             output[f"lam_{i}_{j}_1"], 
-                                                             output[f"lam_{i}_{j}_2"], 
-                                                             output[f"lam_{i}_{j}_3"]])))
-                for j in range(i, self._number_of_robots+1):
-                    if i != j and (j == self._idx or i == self._idx):
-                        self._save_s = np.vstack((self._save_s, np.array([output[f"s_{i}_{j}_0"], output[f"s_{i}_{j}_1"]]))) if self._save_s.size else np.array([output[f"s_{i}_{j}_0"], output[f"s_{i}_{j}_1"]])
-            
-            self._save_lam = np.vstack((self._save_lam, lam)) if self._save_lam.size else lam
+            lam = {}
+            s = {}
+            for j in range(1, self._number_of_robots+1):
+                if self._idx != j:
+                    if j > self._idx:
+                        s[f"s_{self._idx}_{j}"] = [output[f"s_{self._idx}_{j}_0"], output[f"s_{self._idx}_{j}_1"]]
+                    else:
+                        lam[f"lam_{self._idx}_{j}"] = [output[f"lam_{self._idx}_{j}_0"], output[f"lam_{self._idx}_{j}_1"], output[f"lam_{self._idx}_{j}_2"], output[f"lam_{self._idx}_{j}_3"]]
+                        s[f"s_{j}_{self._idx}"] = [output[f"s_{j}_{self._idx}_0"], output[f"s_{j}_{self._idx}_1"]]
+                
+            self._save_lam.append(lam)
+            self._save_s.append(s)
             
 
     def set_nmpc_parameters(self):
@@ -211,6 +212,32 @@ class ROSMPCPlanner:
                     self._params_nmpc.set(k, f"spline_y{i}_d_{self._idx}", splines[i]["d_y"])
 
                     self._params_nmpc.set(k, f"spline{i}_start_{self._idx}", splines[i]["s"])
+            
+            for j in range(1, self._number_of_robots+1):
+                if j != self._idx:
+                    if self._save_lam == []:
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", self._settings["initial_lambda"])
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", self._settings["initial_lambda"])
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", self._settings["initial_lambda"])
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", self._settings["initial_lambda"])
+                        
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", self._settings["initial_lambda"])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", self._settings["initial_lambda"])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", self._settings["initial_lambda"])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", self._settings["initial_lambda"])
+                    else:
+                        lam = self._save_lam[-1][f"lam_{self._idx}_{j}"]
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", lam[0])
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", lam[1])
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", lam[2])
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", lam[3])
+
+                        lam = self._save_lam[-1][f"lam_{self._idx}_{j}"]
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", lam[0])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", lam[1])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", lam[2])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", lam[3])
+                
 
     def publish_throttle(self, output, exit_flag):
         throttle = Float32()
@@ -280,7 +307,7 @@ class ROSMPCPlanner:
             pose.position.x = float(self._state[0])
             pose.position.y = float(self._state[1])
             robot_pos.add_marker(pose)
-        if self._save_s.size:
+        if self._save_s:
             line = self._visuals.get_line()
             line.set_scale(0.05)
             line.set_color(7, alpha=1.0)
@@ -288,13 +315,13 @@ class ROSMPCPlanner:
 
             for j in range(1, self._number_of_robots+1):
                 if j != self._idx:
-                    s = self._save_s[-1,:]
+                    s = self._save_s[-1][f's_{self._idx}_{j}'] if self._idx < j else self._save_s[-1][f's_{j}_{self._idx}']
                     neighbour_pos = np.array([self._state[0], self._state[1]])
                     midpoint = (ego_pos + neighbour_pos) / 2
             
                     # Calculate the direction vector of the line (perpendicular to the normal vector)
                     direction_vector = np.array([-s[1], s[0]]) 
-                    assert np.dot(direction_vector, s) == 0
+                    assert np.dot(direction_vector, np.array(s)) == 0
                     line_length = 100
                     line_start = midpoint - (line_length / 2) * direction_vector
                     line_end = midpoint + (line_length / 2) * direction_vector

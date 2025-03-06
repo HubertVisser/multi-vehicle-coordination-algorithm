@@ -25,7 +25,13 @@ from timer import Timer
 
 from ros_mpc_controller import ROSMPCPlanner
 # from path_generator import generate_path_msg
+import debugpy
 
+# Wait for the debugger to attach
+debugpy.listen(("localhost", 5678))
+print("Waiting for debugger to attach...")
+debugpy.wait_for_client()
+print("Debugger attached.")
 
 class ROSMPCCoordinator:
     def __init__(self):
@@ -67,12 +73,9 @@ class ROSMPCCoordinator:
         for robot in self._robots:
             if robot._spline_fitter._splines:
                 robot.run_nmpc(timer)
-            
-        for robot in self._robots:
-            robot.run_ca(timer)
 
         # Run CA for all robots after all trajectories are received
-        # self.run_ca_for_all_robots(timer)
+        self.run_ca_for_all_robots(timer)
 
     def run_ca_for_all_robots(self, timer):
         with self._trajectory_condition:

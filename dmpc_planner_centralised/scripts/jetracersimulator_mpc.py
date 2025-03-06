@@ -74,9 +74,9 @@ class ROSMPCPlanner:
 
         self._state = np.zeros((self._nx,))
         for n in range(1, self._number_of_robots+1):
-            self._state[(n-1)*self._nx_one_robot: 3 + (n-1)*self._nx_one_robot] = [self._settings[f"robot_{n}"]["start_x"], \
-                                                                                 self._settings[f"robot_{n}"]["start_y"], \
-                                                                                 self._settings[f"robot_{n}"]["start_theta"] * np.pi]
+            self._state[(n-1)*self._nx_one_robot: 3 + (n-1)*self._nx_one_robot] = [ self._settings[f"robot_{n}"]["start_x"], \
+                                                                                    self._settings[f"robot_{n}"]["start_y"], \
+                                                                                    self._settings[f"robot_{n}"]["start_theta"] * np.pi]
 
         self._visuals = ROSMarkerPublisher("mpc_visuals", 100)
         self._path_visual = ROSMarkerPublisher("reference_path", 10)
@@ -95,8 +95,8 @@ class ROSMPCPlanner:
         self._outputs_save_1 = []
         self._outputs_save_2 = []
         self._save_output = []
-        self._save_s = np.array([])
-        self._save_lam = np.array([])
+        self._save_lam = []
+        self._save_s = []
 
 
         self._neighbour_pos_1 = np.array([])
@@ -159,7 +159,8 @@ class ROSMPCPlanner:
             time = timer.stop_and_print()
 
         if self._mpc_feasible:
-            lam = np.array([])
+            lam = {}
+            s = {}
             for i in range(1, self._number_of_robots + 1): 
                 if self._dart_simulator == False:
                     output_keys = [f"x_{i}", f"y_{i}", f"theta_{i}", f"vx_{i}", f"vy_{i}", f"w_{i}", f"s_{i}"]
@@ -169,12 +170,13 @@ class ROSMPCPlanner:
                 getattr(self, f'_outputs_save_{i}').append([output[f"throttle_{i}"], output[f"steering_{i}"]])
                 for j in range(1, self._number_of_robots+1):
                     if i != j:
-                        lam = np.concatenate((lam, np.array([output[f"lam_{i}_{j}_0"], output[f"lam_{i}_{j}_1"], output[f"lam_{i}_{j}_2"], output[f"lam_{i}_{j}_3"]])))
+                        lam[f"lam_{i}_{j}"] = [output[f"lam_{i}_{j}_0"], output[f"lam_{i}_{j}_1"], output[f"lam_{i}_{j}_2"], output[f"lam_{i}_{j}_3"]]
                         if i < j:
-                            self._save_s = np.vstack((self._save_s, np.array([output[f"s_{i}_{j}_0"], output[f"s_{i}_{j}_1"]]))) if self._save_s.size else np.array([output[f"s_{i}_{j}_0"], output[f"s_{i}_{j}_1"]])
+                            s[f"s_{i}_{j}"] = [output[f"s_{i}_{j}_0"], output[f"s_{i}_{j}_1"]]
                 
-            self._save_lam = np.vstack((self._save_lam, lam)) if self._save_lam.size else lam
-            
+            self._save_lam.append(lam)
+            self._save_s.append(s)
+
             # self.plot_pred_traj() # slows down the simulation
 
         self.publish_throttle(output, self._mpc_feasible) if self._dart_simulator else None
@@ -265,7 +267,7 @@ class ROSMPCPlanner:
                 pose.position.x = float(self._state[0 + (n-1) * self._nx_one_robot])
                 pose.position.y = float(self._state[1 + (n-1) * self._nx_one_robot])
                 robot_pos.add_marker(pose)
-            if self._save_s.size:
+            if self._save_s:
                 line = self._visuals.get_line()
                 line.set_scale(0.05)
                 line.set_color(n*7, alpha=1.0)
@@ -273,14 +275,14 @@ class ROSMPCPlanner:
 
                 for j in range(n, self._number_of_robots+1):
                     if j != n:
-                        s = self._save_s[-1,:]
+                        s = self._save_s[-1][f's_{n}_{j}'] if n < j else self._save_s[-1][f's_{j}_{n}']
                         #setattr(self, f'neighbour_pos_{j}', np.array([]))
                         neighbour_pos = np.array([self._state[0 + (j-1)*self._nx_one_robot], self._state[1 + (j-1)*self._nx_one_robot]])
                         midpoint = (ego_pos + neighbour_pos) / 2
                 
                         # Calculate the direction vector of the line (perpendicular to the normal vector)
                         direction_vector = np.array([-s[1], s[0]]) 
-                        assert np.dot(direction_vector, s) == 0
+                        assert np.dot(direction_vector, np.array(s)) == 0
                         line_length = 100
                         line_start = midpoint - (line_length / 2) * direction_vector
                         line_end = midpoint + (line_length / 2) * direction_vector
@@ -478,7 +480,7 @@ class ROSMPCPlanner:
 
         # Plot s
         plt.subplot(1, 2, 1)
-        plt.plot(self._save_s, label=['s_0', 's_1'])
+        plt.plot(self._save_s, label=['s_0', 's_1']) #plot each dict
         plt.xlabel('Time Step')
         plt.ylabel('s Values')
         plt.legend()
@@ -487,7 +489,7 @@ class ROSMPCPlanner:
 
         # Plot lams
         plt.subplot(1, 2, 2)
-        plt.plot(self._save_lam, label=['lam_0', 'lam_1', 'lam_2', 'lam_3','lam_0', 'lam_1', 'lam_2', 'lam_3'])
+        plt.plot(self._save_lam, label=['lam_0', 'lam_1', 'lam_2', 'lam_3','lam_0', 'lam_1', 'lam_2', 'lam_3']) #plot each dict
         plt.xlabel('Time Step')
         plt.ylabel('Lam Values')
         plt.legend()
@@ -552,7 +554,7 @@ if __name__ == "__main__":
         
     # mpc.plot_outputs()
     mpc.plot_states()
-    mpc.plot_duals()
+    # mpc.plot_duals()
     mpc.plot_min_distance()
     # mpc.plot_pred_traj()
     mpc.print_stats()

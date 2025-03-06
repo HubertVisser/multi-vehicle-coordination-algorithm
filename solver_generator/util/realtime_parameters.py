@@ -1,6 +1,6 @@
 
 """
-For python real-time implementation of the controller (TODO)
+For python real-time implementation of the controller
 """
 import numpy as np
 
