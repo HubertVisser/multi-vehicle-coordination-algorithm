@@ -27,11 +27,6 @@ from ros_mpc_controller import ROSMPCPlanner
 # from path_generator import generate_path_msg
 import debugpy
 
-# Wait for the debugger to attach
-debugpy.listen(("localhost", 5678))
-print("Waiting for debugger to attach...")
-debugpy.wait_for_client()
-print("Debugger attached.")
 
 class ROSMPCCoordinator:
     def __init__(self):
@@ -59,9 +54,10 @@ class ROSMPCCoordinator:
         for i in range(1, self._number_of_robots + 1):
             rospy.Subscriber(f"trajectory_{i}", Path, self.trajectory_callback, callback_args=i)
 
-    def trajectory_callback(self, msg, robot_idx):
+    def trajectory_callback(self, msg, i):
         # Update the trajectory for the robot
-        self._robots[robot_idx - 1].trajectory_callback(msg)
+        for robot in self._robots:
+            robot.trajectory_callback(msg, i)
 
         with self._trajectory_lock:
             self._trajectory_counter += 1
@@ -73,6 +69,13 @@ class ROSMPCCoordinator:
         for robot in self._robots:
             if robot._spline_fitter._splines:
                 robot.run_nmpc(timer)
+            else:
+                rospy.logwarn("Splines have not been computed yet. Waiting for splines to be available.")
+                return
+        
+        # for robot in self._robots:
+        #     if robot._spline_fitter._splines:
+        #         robot.run_ca(timer)
 
         # Run CA for all robots after all trajectories are received
         self.run_ca_for_all_robots(timer)
@@ -110,22 +113,24 @@ class ROSMPCCoordinator:
         
 
 if __name__ == "__main__":
-    try:
-        rospy.loginfo("Initializing MPC")
-        rospy.init_node("dmpc_planner_coordinator", anonymous=False)
-    
-        #vehicle           #x y theta vx vy w
-        initial_state_1 = [0., 3., 0, 0, 0, 0]
-        initial_state_2 = [5.0, 0.0, 0.5 * np.pi, 0, 0, 0]
+        
+    rospy.loginfo("Initializing MPC")
+    rospy.init_node("dmpc_planner_coordinator", anonymous=False)
 
-        coordinator = ROSMPCCoordinator()
+    #vehicle           #x y theta vx vy w
+    initial_state_1 = [0., 3., 0, 0, 0, 0]
+    initial_state_2 = [5.0, 0.0, 0.5 * np.pi, 0, 0, 0]
 
-        while not rospy.is_shutdown():
-            rospy.spin()
+    coordinator = ROSMPCCoordinator()
 
-        coordinator._robots[0].plot_states()
-    except rospy.ROSInterruptException:
-        rospy.logerr("ROS Interrupt Exception! Just shutting down to be safe.")
+    while not rospy.is_shutdown():
+        rospy.spin()
+
+    for robot in coordinator._robots:
+        robot.plot_states()
+        robot.plot_duals()
+
+ 
    
         
     

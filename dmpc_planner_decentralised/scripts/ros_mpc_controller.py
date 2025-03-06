@@ -69,9 +69,9 @@ class ROSMPCPlanner:
         self._nvar_ca = self._solver_settings_ca["nvar"]
 
         self._state = np.zeros((self._nx_nmpc,))
-        self._state[: 3] = [self._settings[f"robot_2"]["start_x"], \
-                            self._settings[f"robot_2"]["start_y"], \
-                            self._settings[f"robot_2"]["start_theta"] * np.pi]
+        self._state[: 3] = [self._settings[f"robot_{self._idx}"]["start_x"], \
+                            self._settings[f"robot_{self._idx}"]["start_y"], \
+                            self._settings[f"robot_{self._idx}"]["start_theta"] * np.pi]
         
         self._state[:2] += 5 if self._settings["positive_track"] else 0
 
@@ -109,7 +109,7 @@ class ROSMPCPlanner:
         self._w_sub = rospy.Subscriber(f"omega_{self._idx}", Float32, self.w_pose_callback, queue_size=1)
 
         # Subscriber path generator
-        self._path_sub = rospy.Subscriber(f"roadmap/reference_2", Path, lambda msg: self.path_callback(msg), queue_size=1)
+        self._path_sub = rospy.Subscriber(f"roadmap/reference_{self._idx}", Path, lambda msg: self.path_callback(msg), queue_size=1)
 
         # Trajectory publisher
         self._traj_pub = rospy.Publisher(f"trajectory_{self._idx}", Path, queue_size=1)
@@ -160,6 +160,7 @@ class ROSMPCPlanner:
         
         timer = Timer("loop")
         
+        self.set_ca_parameters()
         # self._params.print()
         # self._params.check_for_nan()
 
@@ -175,11 +176,12 @@ class ROSMPCPlanner:
             s = {}
             for j in range(1, self._number_of_robots+1):
                 if self._idx != j:
-                    if j > self._idx:
-                        s[f"s_{self._idx}_{j}"] = [output[f"s_{self._idx}_{j}_0"], output[f"s_{self._idx}_{j}_1"]]
-                    else:
                         lam[f"lam_{self._idx}_{j}"] = [output[f"lam_{self._idx}_{j}_0"], output[f"lam_{self._idx}_{j}_1"], output[f"lam_{self._idx}_{j}_2"], output[f"lam_{self._idx}_{j}_3"]]
-                        s[f"s_{j}_{self._idx}"] = [output[f"s_{j}_{self._idx}_0"], output[f"s_{j}_{self._idx}_1"]]
+                        lam[f"lam_{j}_{self._idx}"] = [output[f"lam_{j}_{self._idx}_0"], output[f"lam_{j}_{self._idx}_1"], output[f"lam_{j}_{self._idx}_2"], output[f"lam_{j}_{self._idx}_3"]]
+                        if j > self._idx:
+                            s[f"s_{self._idx}_{j}"] = [output[f"s_{self._idx}_{j}_0"], output[f"s_{self._idx}_{j}_1"]]
+                        else:
+                            s[f"s_{j}_{self._idx}"] = [output[f"s_{j}_{self._idx}_0"], output[f"s_{j}_{self._idx}_1"]]
                 
             self._save_lam.append(lam)
             self._save_s.append(s)
@@ -187,6 +189,14 @@ class ROSMPCPlanner:
 
     def set_nmpc_parameters(self):
         
+        lambda_ij_1 = [2.70416628e-17, 0.00000000e+00, 3.06748466e-03, 2.76073620e-02]
+        lambda_ji_1 = [6.98146381e-18, 6.74846626e-02, 6.13496933e-03, 0.00000000e+00]
+        s_ij_1 = [0.00306748, 0.02760736]
+
+        lambda_ij_2 = [0.00000000e+00, 3.84615385e-02, 3.49650350e-03, 1.21430643e-17]
+        lambda_ji_2 = [0.00000000e+00, 1.39748353e-17, 6.99300699e-03, 6.29370629e-02]
+        s_ij_2 = [0.03846154, 0.0034965 ]
+
         splines = None
         if self._path_msg is not None and self._spline_fitter.ready():
             splines = self._spline_fitter.get_active_splines(np.array([self._state[0], self._state[1]]))
@@ -213,31 +223,77 @@ class ROSMPCPlanner:
 
                     self._params_nmpc.set(k, f"spline{i}_start_{self._idx}", splines[i]["s"])
             
+            # for j in range(1, self._number_of_robots+1):
+            #     if j != self._idx:
+            #         if self._save_lam == []:
+            #             if self._idx == 1:
+            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", lambda_ij_1[0])
+            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", lambda_ij_1[1])
+            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", lambda_ij_1[2])
+            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", lambda_ij_1[3])
+                            
+            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", lambda_ji_1[0])
+            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", lambda_ji_1[1])
+            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", lambda_ji_1[2])
+            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", lambda_ji_1[3])
+            #                 if self._idx < j:
+            #                     self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", s_ij_1[0])
+            #                     self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", s_ij_1[1])
+            #                 else:
+            #                     self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", s_ij_1[0])
+            #                     self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", s_ij_1[1])
+            #             elif self._idx == 2:
+            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", lambda_ji_2[0])
+            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", lambda_ji_2[1])
+            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", lambda_ji_2[2])
+            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", lambda_ji_2[3])
+                            
+            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", lambda_ij_2[0])
+            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", lambda_ij_2[1])
+            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", lambda_ij_2[2])
+            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", lambda_ij_2[3])
+            #                 if self._idx < j:
+            #                     self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", s_ij_2[0])
+            #                     self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", s_ij_2[1])
+            #                 else:
+            #                     self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", s_ij_2[0])
+            #                     self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", s_ij_2[1])
+            #         else:
+            #             lam = self._save_lam[-1][f"lam_{self._idx}_{j}"]
+            #             self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", lam[0])
+            #             self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", lam[1])
+            #             self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", lam[2])
+            #             self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", lam[3])
+
+            #             lam = self._save_lam[-1][f"lam_{j}_{self._idx}"]
+            #             self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", lam[0])
+            #             self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", lam[1])
+            #             self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", lam[2])
+            #             self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", lam[3])
+
+            #             if self._idx < j:
+            #                 s = self._save_s[-1][f's_{self._idx}_{j}']
+            #                 self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", s[0])
+            #                 self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", s[0])
+            #             else:
+            #                 s = self._save_s[-1][f's_{j}_{self._idx}']
+            #                 self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", s[0])
+            #                 self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", s[0])
+                
+    def set_ca_parameters(self):
+        # Set parameters for all k
+        for k in range(self._N + 1):
             for j in range(1, self._number_of_robots+1):
                 if j != self._idx:
-                    if self._save_lam == []:
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", self._settings["initial_lambda"])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", self._settings["initial_lambda"])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", self._settings["initial_lambda"])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", self._settings["initial_lambda"])
-                        
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", self._settings["initial_lambda"])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", self._settings["initial_lambda"])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", self._settings["initial_lambda"])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", self._settings["initial_lambda"])
-                    else:
-                        lam = self._save_lam[-1][f"lam_{self._idx}_{j}"]
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", lam[0])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", lam[1])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", lam[2])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", lam[3])
-
-                        lam = self._save_lam[-1][f"lam_{self._idx}_{j}"]
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", lam[0])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", lam[1])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", lam[2])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", lam[3])
-                
+                    self._params_ca.set(k, f"x_{j}", self._settings[f"robot_{j}"]["start_x"]+5)
+                    self._params_ca.set(k, f"y_{j}", self._settings[f"robot_{j}"]["start_y"]+5)
+                    self._params_ca.set(k, f"theta_{j}", self._settings[f"robot_{j}"]["start_theta"] * np.pi)
+                else:
+                    self._params_ca.set(k, f"x_{self._idx}", self._state[0])
+                    self._params_ca.set(k, f"y_{self._idx}", self._state[1])
+                    self._params_ca.set(k, f"theta_{self._idx}", self._state[2])
+                    
+                            
 
     def publish_throttle(self, output, exit_flag):
         throttle = Float32()
@@ -313,10 +369,10 @@ class ROSMPCPlanner:
             line.set_color(7, alpha=1.0)
             ego_pos = np.array([self._state[0], self._state[1]])
 
-            for j in range(1, self._number_of_robots+1):
+            for j in range(self._idx, self._number_of_robots+1):
                 if j != self._idx:
                     s = self._save_s[-1][f's_{self._idx}_{j}'] if self._idx < j else self._save_s[-1][f's_{j}_{self._idx}']
-                    neighbour_pos = np.array([self._state[0], self._state[1]])
+                    neighbour_pos = np.array([self._params_ca.get(1, f"x_{j}"), self._params_ca.get(1, f"y_{j}")])
                     midpoint = (ego_pos + neighbour_pos) / 2
             
                     # Calculate the direction vector of the line (perpendicular to the normal vector)
@@ -398,8 +454,9 @@ class ROSMPCPlanner:
         # plot_splines(self._spline_fitter._splines)
         self.plot_path()
 
-    def trajectory_callback(self, traj_msg):
-        idx = rospy.get_name()[-1]
+    def trajectory_callback(self, traj_msg, i):
+        # idx = traj_msg._connection_header['topic'][-1]
+        idx = i
 
         if not traj_msg.poses:
             rospy.logwarn(f"Received empty path robot {idx}")
@@ -490,28 +547,44 @@ class ROSMPCPlanner:
         plt.close()
     
     def plot_duals(self):
-        plt.figure(figsize=(12, 6))
-        
-        # Plot s
-        plt.subplot(1, 2, 1)
-        plt.plot(self._save_s, label=['s_0', 's_1'])
-        plt.xlabel('Time Step')
-        plt.ylabel('s Values')
-        plt.legend()
-        plt.grid(True)
-        plt.title('s')
+        keys = self._save_lam[0].keys()  # Get the keys from the first dictionary
+        time_steps = range(len(self._save_lam))  # Time steps based on the number of dictionaries
+        num_elements = len(next(iter(self._save_lam[0].values())))  # Number of elements in each list
 
-        # Plot lams
-        plt.subplot(1, 2, 2)
-        plt.plot(self._save_lam, label=['lam_0', 'lam_1', 'lam_2', 'lam_3','lam_0', 'lam_1', 'lam_2', 'lam_3'])
+        for element_index in range(num_elements):
+            plt.figure(figsize=(12, 6))
+
+            for key in keys:
+                values = [d[key][element_index] for d in self._save_lam]  # Extract the desired element for each key
+                plt.plot(time_steps, values, label=f'{key}[{element_index}]')
+
         plt.xlabel('Time Step')
         plt.ylabel('Lam Values')
         plt.legend()
         plt.grid(True)
-        plt.title('lam')
-
+        plt.title(f'Lam Values')
         plt.tight_layout()
-        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f'duals_plot_{self._idx}.png'))  # Save the plot to a file
+        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f'lam_values_plot.png'))  # Save the plot to a file
+        plt.close()
+        
+        keys = self._save_s[0].keys()  # Get the keys from the first dictionary
+        time_steps = range(len(self._save_s))  # Time steps based on the number of dictionaries
+        num_elements = len(next(iter(self._save_s[0].values())))  # Number of elements in each list
+
+        for element_index in range(num_elements):
+            plt.figure(figsize=(12, 6))
+
+            for key in keys:
+                values = [d[key][element_index] for d in self._save_s]  # Extract the desired element for each key
+                plt.plot(time_steps, values, label=f'{key}[{element_index}]')
+
+        plt.xlabel('Time Step')
+        plt.ylabel('s Values')
+        plt.legend()
+        plt.grid(True)
+        plt.title(f's Values')
+        plt.tight_layout()
+        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f's_values_plot.png'))  # Save the plot to a file
         plt.close()
 
     def plot_pred_traj(self):

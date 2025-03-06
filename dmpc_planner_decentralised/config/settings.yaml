@@ -6,7 +6,7 @@ n_discs: 0
 track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
 positive_track: true
 
-number_of_robots: 1
+number_of_robots: 2
 robot_1:
   start_x: -4.0
   start_y: 0.0
@@ -24,15 +24,15 @@ solver_settings:
   iterations: 1 #2 # 1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
-control_frequency: 10.0
+control_frequency: 5.0
 braking_acceleration: 1.0
 
 polytopic:
-  d_min: 0.1
-  length: .3
-  width: .3
+  d_min: 0.
+  length: 1.
+  width: 1.
 
-initial_lambda: 1.0
+initial_lambda: 0.0
 initial_s: 0.0
 
 contouring:

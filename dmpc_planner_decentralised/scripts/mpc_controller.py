@@ -135,7 +135,7 @@ class MPCPlanner:
            
             output = dict()
             if status != 0: #and status != 2: # infeasible
-                print_warning(f"Optimization was infeasible (exitflag = {status})")
+                print_warning(f"Optimization for NMPC {self._idx} was infeasible (exitflag = {status})")
                 
                 self.set_infeasible(output)
                 return output, False, None
@@ -196,7 +196,7 @@ class MPCPlanner:
 
             output = dict()
             if status != 0: #and status != 2: # infeasible
-                print_warning(f"Optimization was infeasible (exitflag = {status})")
+                print_warning(f"Optimization for CA {self._idx} was infeasible (exitflag = {status})")
                 
                 return output, False, None
 
@@ -208,6 +208,12 @@ class MPCPlanner:
                     output[f"lam_{self._idx}_{j}_1"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_1")
                     output[f"lam_{self._idx}_{j}_2"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_2")
                     output[f"lam_{self._idx}_{j}_3"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_3")
+                    
+                    output[f"lam_{j}_{self._idx}_0"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_0")
+                    output[f"lam_{j}_{self._idx}_1"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_1")
+                    output[f"lam_{j}_{self._idx}_2"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_2")
+                    output[f"lam_{j}_{self._idx}_3"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_3")
+
                     if self._idx > j:
                         output[f"s_{j}_{self._idx}_0"] = self._model_ca.get(1, f"s_{j}_{self._idx}_0")
                         output[f"s_{j}_{self._idx}_1"] = self._model_ca.get(1, f"s_{j}_{self._idx}_1")
