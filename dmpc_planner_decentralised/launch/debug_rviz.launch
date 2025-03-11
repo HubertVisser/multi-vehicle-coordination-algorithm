@@ -9,11 +9,11 @@
   <arg name="scenario" default="corridor"/>
   <arg name="experiment" default="none"/>
 
+  <node name="path_node" pkg="dmpc_planner_decentralised" type="path_generator.py" output="log"/> 
   <!-- Add the scenario and experiment as rosparameters -->
   <rosparam param="scenario" subst_value="true">$(arg scenario)</rosparam>
   <rosparam param="experiment" subst_value="true">$(arg experiment)</rosparam>
 
-  <node name="path_node" pkg="dmpc_planner_decentralised" type="path_generator.py" output="log"/> 
 
   <!-- Include dart_simulator.launch -->
   <include file="$(find dart_simulator_pkg)/launch/dart_simulator_no_visuals.launch">

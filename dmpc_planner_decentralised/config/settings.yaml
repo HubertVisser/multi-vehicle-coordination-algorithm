@@ -1,6 +1,6 @@
 name: "Jetracer_decentralised"
 decentralised: true
-N: 15
+N: 6
 integrator_step: 0.3
 n_discs: 0
 track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
@@ -21,7 +21,7 @@ debug_visuals: false
 dart_simulator: false
 
 solver_settings:
-  iterations: 1 #2 # 1
+  iterations: 2 #2 # 1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 5.0
@@ -29,8 +29,8 @@ braking_acceleration: 1.0
 
 polytopic:
   d_min: 0.
-  length: 1.
-  width: 1.
+  length: 0.2
+  width: 0.2
 
 initial_lambda: 0.0
 initial_s: 0.0
@@ -48,7 +48,7 @@ weights:
   reference_velocity: 0.4
   lag: 0.8
   contour: 0.8
-  terminal_angle: 5.0 #0.0
+  terminal_angle: 1.0 #0.0
   terminal_contour: 1.0 # 0.0
   terminal_lag: 1.0 # 0.0
 

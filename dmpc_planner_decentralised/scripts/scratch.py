@@ -4,85 +4,102 @@ import matplotlib.pyplot as plt
 import os
 from scipy.optimize import minimize
 
-# Example values for A and b
+class InitialGuessDuals:
+    def __init__(self, i, theta_1, theta_2, xy_1, xy_2, h, w, d_min):
+        self.i = i
+        self.theta_1 = theta_1
+        self.theta_2 = theta_2
+        self.xy_1 = xy_1
+        self.xy_2 = xy_2
+        self.h = h
+        self.w = w
+        self.d_min = d_min
 
-theta_1 = np.pi/2
-theta_2 = 0
+        self.A_1 = np.array([
+            [np.cos(self.theta_1), np.sin(self.theta_1)],
+            [-np.sin(self.theta_1), np.cos(self.theta_1)],
+            [-np.cos(self.theta_1), -np.sin(self.theta_1)],
+            [np.sin(self.theta_1), -np.cos(self.theta_1)]
+        ])
+        self.A_2 = np.array([
+            [np.cos(self.theta_2), np.sin(self.theta_2)],
+            [-np.sin(self.theta_2), np.cos(self.theta_2)],
+            [-np.cos(self.theta_2), -np.sin(self.theta_2)],
+            [np.sin(self.theta_2), -np.cos(self.theta_2)]
+        ])
 
-A_1 =   np.array([
-    [np.cos(theta_1), np.sin(theta_1)],
-    [-np.sin(theta_1), np.cos(theta_1)],
-    [-np.cos(theta_1), -np.sin(theta_1)],
-    [np.sin(theta_1), -np.cos(theta_1)]
-])
-A_2 =   np.array([
-    [np.cos(theta_2), np.sin(theta_2)],
-    [-np.sin(theta_2), np.cos(theta_2)],
-    [-np.cos(theta_2), -np.sin(theta_2)],
-    [np.sin(theta_2), -np.cos(theta_2)]
-])
+        self.hw = np.array([self.h/2, self.w/2, self.h/2, self.w/2])
+        self.b_1 = self.hw + self.A_1 @ self.xy_1
+        self.b_2 = self.hw + self.A_2 @ self.xy_2
 
-# Define the vector [x, y]
-xy_2 = np.array([1, 5])  # Example values for x and y
-xy_1 = np.array([6, 1])  # Example values for x and y
+    def objective(self, x):
+        return 0
 
-# Define the vector [h/2, w/2, h/2, w/2]
-h = 1  # Example value for h
-w = 1  # Example value for w
-hw = np.array([h/2, w/2, h/2, w/2])
+    def constraint1(self, x):
+        lambda_ij = x[0:4]
+        lambda_ji = x[4:8]
+        if self.i == 1:
+            return -np.dot(self.b_1, lambda_ij) - np.dot(self.b_2, lambda_ji) - self.d_min
+        else:
+            return -np.dot(self.b_2, lambda_ij) - np.dot(self.b_1, lambda_ji) - self.d_min
 
-# Calculate b(z)
-b_1 = hw + A_1 @ xy_1
-print("b(z):", b_1)
-b_2 = hw + A_2 @ xy_2
-print("b(z):", b_2)
+    def constraint2(self, x):
+        lambda_ij = x[0:4]
+        s_ij = x[8:]
+        if self.i == 1:
+            return np.dot(self.A_1.T, lambda_ij) + s_ij
+        else:
+            return np.dot(self.A_2.T, lambda_ij) + s_ij
 
-d_min = 0.5
+    def constraint3(self, x):
+        s_ij = x[8:]
+        return 1 - np.linalg.norm(s_ij, ord=2)
 
-# Objective function to minimize (we can use a dummy objective since we are interested in constraints)
-def objective(x):
-    return 0
+    def solve(self):
+        bounds = [(0, None)] * 8 + [(None, None)] * 2
+        x0 = np.zeros(10)
+        constraints = [
+            {'type': 'ineq', 'fun': self.constraint1},
+            {'type': 'eq', 'fun': self.constraint2},
+            {'type': 'ineq', 'fun': self.constraint3}
+        ]
+        result = minimize(self.objective, x0, method='SLSQP', bounds=bounds, constraints=constraints)
+        if result.success:
+            lambda_ij = result.x[:4]
+            lambda_ji = result.x[4:8]
+            s_ij = result.x[8:]
+            return {
+                "success": True,
+                "lambda_ij": lambda_ij,
+                "lambda_ji": lambda_ji,
+                "s_ij": s_ij
+            }
+        else:
+            return {
+                "success": False,
+                "message": result.message
+            }
 
-# Constraints
-def constraint1(x):
-    lambda_ij = x[0:4]      #np.ones((4)) * x[0]
-    lambda_ji = x[4:8]      #np.ones((4)) * x[0]
-    # return -np.dot(b_1, lambda_ij) - np.dot(b_2, lambda_ji) - d_min
-    return -b_1.reshape(1,-1) @ lambda_ij - b_2.reshape(1,-1) @ lambda_ji - d_min
+# Example usage
+initialGuesser = InitialGuessDuals(
+    i=1,
+    theta_1=0,
+    theta_2=np.pi/2,
+    xy_1=np.array([-5, 0]),
+    xy_2=np.array([1, -4]),
+    h=0.2,
+    w=0.2,
+    d_min=0.1
+)
 
-def constraint2(x):
-    lambda_ij = x[0:4]      #np.ones((4)) * x[0]
-    s_ij = x[8:]            #np.ones((2)) * x[1]
-    # return np.dot(A_1.T, lambda_ij) + s_ij
-    return A_1.T @lambda_ij + s_ij
-
-def constraint3(x):
-    s_ij = x[8:] #np.ones((2)) * x[1]
-    return 1 - np.linalg.norm(s_ij, ord=2)
-
-# Bounds for lambda (non-negative)
-bounds = [(0, None)] * 8 + [(None, None)] * 2
-
-# Initial guess
-x0 = np.zeros(10)
-
-# Define constraints in the form required by scipy.optimize.minimize
-constraints = [
-    {'type': 'ineq', 'fun': constraint1},
-    {'type': 'eq', 'fun': constraint2},
-    {'type': 'ineq', 'fun': constraint3}
-]
-
-# Solve the optimization problem
-result = minimize(objective, x0, method='SLSQP', bounds=bounds, constraints=constraints)
-
-if result.success:
-    lambda_ij = result.x[:4] #result.x[0]
-    lambda_ji = result.x[4:8] #result.x[0]
-    s_ij = result.x[8:]
+result = initialGuesser.solve()
+if result["success"]:
+    print("robot", initialGuesser.i)
     print("Solution found:")
-    print("lambda_ij:", lambda_ij)
-    print("lambda_ji:", lambda_ji)
-    print("s_ij:", s_ij)
+    print("lambda_ij:", result["lambda_ij"][2])
+    print("lambda_ji:", result["lambda_ji"])
+    print("s_ij:", result["s_ij"])
+    print("b_1:", initialGuesser.b_1)
+    print("b_2:", initialGuesser.b_2)
 else:
-    print("No solution found:", result.message)
+    print("No solution found:", result["message"])

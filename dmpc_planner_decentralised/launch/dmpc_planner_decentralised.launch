@@ -14,13 +14,13 @@
   <rosparam param="experiment" subst_value="true">$(arg experiment)</rosparam>
 
   <!-- <include file="$(find jackal_socialsim)/launch/$(arg scenario).launch"/> -->
+  <node name="path_node" pkg="dmpc_planner_decentralised" type="path_generator.py" output="log"/> 
 
   <node name="dmpc_planner_node" pkg="dmpc_planner_decentralised" type="run_dmpc.sh" output="log" if="$(arg silent)"/>
   <node name="dmpc_planner_node" pkg="dmpc_planner_decentralised" type="main.py" output="screen" unless="$(arg silent)"/>
 
   <!-- <include file="$(find mpc_planner_standalone)/launch/decomp_node.launch"/> -->
 
-  <node name="path_node" pkg="dmpc_planner_decentralised" type="path_generator.py" output="log"/> 
 
   <!-- <node pkg="pedestrian_simulator" type="collision_checker_node" name="collision_checker_node" output="screen"/> -->
 

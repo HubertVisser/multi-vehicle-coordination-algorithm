@@ -30,6 +30,7 @@ from util.convertion import quaternion_to_yaw, yaw_to_quaternion
 from util.logging import print_value 
 from timer import Timer
 from spline import Spline, Spline2D
+from scratch import InitialGuessDuals
 
 from contouring_spline import SplineFitter
 from mpc_controller import MPCPlanner
@@ -188,14 +189,19 @@ class ROSMPCPlanner:
             
 
     def set_nmpc_parameters(self):
-        
-        lambda_ij_1 = [2.70416628e-17, 0.00000000e+00, 3.06748466e-03, 2.76073620e-02]
-        lambda_ji_1 = [6.98146381e-18, 6.74846626e-02, 6.13496933e-03, 0.00000000e+00]
-        s_ij_1 = [0.00306748, 0.02760736]
+        xy_1 = np.array([self._settings[f"robot_1"]["start_x"], self._settings[f"robot_1"]["start_y"]])
+        xy_2 = np.array([self._settings[f"robot_2"]["start_x"], self._settings[f"robot_2"]["start_y"]])
+        theta_1 = self._settings[f"robot_1"]["start_theta"] * np.pi
+        theta_2 = self._settings[f"robot_2"]["start_theta"] * np.pi
 
-        lambda_ij_2 = [0.00000000e+00, 3.84615385e-02, 3.49650350e-03, 1.21430643e-17]
-        lambda_ji_2 = [0.00000000e+00, 1.39748353e-17, 6.99300699e-03, 6.29370629e-02]
-        s_ij_2 = [0.03846154, 0.0034965 ]
+        h = self._settings["polytopic"]["length"]
+        w = self._settings["polytopic"]["width"]
+        d_min = self._settings["polytopic"]["d_min"]
+        initialguesser = InitialGuessDuals(i=self._idx, theta_1=theta_1, theta_2=theta_2, xy_1=xy_1, xy_2=xy_2, h=h, w=w, d_min=d_min)
+        result = initialguesser.solve()
+        lambda_ij = result["lambda_ij"]
+        lambda_ji = result["lambda_ji"]
+        s_ij = result["s_ij"]
 
         splines = None
         if self._path_msg is not None and self._spline_fitter.ready():
@@ -223,70 +229,53 @@ class ROSMPCPlanner:
 
                     self._params_nmpc.set(k, f"spline{i}_start_{self._idx}", splines[i]["s"])
             
-            # for j in range(1, self._number_of_robots+1):
-            #     if j != self._idx:
-            #         if self._save_lam == []:
-            #             if self._idx == 1:
-            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", lambda_ij_1[0])
-            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", lambda_ij_1[1])
-            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", lambda_ij_1[2])
-            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", lambda_ij_1[3])
-                            
-            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", lambda_ji_1[0])
-            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", lambda_ji_1[1])
-            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", lambda_ji_1[2])
-            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", lambda_ji_1[3])
-            #                 if self._idx < j:
-            #                     self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", s_ij_1[0])
-            #                     self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", s_ij_1[1])
-            #                 else:
-            #                     self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", s_ij_1[0])
-            #                     self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", s_ij_1[1])
-            #             elif self._idx == 2:
-            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", lambda_ji_2[0])
-            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", lambda_ji_2[1])
-            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", lambda_ji_2[2])
-            #                 self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", lambda_ji_2[3])
-                            
-            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", lambda_ij_2[0])
-            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", lambda_ij_2[1])
-            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", lambda_ij_2[2])
-            #                 self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", lambda_ij_2[3])
-            #                 if self._idx < j:
-            #                     self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", s_ij_2[0])
-            #                     self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", s_ij_2[1])
-            #                 else:
-            #                     self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", s_ij_2[0])
-            #                     self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", s_ij_2[1])
-            #         else:
-            #             lam = self._save_lam[-1][f"lam_{self._idx}_{j}"]
-            #             self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", lam[0])
-            #             self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", lam[1])
-            #             self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", lam[2])
-            #             self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", lam[3])
+            for j in range(1, self._number_of_robots+1):
+                if j != self._idx:
+                    if self._save_lam == []:
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", lambda_ij[0])
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", lambda_ij[1])
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", lambda_ij[2])
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", lambda_ij[3])
+                        
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", lambda_ji[0])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", lambda_ji[1])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", lambda_ji[2])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", lambda_ji[3])
+                        if self._idx < j:
+                            self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", s_ij[0])
+                            self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", s_ij[1])
+                        else:
+                            self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", s_ij[0])
+                            self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", s_ij[1])
+                    else:
+                        lam = self._save_lam[-1][f"lam_{self._idx}_{j}"]
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", lam[0])
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", lam[1])
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", lam[2])
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", lam[3])
 
-            #             lam = self._save_lam[-1][f"lam_{j}_{self._idx}"]
-            #             self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", lam[0])
-            #             self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", lam[1])
-            #             self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", lam[2])
-            #             self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", lam[3])
+                        lam = self._save_lam[-1][f"lam_{j}_{self._idx}"]
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", lam[0])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", lam[1])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", lam[2])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", lam[3])
 
-            #             if self._idx < j:
-            #                 s = self._save_s[-1][f's_{self._idx}_{j}']
-            #                 self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", s[0])
-            #                 self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", s[0])
-            #             else:
-            #                 s = self._save_s[-1][f's_{j}_{self._idx}']
-            #                 self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", s[0])
-            #                 self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", s[0])
+                        if self._idx < j:
+                            s = self._save_s[-1][f's_{self._idx}_{j}']
+                            self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", s[0])
+                            self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", s[0])
+                        else:
+                            s = self._save_s[-1][f's_{j}_{self._idx}']
+                            self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", s[0])
+                            self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", s[0])
                 
     def set_ca_parameters(self):
         # Set parameters for all k
         for k in range(self._N + 1):
             for j in range(1, self._number_of_robots+1):
                 if j != self._idx:
-                    self._params_ca.set(k, f"x_{j}", self._settings[f"robot_{j}"]["start_x"]+5)
-                    self._params_ca.set(k, f"y_{j}", self._settings[f"robot_{j}"]["start_y"]+5)
+                    self._params_ca.set(k, f"x_{j}", self._settings[f"robot_{j}"]["start_x"])
+                    self._params_ca.set(k, f"y_{j}", self._settings[f"robot_{j}"]["start_y"])
                     self._params_ca.set(k, f"theta_{j}", self._settings[f"robot_{j}"]["start_theta"] * np.pi)
                 else:
                     self._params_ca.set(k, f"x_{self._idx}", self._state[0])
@@ -337,13 +326,13 @@ class ROSMPCPlanner:
                 pose.header.stamp = rospy.Time.now()
                 pose.header.frame_id = "map"
                 if k != self._N:
-                    pose.pose.position.x = trajectory[k, 0]
-                    pose.pose.position.y = trajectory[k, 1]
-                    q = yaw_to_quaternion(trajectory[k, 2])
+                    pose.pose.position.x = trajectory[0,k]
+                    pose.pose.position.y = trajectory[1,k]
+                    q = yaw_to_quaternion(trajectory[2,k])
                 elif k == self._N:  # Interpolate the last point
-                    pose.pose.position.x = trajectory[k, 0] + (trajectory[k, 0] - trajectory[k - 1, 0])
-                    pose.pose.position.y = trajectory[k, 1] + (trajectory[k, 1] - trajectory[k - 1, 1])
-                    q = yaw_to_quaternion(trajectory[k, 2] + (trajectory[k, 2] - trajectory[k - 1, 2]))
+                    pose.pose.position.x = trajectory[0, k-1] + (trajectory[0, k-1] - trajectory[0, k - 2])
+                    pose.pose.position.y = trajectory[1, k - 1] + (trajectory[1, k - 1] - trajectory[1, k - 2])
+                    q = yaw_to_quaternion(trajectory[2, k - 1] + (trajectory[2, k - 1] - trajectory[2, k - 2]))
                 pose.pose.orientation.x = q[0]
                 pose.pose.orientation.y = q[1]
                 pose.pose.orientation.z = q[2]
