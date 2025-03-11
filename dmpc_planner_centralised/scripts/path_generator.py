@@ -29,7 +29,7 @@ def raw_track(choice, start_x, start_y, positive_track):
         checkpoints_y_turn = -2 + 3 * np.sin(theta)
 
         # Straight segment from (-2, 1) to (-4, 1)
-        checkpoints_x_straight2 = np.linspace(-2, -4, 4)
+        checkpoints_x_straight2 = np.linspace(-2, -6, 4)
         checkpoints_y_straight2 = np.ones(4) 
         
         
@@ -37,7 +37,7 @@ def raw_track(choice, start_x, start_y, positive_track):
         checkpoints_x_2 = np.concatenate((checkpoints_x_straight1[:-1], checkpoints_x_turn[:-1], checkpoints_x_straight2))
         checkpoints_y_2 = np.concatenate((checkpoints_y_straight1[:-1], checkpoints_y_turn[:-1], checkpoints_y_straight2))
         
-        checkpoints_x_1 = np.linspace(start_x[0], 5, n_checkpoints)
+        checkpoints_x_1 = np.linspace(start_x[0], 7, n_checkpoints)
         checkpoints_y_1 = np.ones(n_checkpoints) * start_y[0]
 
         if positive_track:

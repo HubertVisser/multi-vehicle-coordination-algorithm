@@ -54,7 +54,6 @@ class ROSMPCPlanner:
         self._dart_simulator = self._settings["dart_simulator"]
 
         self._planner = MPCPlanner(self._settings)
-        # self._planner.set_projection(lambda trajectory: self.project_to_safety(trajectory))
 
         self._spline_fitter_1 = SplineFitter(self._settings)
         self._spline_fitter_2 = SplineFitter(self._settings)
