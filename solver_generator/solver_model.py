@@ -326,7 +326,10 @@ class BicycleModel2ndOrder(DynamicsModel):
 
         self.lower_bound_u = self.lower_bound[self.nx:]
         self.upper_bound_u = self.upper_bound[self.nx:]
-    
+        
+        self.lower_bound_inputs = self.lower_bound[self.nx:]
+        self.upper_bound_inputs = self.upper_bound[self.nx:]
+
     def model_parameters(self):
         lr_reference = 0.115  #0.11650    # (measureing it wit a tape measure it's 0.1150) reference point location taken by the vicon system measured from the rear wheel
         #COM_positon = 0.084 #0.09375 #centre of mass position measured from the rear wheel
@@ -609,14 +612,17 @@ class CollisionAvoidanceModel(DynamicsModel):
                 if i != j and (i == idx or j == idx):
                     self.inputs.extend([f"s_{i}_{j}_0", f"s_{i}_{j}_1"])
 
-        self.lower_bound = np.array([0.0] + [0.0]* self.nlam + [-1.0]* self.ns ) # [x, u]
-        self.upper_bound = np.array([0.0] + [1000.0]* self.nlam + [1.0]* self.ns ) # [x, u]
+        self.lower_bound = np.array([0.0] + [0.0]* self.nlam + [-10.0]* self.ns ) # [x, u]
+        self.upper_bound = np.array([0.0] + [1000.0]* self.nlam + [10.0]* self.ns ) # [x, u]
 
         self.lower_bound_states = self.lower_bound[:self.nx]
         self.upper_bound_states = self.upper_bound[:self.nx]
 
         self.lower_bound_u = self.lower_bound[self.nx:]
         self.upper_bound_u = self.upper_bound[self.nx:]
+        
+        self.lower_bound_inputs = self.lower_bound[self.nx:]
+        self.upper_bound_inputs = self.upper_bound[self.nx:]
 
     def continuous_model(self, x, u):
         return x

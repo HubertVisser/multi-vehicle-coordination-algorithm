@@ -16,22 +16,23 @@ from control_modules import ConstraintModule
 
 class s2normConstraintModule(ConstraintModule):
 
-    def __init__(self, settings):
+    def __init__(self, settings, idx):
         super().__init__()
 
         self.module_name = f"s_2norm"  # c++ name of the module
         self.import_name = "s_2norm.h"
 
-        self.constraints.append(s2normConstraintConstraints(n_robots=settings["number_of_robots"]))
+        self.constraints.append(s2normConstraintConstraints(n_robots=settings["number_of_robots"], idx=idx))
         self.description = "Bounds on the 2-norm of the s in the dual formulation of the polytopic constraints"
 
 
 # Constraints of the form sqrt(sum(s^2)) =< 1
 class s2normConstraintConstraints:
 
-    def __init__(self, n_robots):
+    def __init__(self, n_robots, idx):
         self.n_robots = n_robots
-        self.n_constraints = ((n_robots * n_robots)- n_robots)//2
+        self.idx = idx
+        self.n_constraints = ((n_robots * n_robots)- n_robots)
         self.nh = self.n_constraints
 
     def define_parameters(self, params):
@@ -40,7 +41,7 @@ class s2normConstraintConstraints:
     def get_lower_bound(self):
         lower_bound = []
         for index in range(0, self.n_constraints):
-            lower_bound.append(-100)
+            lower_bound.append(-1)
         return lower_bound
 
     def get_upper_bound(self):
@@ -52,11 +53,16 @@ class s2normConstraintConstraints:
     def get_constraints(self, model, params, settings, stage_idx):
         constraints = []
 
-        for i in range(1, self.n_robots+1):
-            for j in range(i, self.n_robots+1): 
-                if j != i:
-                    s_ij = model.get(f"s_{i}_{j}")
-        constraint = cd.norm_2(s_ij)
-        constraints.append(constraint)
+        for j in range(1, self.n_robots+1): 
+            if j != self.idx:
+                if self.idx < j:
+                    s_ij_0 = model.get(f"s_{self.idx}_{j}_0")
+                    s_ij_1 = model.get(f"s_{self.idx}_{j}_1")
+                    
+                else:
+                    s_ij_0 = model.get(f"s_{j}_{self.idx}_0")
+                    s_ij_1 = model.get(f"s_{j}_{self.idx}_1")
+                constraints.append(cd.norm_2(s_ij_0))
+                constraints.append(cd.norm_2(s_ij_1))
 
         return constraints

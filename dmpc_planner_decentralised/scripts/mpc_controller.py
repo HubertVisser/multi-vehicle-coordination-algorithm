@@ -168,12 +168,12 @@ class MPCPlanner:
 
         return output, True, self._prev_trajectory
    
-    def solve_ca(self, p): 
+    def solve_ca(self, uinit, p): 
 
         if not hasattr(self, "_x_init_ca"):
             self._x_init_ca = np.zeros((self._nx_ca, self._N))
         if not hasattr(self, "_u_init_ca"):
-            self._u_init_ca = np.zeros((self._nu_ca, self._N))
+            self._u_init_ca = np.tile(np.array(uinit).reshape((-1, 1)), (1, self._N))
 
         try:
             # Set initial state

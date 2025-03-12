@@ -69,12 +69,21 @@ class ROSMPCPlanner:
         self._nu_ca = self._solver_settings_ca["nu"]
         self._nvar_ca = self._solver_settings_ca["nvar"]
 
+        self._states_save = []
+        self._outputs_save = []
+        self._save_output = []
+        self._save_lam = []
+        self._save_s = []
+
         self._state = np.zeros((self._nx_nmpc,))
         self._state[: 3] = [self._settings[f"robot_{self._idx}"]["start_x"], \
                             self._settings[f"robot_{self._idx}"]["start_y"], \
                             self._settings[f"robot_{self._idx}"]["start_theta"] * np.pi]
         
         self._state[:2] += 5 if self._settings["positive_track"] else 0
+
+        self._uinit = np.zeros(self._nu_ca)
+        self.initialise_duals()
 
         self._visuals = ROSMarkerPublisher(f"mpc_visuals_{self._idx}", 100)
         self._path_visual = ROSMarkerPublisher(f"reference_path_{self._idx}", 10)
@@ -84,11 +93,6 @@ class ROSMPCPlanner:
         self._path_msg = None
         self._trajectory = None
 
-        self._states_save = []
-        self._outputs_save = []
-        self._save_output = []
-        self._save_lam = []
-        self._save_s = []
 
         self._neighbour_pos = np.array([])
 
@@ -162,12 +166,12 @@ class ROSMPCPlanner:
         timer = Timer("loop")
         
         self.set_ca_parameters()
-
+        self.set_uinit()
         # self._params.print()
         # self._params.check_for_nan()
 
         ca_timer = Timer("CA")
-        output, self._ca_feasible, self._ca_solution = self._planner.solve_ca(self._params_ca.get_solver_params())
+        output, self._ca_feasible, self._ca_solution = self._planner.solve_ca(self._uinit, self._params_ca.get_solver_params())
         del ca_timer
 
         if self._verbose:
@@ -190,19 +194,6 @@ class ROSMPCPlanner:
             
 
     def set_nmpc_parameters(self):
-        xy_1 = np.array([self._settings[f"robot_1"]["start_x"], self._settings[f"robot_1"]["start_y"]])
-        xy_2 = np.array([self._settings[f"robot_2"]["start_x"], self._settings[f"robot_2"]["start_y"]])
-        theta_1 = self._settings[f"robot_1"]["start_theta"] * np.pi
-        theta_2 = self._settings[f"robot_2"]["start_theta"] * np.pi
-
-        h = self._settings["polytopic"]["length"]
-        w = self._settings["polytopic"]["width"]
-        d_min = self._settings["polytopic"]["d_min"]
-        initialguesser = InitialGuessDuals(i=self._idx, theta_1=theta_1, theta_2=theta_2, xy_1=xy_1, xy_2=xy_2, h=h, w=w, d_min=d_min)
-        result = initialguesser.solve()
-        lambda_ij = result["lambda_ij"]
-        lambda_ji = result["lambda_ji"]
-        s_ij = result["s_ij"]
 
         splines = None
         if self._path_msg is not None and self._spline_fitter.ready():
@@ -232,50 +223,38 @@ class ROSMPCPlanner:
             
             for j in range(1, self._number_of_robots+1):
                 if j != self._idx:
-                    if self._save_lam == []:
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", lambda_ij[0])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", lambda_ij[1])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", lambda_ij[2])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", lambda_ij[3])
-                        
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", lambda_ji[0])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", lambda_ji[1])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", lambda_ji[2])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", lambda_ji[3])
-                        if self._idx < j:
-                            self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", s_ij[0])
-                            self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", s_ij[1])
-                        else:
-                            self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", s_ij[0])
-                            self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", s_ij[1])
+                    if self._trajectory is None:
                         self._params_nmpc.set(k, f"x_{j}", self._settings[f"robot_{j}"]["start_x"])
                         self._params_nmpc.set(k, f"y_{j}", self._settings[f"robot_{j}"]["start_y"])
                         self._params_nmpc.set(k, f"theta_{j}", self._settings[f"robot_{j}"]["start_theta"] * np.pi)
+                    lam = self._save_lam[-1][f"lam_{self._idx}_{j}"]
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", lam[0])
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", lam[1])
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", lam[2])
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", lam[3])
+
+                    lam = self._save_lam[-1][f"lam_{j}_{self._idx}"]
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", lam[0])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", lam[1])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", lam[2])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", lam[3])
+
+                    if self._idx < j:
+                        s = self._save_s[-1][f's_{self._idx}_{j}']
+                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", s[0])
+                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", s[0])
                     else:
-                        lam = self._save_lam[-1][f"lam_{self._idx}_{j}"]
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", lam[0])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", lam[1])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", lam[2])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", lam[3])
-
-                        lam = self._save_lam[-1][f"lam_{j}_{self._idx}"]
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", lam[0])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", lam[1])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", lam[2])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", lam[3])
-
-                        if self._idx < j:
-                            s = self._save_s[-1][f's_{self._idx}_{j}']
-                            self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", s[0])
-                            self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", s[0])
-                        else:
-                            s = self._save_s[-1][f's_{j}_{self._idx}']
-                            self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", s[0])
-                            self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", s[0])
+                        s = self._save_s[-1][f's_{j}_{self._idx}']
+                        self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", s[0])
+                        self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", s[0])
                 
     def set_ca_parameters(self):
         # Set parameters for all k
         for k in range(self._N + 1):
+                # Tuning parameters
+                for weight, value in self._weights.items():
+                    self._params_ca.set(k, weight, value)
+
                 self._params_ca.set(k, f"x_{self._idx}", self._state[0])
                 self._params_ca.set(k, f"y_{self._idx}", self._state[1])
                 self._params_ca.set(k, f"theta_{self._idx}", self._state[2])
@@ -286,7 +265,61 @@ class ROSMPCPlanner:
                             self._params_ca.set(k, f"x_{j}", self._settings[f"robot_{j}"]["start_x"])
                             self._params_ca.set(k, f"y_{j}", self._settings[f"robot_{j}"]["start_y"])
                             self._params_ca.set(k, f"theta_{j}", self._settings[f"robot_{j}"]["start_theta"] * np.pi)
+
+    def initialise_duals(self):
+
+        xy_1 = np.array([self._settings[f"robot_1"]["start_x"], self._settings[f"robot_1"]["start_y"]])
+        xy_2 = np.array([self._settings[f"robot_2"]["start_x"], self._settings[f"robot_2"]["start_y"]])
+        theta_1 = self._settings[f"robot_1"]["start_theta"] * np.pi
+        theta_2 = self._settings[f"robot_2"]["start_theta"] * np.pi
+
+        h = self._settings["polytopic"]["length"]
+        w = self._settings["polytopic"]["width"]
+        d_min = self._settings["polytopic"]["d_min"]
+        initialguesser = InitialGuessDuals(i=self._idx, theta_1=theta_1, theta_2=theta_2, xy_1=xy_1, xy_2=xy_2, h=h, w=w, d_min=d_min)
+        result = initialguesser.solve()
+        lambda_ij = result["lambda_ij"]
+        lambda_ji = result["lambda_ji"]
+        s_ij = result["s_ij"]
+        
+        lam = {}
+        s = {}
+        for j in range(1, self._number_of_robots+1):
+            if self._idx != j:
+                    lam[f"lam_{self._idx}_{j}"] = lambda_ij
+                    lam[f"lam_{j}_{self._idx}"] = lambda_ji
+                    if j > self._idx:
+                        s[f"s_{self._idx}_{j}"] = s_ij
+                    else:
+                        s[f"s_{j}_{self._idx}"] = s_ij
+                
+        self._save_lam.append(lam)
+        self._save_s.append(s)
+    
+    def set_uinit(self):
+        # Set u init for the CA solver
+        self._map = load_settings(model_map_name=f"model_map_ca_{self._idx}", package="mpc_planner_solver")
+        
+        for j in range(1, self._number_of_robots+1):
+                if j != self._idx:
+                    lam_name = f"lam_{self._idx}_{j}"
+                    lam = self._save_lam[0][lam_name]
+                    map_value = self._map[lam_name + "_0"][1]
+                    self._uinit[map_value - self._nx_ca : (map_value - self._nx_ca) + 4] = lam
+                    lam_name = f"lam_{j}_{self._idx}"
+                    lam = self._save_lam[0][lam_name]
+                    map_value = self._map[lam_name + "_0"][1]
+                    self._uinit[map_value - self._nx_ca : (map_value - self._nx_ca) + 4] = lam
+
+                    if self._idx < j:
+                        s_name = f"s_{self._idx}_{j}"
+                    else:
+                        s_name = f"s_{j}_{self._idx}"
+                    s = self._save_s[0][s_name]
+                    map_value = self._map[s_name + "_0"][1]
+                    self._uinit[map_value - self._nx_ca : (map_value - self._nx_ca) + 2] = lam
                     
+        
                             
 
     def publish_throttle(self, output, exit_flag):
