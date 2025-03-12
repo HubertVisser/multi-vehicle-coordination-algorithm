@@ -162,6 +162,7 @@ class ROSMPCPlanner:
         timer = Timer("loop")
         
         self.set_ca_parameters()
+
         # self._params.print()
         # self._params.check_for_nan()
 
@@ -247,6 +248,9 @@ class ROSMPCPlanner:
                         else:
                             self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", s_ij[0])
                             self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", s_ij[1])
+                        self._params_nmpc.set(k, f"x_{j}", self._settings[f"robot_{j}"]["start_x"])
+                        self._params_nmpc.set(k, f"y_{j}", self._settings[f"robot_{j}"]["start_y"])
+                        self._params_nmpc.set(k, f"theta_{j}", self._settings[f"robot_{j}"]["start_theta"] * np.pi)
                     else:
                         lam = self._save_lam[-1][f"lam_{self._idx}_{j}"]
                         self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", lam[0])
@@ -272,15 +276,16 @@ class ROSMPCPlanner:
     def set_ca_parameters(self):
         # Set parameters for all k
         for k in range(self._N + 1):
-            for j in range(1, self._number_of_robots+1):
-                if j != self._idx:
-                    self._params_ca.set(k, f"x_{j}", self._settings[f"robot_{j}"]["start_x"])
-                    self._params_ca.set(k, f"y_{j}", self._settings[f"robot_{j}"]["start_y"])
-                    self._params_ca.set(k, f"theta_{j}", self._settings[f"robot_{j}"]["start_theta"] * np.pi)
-                else:
-                    self._params_ca.set(k, f"x_{self._idx}", self._state[0])
-                    self._params_ca.set(k, f"y_{self._idx}", self._state[1])
-                    self._params_ca.set(k, f"theta_{self._idx}", self._state[2])
+                self._params_ca.set(k, f"x_{self._idx}", self._state[0])
+                self._params_ca.set(k, f"y_{self._idx}", self._state[1])
+                self._params_ca.set(k, f"theta_{self._idx}", self._state[2])
+
+                if self._save_lam == []:
+                    for j in range(1, self._number_of_robots+1):
+                        if j != self._idx:
+                            self._params_ca.set(k, f"x_{j}", self._settings[f"robot_{j}"]["start_x"])
+                            self._params_ca.set(k, f"y_{j}", self._settings[f"robot_{j}"]["start_y"])
+                            self._params_ca.set(k, f"theta_{j}", self._settings[f"robot_{j}"]["start_theta"] * np.pi)
                     
                             
 
@@ -326,9 +331,9 @@ class ROSMPCPlanner:
                 pose.header.stamp = rospy.Time.now()
                 pose.header.frame_id = "map"
                 if k != self._N:
-                    pose.pose.position.x = trajectory[0,k]
-                    pose.pose.position.y = trajectory[1,k]
-                    q = yaw_to_quaternion(trajectory[2,k])
+                    pose.pose.position.x = trajectory[0, k]
+                    pose.pose.position.y = trajectory[1, k]
+                    q = yaw_to_quaternion(trajectory[2, k])
                 elif k == self._N:  # Interpolate the last point
                     pose.pose.position.x = trajectory[0, k-1] + (trajectory[0, k-1] - trajectory[0, k - 2])
                     pose.pose.position.y = trajectory[1, k - 1] + (trajectory[1, k - 1] - trajectory[1, k - 2])
@@ -455,6 +460,9 @@ class ROSMPCPlanner:
             self._params_ca.set(k, f"x_{idx}", pose.pose.position.x)
             self._params_ca.set(k, f"y_{idx}", pose.pose.position.y)
             self._params_ca.set(k, f"theta_{idx}", quaternion_to_yaw(pose.pose.orientation))
+            self._params_nmpc.set(k, f"x_{idx}", pose.pose.position.x)
+            self._params_nmpc.set(k, f"y_{idx}", pose.pose.position.y)
+            self._params_nmpc.set(k, f"theta_{idx}", quaternion_to_yaw(pose.pose.orientation))
 
     # For debugging purposes
     def plot_warmstart(self): 

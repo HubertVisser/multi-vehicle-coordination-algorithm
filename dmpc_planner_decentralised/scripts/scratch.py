@@ -80,26 +80,27 @@ class InitialGuessDuals:
                 "message": result.message
             }
 
-# Example usage
-initialGuesser = InitialGuessDuals(
-    i=1,
-    theta_1=0,
-    theta_2=np.pi/2,
-    xy_1=np.array([-5, 0]),
-    xy_2=np.array([1, -4]),
-    h=0.2,
-    w=0.2,
-    d_min=0.1
-)
+if __name__ == "__main__":
+    # Example usage
+    initialGuesser = InitialGuessDuals(
+        i=1,
+        theta_1=0,
+        theta_2=np.pi/2,
+        xy_1=np.array([-5, 0]),
+        xy_2=np.array([1, -4]),
+        h=0.2,
+        w=0.2,
+        d_min=0.1
+    )
 
-result = initialGuesser.solve()
-if result["success"]:
-    print("robot", initialGuesser.i)
-    print("Solution found:")
-    print("lambda_ij:", result["lambda_ij"][2])
-    print("lambda_ji:", result["lambda_ji"])
-    print("s_ij:", result["s_ij"])
-    print("b_1:", initialGuesser.b_1)
-    print("b_2:", initialGuesser.b_2)
-else:
-    print("No solution found:", result["message"])
+    result = initialGuesser.solve()
+    if result["success"]:
+        print("robot", initialGuesser.i)
+        print("Solution found:")
+        print("lambda_ij:", result["lambda_ij"][2])
+        print("lambda_ji:", result["lambda_ji"])
+        print("s_ij:", result["s_ij"])
+        print("b_1:", initialGuesser.b_1)
+        print("b_2:", initialGuesser.b_2)
+    else:
+        print("No solution found:", result["message"])

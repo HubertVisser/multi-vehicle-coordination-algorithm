@@ -117,10 +117,6 @@ if __name__ == "__main__":
     rospy.loginfo("Initializing MPC")
     rospy.init_node("dmpc_planner_coordinator", anonymous=False)
 
-    #vehicle           #x y theta vx vy w
-    initial_state_1 = [0., 3., 0, 0, 0, 0]
-    initial_state_2 = [5.0, 0.0, 0.5 * np.pi, 0, 0, 0]
-
     coordinator = ROSMPCCoordinator()
 
     while not rospy.is_shutdown():
