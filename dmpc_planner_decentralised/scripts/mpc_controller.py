@@ -131,6 +131,7 @@ class MPCPlanner:
             solve_time = 0.
             for it in range(self._settings["solver_settings"]["iterations"]):
                 status = self._solver_nmpc.solve()
+                print(self._solver_nmpc.get(self._N,'u'))
                 solve_time += float(self._solver_nmpc.get_stats('time_tot')) * 1000.
            
             output = dict()

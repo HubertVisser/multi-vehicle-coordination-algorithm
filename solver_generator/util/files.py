@@ -56,6 +56,16 @@ def load_test_settings(setting_file_name="settings"):
     return settings
 
 
+def load_model(model_map_name="model_map", package="mpc_planner_solver"):
+    path = os.path.normpath(os.path.join(get_package_path(package), "config", f"{model_map_name}.yaml"))
+    print(path)
+    print_path("Model_map", path, end="")
+    with open(path, "r") as stream:
+        model_map = yaml.safe_load(stream)
+    print_success(f" -> loaded")
+    return model_map
+
+
 def load_parameters(parameter_map_name="parameter_map", package="mpc_planner_solver"):
     path = os.path.normpath(os.path.join(get_package_path(package), "config", f"{parameter_map_name}.yaml"))
     print(path)
