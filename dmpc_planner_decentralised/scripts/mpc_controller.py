@@ -120,13 +120,13 @@ class MPCPlanner:
             self._solver_nmpc.constraints_set(0, 'lbx', np.array(xinit))
             self._solver_nmpc.constraints_set(0, 'ubx', np.array(xinit))
             
-            npar = int(len(p) / (self._N + 1))
+            npar = int(len(p) / (self._N))
             for k in range(0, self._N):
                 self._solver_nmpc.set(k, 'x', self._x_traj_init[:, k])
                 self._solver_nmpc.set(k, 'u', self._u_traj_init[:, k]) 
                 self._solver_nmpc.set(k, 'p', np.array(p[k*npar:(k+1)*npar])) # params for the current stage
 
-            self._solver_nmpc.set(self._N, 'p', np.array(p[self._N*npar:(self._N + 1)*npar])) # Repeats the final set of parameters
+            self._solver_nmpc.set(self._N, 'p', np.array(p[(self._N - 1)*npar : (self._N)*npar])) # Repeats the final set of parameters
 
             solve_time = 0.
             for it in range(self._settings["solver_settings"]["iterations"]):
@@ -181,13 +181,13 @@ class MPCPlanner:
             self._solver_ca.constraints_set(0, 'lbx', 0)
             self._solver_ca.constraints_set(0, 'ubx', 0)
 
-            npar = int(len(p) / (self._N + 1))
+            npar = int(len(p) / (self._N))
             for k in range(0, self._N):
                 self._solver_ca.set(k, 'x', self._x_init_ca[:, k])
                 self._solver_ca.set(k, 'u', self._u_init_ca[:, k]) 
-                self._solver_ca.set(k, 'p', np.array(p[k*npar:(k+1)*npar])) # params for the current stage
+                self._solver_ca.set(k, 'p', np.array(p[k*npar : (k+1)*npar])) # params for the current stage
 
-            self._solver_ca.set(self._N, 'p', np.array(p[self._N*npar:(self._N + 1)*npar])) # Repeats the final set of parameters
+            self._solver_ca.set(self._N, 'p', np.array(p[(self._N - 1)*npar : self._N*npar])) # Repeats the final set of parameters
 
             solve_time = 0.
             for it in range(self._settings["solver_settings"]["iterations"]):

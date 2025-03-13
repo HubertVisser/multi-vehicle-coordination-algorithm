@@ -202,7 +202,7 @@ class ROSMPCPlanner:
         s = self._save_s[-1]
 
         # Set parameters for all k
-        for k in range(self._N + 1):
+        for k in range(self._N):
 
             # Tuning parameters
             for weight, value in self._weights.items():
@@ -245,7 +245,7 @@ class ROSMPCPlanner:
                         else:
                             self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", s[f's_{j}_{self._idx}'][0])
                             self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", s[f's_{j}_{self._idx}'][1])
-                    elif k != self._N:
+                    else:
                         # Hardcoded for 2 robots TODO: Generalize
                         self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", self._ca_solution[1, k])
                         self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", self._ca_solution[2, k])
@@ -263,49 +263,31 @@ class ROSMPCPlanner:
                         else:
                             self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", self._ca_solution[9, k])
                             self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", self._ca_solution[10, k])
-                    elif k == self._N:
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", self._ca_solution[1, k-1])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", self._ca_solution[2, k-1])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", self._ca_solution[3, k-1])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", self._ca_solution[4, k-1])
-
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", self._ca_solution[5, k-1])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", self._ca_solution[6, k-1])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", self._ca_solution[7, k-1])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", self._ca_solution[8, k-1])
-
-                        if self._idx < j:
-                            self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", self._ca_solution[9, k-1])
-                            self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", self._ca_solution[10, k-1])
-                        else:
-                            self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", self._ca_solution[9, k-1])
-                            self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", self._ca_solution[10, k-1])
 
                         
                 
     def set_ca_parameters(self):
         # Set parameters for all k
-        for k in range(self._N + 1):
-                # Tuning parameters
+        for k in range(self._N):
+                
                 for weight, value in self._weights.items():
                     self._params_ca.set(k, weight, value)
 
-
-                if self._save_lam == []:
+                if self._ca_solution is None:
                     for j in range(1, self._number_of_robots+1):
                         if j != self._idx:
                             self._params_ca.set(k, f"x_{j}", self._settings[f"robot_{j}"]["start_x"])
                             self._params_ca.set(k, f"y_{j}", self._settings[f"robot_{j}"]["start_y"])
                             self._params_ca.set(k, f"theta_{j}", self._settings[f"robot_{j}"]["start_theta"] * np.pi)
-        for k in range(1, self._N + 1):
-                if k < self._N:
-                    self._params_ca.set(k, f"x_{self._idx}", self._trajectory[0, k])
-                    self._params_ca.set(k, f"y_{self._idx}", self._trajectory[1, k])
-                    self._params_ca.set(k, f"theta_{self._idx}", self._trajectory[2, k])
-                elif k == self._N:
+
+                if k == self._N-1:
                     self._params_ca.set(k, f"x_{self._idx}", self._trajectory[0, k-1] + (self._trajectory[0, k-1] - self._trajectory[0, k - 2]))
                     self._params_ca.set(k, f"y_{self._idx}", self._trajectory[1, k-1] + (self._trajectory[1, k-1] - self._trajectory[1, k - 2]))
                     self._params_ca.set(k, f"theta_{self._idx}", self._trajectory[2, k-1] + (self._trajectory[2, k-1] - self._trajectory[2, k - 2]))
+                else:
+                    self._params_ca.set(k, f"x_{self._idx}", self._trajectory[0, k+1])
+                    self._params_ca.set(k, f"y_{self._idx}", self._trajectory[1, k+1])
+                    self._params_ca.set(k, f"theta_{self._idx}", self._trajectory[2, k+1])
 
     def initialise_duals(self):
 
@@ -409,7 +391,7 @@ class ROSMPCPlanner:
                     pose.pose.position.y = trajectory[1, k]
                     q = yaw_to_quaternion(trajectory[2, k])
                 elif k == self._N:  # Interpolate the last point
-                    pose.pose.position.x = trajectory[0, k-1] + (trajectory[0, k-1] - trajectory[0, k - 2])
+                    pose.pose.position.x = trajectory[0, k - 1] + (trajectory[0, k - 1] - trajectory[0, k - 2])
                     pose.pose.position.y = trajectory[1, k - 1] + (trajectory[1, k - 1] - trajectory[1, k - 2])
                     q = yaw_to_quaternion(trajectory[2, k - 1] + (trajectory[2, k - 1] - trajectory[2, k - 2]))
                 pose.pose.orientation.x = q[0]
@@ -524,19 +506,19 @@ class ROSMPCPlanner:
 
     def trajectory_callback(self, traj_msg, i):
         # idx = traj_msg._connection_header['topic'][-1]
-        idx = i
+        j = i
 
         if not traj_msg.poses:
-            rospy.logwarn(f"Received empty path robot {idx}")
+            rospy.logwarn(f"Received empty path robot {j}")
             return
         
         for k, pose in enumerate(traj_msg.poses):
-            self._params_ca.set(k, f"x_{idx}", pose.pose.position.x)
-            self._params_ca.set(k, f"y_{idx}", pose.pose.position.y)
-            self._params_ca.set(k, f"theta_{idx}", quaternion_to_yaw(pose.pose.orientation))
-            self._params_nmpc.set(k, f"x_{idx}", pose.pose.position.x)
-            self._params_nmpc.set(k, f"y_{idx}", pose.pose.position.y)
-            self._params_nmpc.set(k, f"theta_{idx}", quaternion_to_yaw(pose.pose.orientation))
+            self._params_ca.set(k, f"x_{j}", pose.pose.position.x)
+            self._params_ca.set(k, f"y_{j}", pose.pose.position.y)
+            self._params_ca.set(k, f"theta_{j}", quaternion_to_yaw(pose.pose.orientation))
+            self._params_nmpc.set(k, f"x_{j}", pose.pose.position.x)
+            self._params_nmpc.set(k, f"y_{j}", pose.pose.position.y)
+            self._params_nmpc.set(k, f"theta_{j}", quaternion_to_yaw(pose.pose.orientation))
 
     # For debugging purposes
     def plot_warmstart(self): 

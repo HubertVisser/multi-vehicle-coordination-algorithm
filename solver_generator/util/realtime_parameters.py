@@ -14,7 +14,7 @@ class RealTimeParameters:
         self._settings = settings
 
         self._num_p = self._map['num parameters']
-        self._params = np.zeros((settings["N"]+1, self._num_p))
+        self._params = np.zeros((settings["N"], self._num_p))
 
     def set(self, k, parameter, value):
         if parameter in self._map.keys():
@@ -26,7 +26,7 @@ class RealTimeParameters:
 
     def get_solver_params(self):
         out = []
-        for k in range(self._settings["N"]+1):
+        for k in range(self._settings["N"]):
             for i in range(self._num_p):
                 out.append(self._params[k, i])
         return out
@@ -52,15 +52,6 @@ class RealTimeParameters:
             for key, value in self._map.items():
                 if key != "num parameters" and np.isnan(self._params[k, value]):
                     print(f"NaN detected for {key} at k = {k}: {self._params[k, value]}")
-
-
-class RealTimeGlobalParameters(RealTimeParameters):
-    def __init__(self, settings):
-        self._map = load_parameters("parameter_map_global")
-        self._settings = settings
-
-        self._num_p = self._map['num parameters']
-        self._params = np.zeros((settings["N"]+1, self._num_p))
     
 
 # Python real-time
