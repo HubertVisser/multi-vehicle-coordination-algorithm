@@ -30,7 +30,7 @@ from util.convertion import quaternion_to_yaw, yaw_to_quaternion
 from util.logging import print_value 
 from timer import Timer
 from spline import Spline, Spline2D
-from scratch import InitialGuessDuals
+from dual_initialiser import dual_initialiser, set_initial_x_plan
 
 from contouring_spline import SplineFitter
 from mpc_controller import MPCPlanner
@@ -84,7 +84,7 @@ class ROSMPCPlanner:
 
         self._uinit = np.zeros(self._nu_ca)
         self.initialise_duals()
-        self.set_uinit()
+ 
 
         self._visuals = ROSMarkerPublisher(f"mpc_visuals_{self._idx}", 100)
         self._path_visual = ROSMarkerPublisher(f"reference_path_{self._idx}", 10)
@@ -198,8 +198,6 @@ class ROSMPCPlanner:
             splines = self._spline_fitter.get_active_splines(np.array([self._state[0], self._state[1]]))
             self._state[-1] = self._spline_fitter.find_closest_s(np.array([self._state[0], self._state[1]]))
 
-        lam = self._save_lam[-1]
-        s = self._save_s[-1]
 
         # Set parameters for all k
         for k in range(self._N):
@@ -225,26 +223,29 @@ class ROSMPCPlanner:
             for j in range(1, self._number_of_robots+1):
                 if j != self._idx:
                     if self._ca_solution is None:
-                        self._params_nmpc.set(k, f"x_{j}", self._settings[f"robot_{j}"]["start_x"])
-                        self._params_nmpc.set(k, f"y_{j}", self._settings[f"robot_{j}"]["start_y"])
-                        self._params_nmpc.set(k, f"theta_{j}", self._settings[f"robot_{j}"]["start_theta"] * np.pi)
-                    
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", lam[f"lam_{self._idx}_{j}"][0])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", lam[f"lam_{self._idx}_{j}"][1])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", lam[f"lam_{self._idx}_{j}"][2])
-                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", lam[f"lam_{self._idx}_{j}"][3])
+                        xinit_j = np.array([self._settings[f"robot_{j}"]["start_x"], self._settings[f"robot_{j}"]["start_y"], self._settings[f"robot_{j}"]["start_theta"] * np.pi])
+                        x_plan_j = set_initial_x_plan(self._settings, xinit_j)
+                        self._params_nmpc.set(k, f"x_{j}", x_plan_j[0, k])
+                        self._params_nmpc.set(k, f"y_{j}", x_plan_j[1, k])
+                        self._params_nmpc.set(k, f"theta_{j}", x_plan_j[2, k])
 
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", lam[f"lam_{j}_{self._idx}"][0])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", lam[f"lam_{j}_{self._idx}"][1])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", lam[f"lam_{j}_{self._idx}"][2])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", lam[f"lam_{j}_{self._idx}"][3])
+                        initial_duals = getattr(self, f'initial_duals_{j}')
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", initial_duals[k][0])
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", initial_duals[k][1])
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", initial_duals[k][2])
+                        self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", initial_duals[k][3])
+
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", initial_duals[k][4])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", initial_duals[k][5])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", initial_duals[k][6])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", initial_duals[k][7])
 
                         if self._idx < j:
-                            self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", s[f's_{self._idx}_{j}'][0])
-                            self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", s[f's_{self._idx}_{j}'][1])
+                            self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", initial_duals[k][8])
+                            self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", initial_duals[k][9])
                         else:
-                            self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", s[f's_{j}_{self._idx}'][0])
-                            self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", s[f's_{j}_{self._idx}'][1])
+                            self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", initial_duals[k][8])
+                            self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", initial_duals[k][9])
                     else:
                         # Hardcoded for 2 robots TODO: Generalize
                         self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", self._ca_solution[1, k])
@@ -273,7 +274,7 @@ class ROSMPCPlanner:
                 for weight, value in self._weights.items():
                     self._params_ca.set(k, weight, value)
 
-                if self._ca_solution is None:
+                if self._save_lam is None:
                     for j in range(1, self._number_of_robots+1):
                         if j != self._idx:
                             self._params_ca.set(k, f"x_{j}", self._settings[f"robot_{j}"]["start_x"])
@@ -291,33 +292,9 @@ class ROSMPCPlanner:
 
     def initialise_duals(self):
 
-        xy_1 = np.array([self._settings[f"robot_1"]["start_x"], self._settings[f"robot_1"]["start_y"]])
-        xy_2 = np.array([self._settings[f"robot_2"]["start_x"], self._settings[f"robot_2"]["start_y"]])
-        theta_1 = self._settings[f"robot_1"]["start_theta"] * np.pi
-        theta_2 = self._settings[f"robot_2"]["start_theta"] * np.pi
-
-        h = self._settings["polytopic"]["length"]
-        w = self._settings["polytopic"]["width"]
-        d_min = self._settings["polytopic"]["d_min"]
-        initialguesser = InitialGuessDuals(i=self._idx, theta_1=theta_1, theta_2=theta_2, xy_1=xy_1, xy_2=xy_2, h=h, w=w, d_min=d_min)
-        result = initialguesser.solve()
-        lambda_ij = result["lambda_ij"]
-        lambda_ji = result["lambda_ji"]
-        s_ij = result["s_ij"]
-        
-        lam = {}
-        s = {}
         for j in range(1, self._number_of_robots+1):
             if self._idx != j:
-                    lam[f"lam_{self._idx}_{j}"] = lambda_ij
-                    lam[f"lam_{j}_{self._idx}"] = lambda_ji
-                    if j > self._idx:
-                        s[f"s_{self._idx}_{j}"] = s_ij
-                    else:
-                        s[f"s_{j}_{self._idx}"] = s_ij
-                
-        self._save_lam.append(lam)
-        self._save_s.append(s)
+                setattr(self, f'initial_duals_{j}', dual_initialiser(self._settings, self._idx, 2))
     
     def set_uinit(self):
         # Set u init for the CA solver
