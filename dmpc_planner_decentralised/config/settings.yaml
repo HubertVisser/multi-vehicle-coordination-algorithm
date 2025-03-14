@@ -21,7 +21,7 @@ debug_visuals: false
 dart_simulator: false
 
 solver_settings:
-  iterations: 1 #2 # 1
+  iterations: 2 #2 # 1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 5.0
@@ -44,6 +44,7 @@ weights:
   steering: .1
   lambda: .1
   s_dual: .1
+  dmin_objective: .01
   velocity: 0.5
   reference_velocity: 0.4
   lag: 0.8

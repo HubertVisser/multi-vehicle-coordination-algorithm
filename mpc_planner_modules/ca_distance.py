@@ -22,7 +22,8 @@ class MinimizeCollisionAvoidanceObjective:
         self.number_of_robots = settings["number_of_robots"]
 
     def define_parameters(self, params):
-        pass
+        
+        params.add("dmin_objective")
     
     def get_pos_theta_i(self, params):
         pos_x_i = params.get(f"x_{self.idx_i}")
@@ -55,7 +56,8 @@ class MinimizeCollisionAvoidanceObjective:
 
         pos_i, theta_i = self.get_pos_theta_i(params)
         b_i = get_b(pos_i, theta_i, self.length, self.width)
-        
+        dmin_weight = params.get("dmin_objective")
+
         # Objective for all neighbouring robots (j)
         for j in range(1, self.number_of_robots+1): 
             if j != self.idx_i:
@@ -67,7 +69,7 @@ class MinimizeCollisionAvoidanceObjective:
 
                 b_j = get_b(pos_j, theta_j, self.length, self.width)
 
-                cost += -1*(- b_i.T @ lam_ij - b_j.T @ lam_ji)
+                cost += -1 * dmin_weight *(- b_i.T @ lam_ij - b_j.T @ lam_ji)
         
         return cost
         

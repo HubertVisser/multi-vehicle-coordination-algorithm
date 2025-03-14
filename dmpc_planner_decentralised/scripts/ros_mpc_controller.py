@@ -277,9 +277,11 @@ class ROSMPCPlanner:
                 if self._save_lam is None:
                     for j in range(1, self._number_of_robots+1):
                         if j != self._idx:
-                            self._params_ca.set(k, f"x_{j}", self._settings[f"robot_{j}"]["start_x"])
-                            self._params_ca.set(k, f"y_{j}", self._settings[f"robot_{j}"]["start_y"])
-                            self._params_ca.set(k, f"theta_{j}", self._settings[f"robot_{j}"]["start_theta"] * np.pi)
+                            xinit_j = np.array([self._settings[f"robot_{j}"]["start_x"], self._settings[f"robot_{j}"]["start_y"], self._settings[f"robot_{j}"]["start_theta"] * np.pi])
+                            x_plan_j = set_initial_x_plan(self._settings, xinit_j)
+                            self._params_ca.set(k, f"x_{j}", x_plan_j[0, k])
+                            self._params_ca.set(k, f"y_{j}", x_plan_j[1, k])
+                            self._params_ca.set(k, f"theta_{j}", x_plan_j[2, k])
 
                 if k == self._N-1:
                     self._params_ca.set(k, f"x_{self._idx}", self._trajectory[0, k-1] + (self._trajectory[0, k-1] - self._trajectory[0, k - 2]))

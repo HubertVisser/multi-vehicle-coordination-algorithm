@@ -86,7 +86,7 @@ def set_initial_x_plan(settings, xinit):
 
     # assign initial guess for the states by forward euler integration on the reference path
     # refinement for first guess needs to be higher because the forward euler is a bit lame
-    N_0 = 1000
+    N_0 = _N
 
     s_0_vec = np.linspace(0, 0 + reference_velocity * 1.5, N_0+1)
     x_ref_0 = np.ones(N_0+1) * xinit[0]
