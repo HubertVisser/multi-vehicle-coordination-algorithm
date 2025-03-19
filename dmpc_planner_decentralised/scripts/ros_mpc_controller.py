@@ -164,6 +164,7 @@ class ROSMPCPlanner:
         # self._params.check_for_nan()
 
         ca_timer = Timer("CA")
+        # self._params_ca.plot_parameters(["x_1", "x_2", "y_1", "y_2", "theta_1", "theta_2"])
         output, self._ca_feasible, self._ca_solution = self._planner.solve_ca(self._uinit, self._params_ca.get_solver_params())
         del ca_timer
 

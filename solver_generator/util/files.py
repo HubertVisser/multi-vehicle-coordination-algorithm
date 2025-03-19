@@ -108,7 +108,7 @@ def generated_src_file(settings):
 
 
 def planner_path():
-    return get_package_path("dmpc_planner")
+    return get_package_path("dmpc_planner_decentralised")
 
 def rqt_config_path():
     return os.path.join(get_package_path("dmpc_planner"), "cfg/")

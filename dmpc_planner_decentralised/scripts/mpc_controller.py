@@ -158,7 +158,7 @@ class MPCPlanner:
             
             self.time_tracker.add(solve_time)
 
-            print_value(f"Current cost (nmpc {self._idx}):", f"{self.get_cost_nmpc():.2f}")
+            print_value(f"Current cost (nmpc {self._idx}):", f"{self.get_cost_nmpc():.2f}") if self._idx == 1 else None
             self._prev_trajectory = self._model_nmpc.get_trajectory(self._solver_nmpc, self._mpc_x_plan, self._mpc_u_plan)
         except AttributeError:
             output = dict()
@@ -224,7 +224,7 @@ class MPCPlanner:
             
             self.time_tracker.add(solve_time)
 
-            print_value(f"Current cost (ca {self._idx}):", f"{self.get_cost_ca():.2f}")
+            # print_value(f"Current cost (ca {self._idx}):", f"{self.get_cost_ca():.2f}")
             self._prev_solution_ca = self._model_ca.get_solution_ca(self._solver_ca, self._x_init_ca, self._u_init_ca)
         except AttributeError:
             output = dict()

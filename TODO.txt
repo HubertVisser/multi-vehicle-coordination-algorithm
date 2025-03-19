@@ -4,3 +4,5 @@ TODO:
 - [ ] Fix the tests
 - [ ] Build a check in the different robots that only solves CA if all trajectories are received
 - [ ] Option to run without compiling the solvers
+
+Bij 17 stappen gaat het mis
