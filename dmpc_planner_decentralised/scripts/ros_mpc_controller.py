@@ -137,6 +137,7 @@ class ROSMPCPlanner:
         # self._params.check_for_nan()
 
         mpc_timer = Timer("NMPC")
+        self._params_nmpc.plot_parameters(["s_1_2_0", "s_1_2_1", "lam_1_2_0", "lam_1_2_1", "lam_1_2_2", "lam_1_2_3"])
         output, self._mpc_feasible, self._trajectory = self._planner.solve_nmpc(self._state, self._params_nmpc.get_solver_params())
         del mpc_timer
 
@@ -150,8 +151,8 @@ class ROSMPCPlanner:
                 self._states_save.append(deepcopy(self._state))
             
             self._outputs_save.append([output["throttle"], output["steering"]])
-            
             # self.plot_pred_traj() # slows down the simulation
+
         self.publish_trajectory(self._trajectory) 
     
     def run_ca(self, timer):
@@ -603,8 +604,8 @@ class ROSMPCPlanner:
         time_steps = range(len(self._save_lam))  # Time steps based on the number of dictionaries
         num_elements = len(next(iter(self._save_lam[0].values())))  # Number of elements in each list
 
+        plt.figure(figsize=(12, 6))
         for element_index in range(num_elements):
-            plt.figure(figsize=(12, 6))
 
             for key in keys:
                 values = [d[key][element_index] for d in self._save_lam]  # Extract the desired element for each key
@@ -623,8 +624,8 @@ class ROSMPCPlanner:
         time_steps = range(len(self._save_s))  # Time steps based on the number of dictionaries
         num_elements = len(next(iter(self._save_s[0].values())))  # Number of elements in each list
 
+        plt.figure(figsize=(12, 6))
         for element_index in range(num_elements):
-            plt.figure(figsize=(12, 6))
 
             for key in keys:
                 values = [d[key][element_index] for d in self._save_s]  # Extract the desired element for each key

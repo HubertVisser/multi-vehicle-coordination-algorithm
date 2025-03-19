@@ -1,6 +1,6 @@
 name: "Jetracer_decentralised"
 decentralised: true
-N: 8
+N: 12
 integrator_step: 0.3
 n_discs: 0
 track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
@@ -46,7 +46,7 @@ weights:
   s_dual: .1
   dmin_objective: .01
   velocity: 0.5
-  reference_velocity: 0.4
+  reference_velocity: 0.8
   lag: 0.6
   contour: 0.8
   terminal_angle: 1.0 #0.0

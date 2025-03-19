@@ -86,7 +86,8 @@ class ROSMPCCoordinator:
                 self._trajectory_condition.wait()
 
             for robot in self._robots:
-                robot.run_ca(timer)
+                if robot._spline_fitter._splines:
+                    robot.run_ca(timer)
 
             self._trajectory_counter = 0
 
