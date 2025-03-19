@@ -143,8 +143,6 @@ class MPCPlanner:
             self._mpc_feasible = True
             self._model_nmpc.load(self._solver_nmpc)
 
-            output = dict()
-
             output[f"x_{self._idx}"] = self._model_nmpc.get(1, f"x_{self._idx}")
             output[f"y_{self._idx}"] = self._model_nmpc.get(1, f"y_{self._idx}")
             output[f"theta_{self._idx}"] = self._model_nmpc.get(1, f"theta_{self._idx}")

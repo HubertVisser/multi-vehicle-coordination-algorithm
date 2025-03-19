@@ -1,6 +1,6 @@
 name: "Jetracer_decentralised"
 decentralised: true
-N: 12
+N: 8
 integrator_step: 0.3
 n_discs: 0
 track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
@@ -21,7 +21,7 @@ debug_visuals: false
 dart_simulator: false
 
 solver_settings:
-  iterations: 2 #2 # 1
+  iterations: 1 #2 # 1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 5.0
