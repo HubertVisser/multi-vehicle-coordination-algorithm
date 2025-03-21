@@ -19,17 +19,17 @@ def raw_track(choice, start_x, start_y, positive_track):
     n_checkpoints = 10
     if choice == 't_junction' and len(start_x) == 2:
         
-        # Straight segment from (1, -4) to (1, -2)
+        # Straight segment from (0, -4) to (0, -2)
         checkpoints_x_straight1 = np.ones(4) * start_x[1]
         checkpoints_y_straight1 = np.linspace(start_y[1], -2, 4)
 
         # 90 degree turn with radius 3 from (1, -2) to (-2, 1)
         theta = np.linspace(0, 0.5*np.pi, 8)
-        checkpoints_x_turn = -2 + 3 * np.cos(theta)
+        checkpoints_x_turn = -3 + 3 * np.cos(theta)
         checkpoints_y_turn = -2 + 3 * np.sin(theta)
 
         # Straight segment from (-2, 1) to (-4, 1)
-        checkpoints_x_straight2 = np.linspace(-2, -6, 4)
+        checkpoints_x_straight2 = np.linspace(-3, -6, 4)
         checkpoints_y_straight2 = np.ones(4) 
         
         
@@ -43,7 +43,7 @@ def raw_track(choice, start_x, start_y, positive_track):
         if positive_track:
             return checkpoints_x_1 + 5, checkpoints_y_1 + 5, checkpoints_x_2 + 5, checkpoints_y_2 + 5
         else:
-            return checkpoints_x_1, checkpoints_y_1, checkpoints_x_2, checkpoints_y_2
+            return checkpoints_x_1, checkpoints_y_1, checkpoints_x_2 * 1, checkpoints_y_2
     
     elif choice == 'straight_line' or len(start_x) == 1:
         checkpoints_x_1 = np.linspace(start_x[0], 5, n_checkpoints)
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     rospy.spin()
 
     # choice = 't_junction'
-    # start_x = [-4, 1]
+    # start_x = [-4, 0]
     # start_y = [0, -4]
     # raw_track = raw_track(choice, start_x, start_y, positive_track=False)
     # plt.plot(raw_track[0], raw_track[1])

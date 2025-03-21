@@ -9,12 +9,12 @@ add_slack: true
 
 number_of_robots: 2
 robot_1:
-  start_x: -5.0
+  start_x: -6.0
   start_y: 0.0
   start_theta: 0.0  # in radians
 robot_2:
-  start_x: 1.0
-  start_y: -4.0
+  start_x: 0.0
+  start_y: -3.0
   start_theta: 0.5  # radians
 
 verbose: false
@@ -22,7 +22,7 @@ debug_visuals: false
 dart_simulator: false
 
 solver_settings:
-  iterations: 1 #2 # 1
+  iterations: 2 #2 # 1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 10.0
@@ -30,8 +30,8 @@ braking_acceleration: 1.0
 
 polytopic:
   d_min: 0.1
-  length: 0.1
-  width: 0.1
+  length: 0.2
+  width: 0.2
 
 contouring:
   num_segments: 5
@@ -42,13 +42,13 @@ weights:
   steering: .1
   lambda: .1
   s_dual: .1
-  dmin_objective: .01
-  velocity: 0.5
-  reference_velocity: 0.6
-  lag: 0.8
-  contour: 0.8
+  dmin_objective: .1
+  velocity: 0.4
+  reference_velocity: 0.4
+  lag: 0.6
+  contour: 0.6
   terminal_angle: 1.0 #0.0
-  terminal_contour: 1.0 # 0.0
+  terminal_contour: 5.0 # 0.0
   terminal_lag: 1.0 # 0.0
 
 

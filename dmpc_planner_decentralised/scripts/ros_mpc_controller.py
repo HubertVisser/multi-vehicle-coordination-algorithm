@@ -442,10 +442,10 @@ class ROSMPCPlanner:
         if self._save_s:
             line = self._visuals.get_line()
             line.set_scale(0.05)
-            line.set_color(7, alpha=1.0)
+            line.set_color(7**self._idx, alpha=1.0)
             ego_pos = np.array([self._state[0], self._state[1]])
 
-            for j in range(self._idx, self._number_of_robots+1):
+            for j in range(1, self._number_of_robots+1):
                 if j != self._idx:
                     s = self._save_s[-1][f's_{self._idx}_{j}'] if self._idx < j else self._save_s[-1][f's_{j}_{self._idx}']
                     neighbour_pos = np.array([self._params_ca.get(1, f"x_{j}"), self._params_ca.get(1, f"y_{j}")])
