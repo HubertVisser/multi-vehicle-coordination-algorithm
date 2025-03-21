@@ -90,10 +90,13 @@ def generate_solver(modules, model, settings=None):
     # ocp.cost.cost_type_e = "EXTERNAL"
 
     # Number of inputs and states
-    nu = model.nu 
     nx = model.nx
     nlam = model.nlam
     ns = model.ns
+    nu = model.nu 
+
+    if not settings["decentralised"]:
+        nu = nu + ns + nlam
 
     # Set initial constraint
     ocp.constraints.x0 = np.zeros(nx)
@@ -106,7 +109,7 @@ def generate_solver(modules, model, settings=None):
     # Set control input bound
     ocp.constraints.lbu = model.lower_bound_u.flatten() 
     ocp.constraints.ubu = model.upper_bound_u.flatten() 
-    ocp.constraints.idxbu = np.array(range(nu)) if settings["decentralised"] else np.array(range(nu + ns + nlam))
+    ocp.constraints.idxbu = np.array(range(nu))
 
     # Set path constraints bound 
     nc = ocp.model.con_h_expr.shape[0]
@@ -114,24 +117,26 @@ def generate_solver(modules, model, settings=None):
     ocp.constraints.uh = np.array(constraint_upper_bounds(modules))
 
     # Slack for constraints
-    add_slack = False
+    add_slack = settings["add_slack"]
     if add_slack:
         add_constraint_slack = True
-        value = 1.0e5
+        value = 1.0e2
 
-        ns = nx + nu
+        ns = nx + nu 
         if add_constraint_slack:
             ns += nc
             ocp.constraints.idxsh = np.array(range(nc))
+            # ns += 1
+            # ocp.constraints.idxsh = np.array([0])
 
         ocp.constraints.idxsbx = np.array(range(nx))
-        ocp.constraints.idxsbu = np.array(range(nu))
+        ocp.constraints.idxsbu = np.array(range(nu)) 
 
         # Slack for state bounds
-        ocp.cost.zl = value * np.ones((ns,))
-        ocp.cost.zu = value * np.ones((ns,))
-        ocp.cost.Zl = value * np.ones((ns,))
-        ocp.cost.Zu = value * np.ones((ns,))
+        ocp.cost.zl = value * np.ones((ns,)) # gradient wrt lower slack at intermediate shooting nodes (0 to N-1)
+        ocp.cost.zu = value * np.ones((ns,)) # gradient wrt upper slack at intermediate shooting nodes (0 to N-1)
+        ocp.cost.Zl = value * np.ones((ns,)) # diagonal of Hessian wrt lower slack at intermediate shooting nodes (0 to N-1)
+        ocp.cost.Zu = value * np.ones((ns,)) # diagonal of Hessian wrt upper slack at intermediate shooting nodes (0 to N-1)
 
         # ocp.constraints.idxsbx_e = np.array(range(nx))
         # ocp.cost.zl_e = value * np.ones(ns)
@@ -179,7 +184,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.qp_solver_iter_max = 50 # default = 50
+    ocp.solver_options.qp_solver_iter_max = 500 # default = 50
     ocp.solver_options.qp_solver_warm_start = 1  # cold start / 1 = warm, 2 = warm primal and dual
 
     # code generation options

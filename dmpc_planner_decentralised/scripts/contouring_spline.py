@@ -5,7 +5,7 @@ from nav_msgs.msg import Path
 from scipy.interpolate import CubicSpline
 import numpy as np
 
-from pyplot import plot_x_traj, plot_splines
+# from plot_utils import plot_x_traj, plot_splines
 # from path_generator import generate_path_msg
 
 class SplineFitter:

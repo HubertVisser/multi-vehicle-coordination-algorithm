@@ -35,7 +35,7 @@ from dual_initialiser import dual_initialiser, set_initial_x_plan
 from contouring_spline import SplineFitter
 from mpc_controller import MPCPlanner
 from ros_visuals import ROSMarkerPublisher
-# from path_generator import generate_path_msg
+from plot_utils import plot_warmstart, plot_path, plot_states, plot_duals
 
 
 class ROSMPCPlanner:
@@ -157,6 +157,7 @@ class ROSMPCPlanner:
             # self.plot_pred_traj() # slows down the simulation
 
             self.publish_trajectory(trajectory) 
+            self.visualize()
     
     def run_ca(self, timer):
         # Check if splines exist
@@ -474,7 +475,8 @@ class ROSMPCPlanner:
                 pose.position.y = float(self._spline_fitter._closest_y)
                 cube.add_marker(pose)
 
-            self.plot_warmstart()
+
+            plot_warmstart(self)
             self._debug_visuals_pub.publish()
 
         trajectory_i = getattr(self, f'_trajectory_{self._idx}')
@@ -528,7 +530,7 @@ class ROSMPCPlanner:
         self._path_msg = msg
         self._spline_fitter.fit_path(msg)
         # plot_splines(self._spline_fitter._splines)
-        self.plot_path()
+        plot_path(self)
 
     def trajectory_callback(self, traj_msg, i):
         # idx = traj_msg._connection_header['topic'][-1]
@@ -544,148 +546,18 @@ class ROSMPCPlanner:
                 trajectory[0, k] = pose.pose.position.x
                 trajectory[1, k] = pose.pose.position.y
                 trajectory[2, k] = quaternion_to_yaw(pose.pose.orientation)
-        
-    # For debugging purposes
-    def plot_warmstart(self): 
-        warmstart_u, warmstart_x = self._planner.get_initial_guess() 
-        for n in range(1, self._number_of_robots+1):
-            cylinder = self._debug_visuals_pub.get_cylinder()
-            cylinder.set_color(10, alpha=1.0)
-            cylinder.set_scale(0.65, 0.65, 0.05)
-            pose = Pose()
-            for k in range(1, self._N):
-                pose.position.x = float(warmstart_x[0 + (n-1)*self._nx_one_robot, k])
-                pose.position.y = float(warmstart_x[1 + (n-1)*self._nx_one_robot, k])
-                cylinder.add_marker(deepcopy(pose))
-
-    def plot_path(self):
-        dist = 0.2
-        if self._path_msg is not None:
-            line = self._path_visual.get_line()
-            line.set_scale(0.05)
-            line.set_color(1, alpha=1.0)
-            points = self._path_visual.get_cube()
-            points.set_color(3)
-            points.set_scale(0.1, 0.1, 0.1)
-            s = 0.0
-            for i in range(50):
-                a = self._spline_fitter.evaluate(s)
-                b = self._spline_fitter.evaluate(s + dist)
-                pose_a = Pose()
-                pose_a.position.x = float(a[0])
-                pose_a.position.y = float(a[1])
-                points.add_marker(pose_a)
-                pose_b = Pose()
-                pose_b.position.x = float(b[0])
-                pose_b.position.y = float(b[1])
-                s += dist
-                line.add_line_from_poses(pose_a, pose_b)
-        self._path_visual.publish()
-        
+    
     def print_stats(self):
         self._planner.print_stats()
         # self._decomp_constraints.print_stats()
-
-    def print_contouring_ref(self):     # Not adjusted for multi robot
-        s = self._state[6]
-        x, y = self._spline_fitter.evaluate(s)
-        print(f"Path at s = {s}: ({x}, {y})")
-        print(f"State: ({self._spline_fitter._closest_x}, {self._spline_fitter._closest_y})")
     
     def plot_states(self):
-        state_labels = ["x", "y", "theta", "vx", "vy", "omega", "s"]
-        output_labels = ["throttle", "steering"]
-        plt.figure(figsize=(12, 6))
-        
-        # Plot states
-        plt.subplot(1, 2, 1)
-        num_states = len(state_labels)
-        for i in range(num_states):
-            state_values = [state[i] for state in self._states_save]
-            plt.plot(state_values, label=state_labels[i])
-        plt.xlabel('Time Step')
-        plt.ylabel('State Values')
-        plt.legend()
-        plt.grid(True)
-        plt.title(f'Robot {self._idx} States')
-
-        # Plot outputs
-        plt.subplot(1, 2, 2)
-        for i in range(len(output_labels)):
-            output_values = [output[i] for output in self._outputs_save]
-            plt.plot(output_values, label=output_labels[i])
-        plt.xlabel('Time Step')
-        plt.ylabel('Output Values')
-        plt.legend()
-        plt.grid(True)
-        plt.title(f'Robot {self._idx} Outputs')
-
-        plt.tight_layout()
-        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f'states_outputs_plot_{self._idx}.png'))  # Save the plot to a file
-        plt.close()
+        plot_states(self)
+    
     
     def plot_duals(self):
-        keys = self._save_lam[0].keys()  # Get the keys from the first dictionary
-        time_steps = range(len(self._save_lam))  # Time steps based on the number of dictionaries
-        num_elements = len(next(iter(self._save_lam[0].values())))  # Number of elements in each list
+        plot_duals(self)
 
-        plt.figure(figsize=(12, 6))
-        for element_index in range(num_elements):
-
-            for key in keys:
-                values = [d[key][element_index] for d in self._save_lam]  # Extract the desired element for each key
-                plt.plot(time_steps, values, label=f'{key}[{element_index}]')
-
-        plt.xlabel('Time Step')
-        plt.ylabel('Lam Values')
-        plt.legend()
-        plt.grid(True)
-        plt.title(f'Lam Values')
-        plt.tight_layout()
-        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f'lam_values_plot.png'))  # Save the plot to a file
-        plt.close()
-        
-        keys = self._save_s[0].keys()  # Get the keys from the first dictionary
-        time_steps = range(len(self._save_s))  # Time steps based on the number of dictionaries
-        num_elements = len(next(iter(self._save_s[0].values())))  # Number of elements in each list
-
-        plt.figure(figsize=(12, 6))
-        for element_index in range(num_elements):
-
-            for key in keys:
-                values = [d[key][element_index] for d in self._save_s]  # Extract the desired element for each key
-                plt.plot(time_steps, values, label=f'{key}[{element_index}]')
-
-        plt.xlabel('Time Step')
-        plt.ylabel('s Values')
-        plt.legend()
-        plt.grid(True)
-        plt.title(f's Values')
-        plt.tight_layout()
-        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f's_values_plot.png'))  # Save the plot to a file
-        plt.close()
-
-    def plot_pred_traj(self):
-        state_labels = ["x", "y", "theta", "vx", "vy", "omega", "s"]
-        time = np.linspace(0, (self._N-1) * self._integrator_step, self._N)
-
-        plt.figure(figsize=(6, 12))
-      
-        # Plot states
-        num_states = len(state_labels)
-        trajectory_i = getattr(self, f'_trajectory_{self._idx}')
-        plt.plot(time, trajectory_i.T)
-        plt.legend(state_labels)
-
-        plt.xlabel('Time Steps')
-        plt.ylabel('State Values')
-        plt.legend()
-        plt.grid(True)
-        plt.title(f'Robot {self._idx} Predictions')
-
-        plt.tight_layout()
-        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'prediction_plot.png'))  # Save the plot to a file
-        plt.close()  
 
 
 if __name__ == "__main__":
@@ -698,7 +570,7 @@ if __name__ == "__main__":
         rospy.spin()
         
     # mpc.plot_outputs()
-    mpc.plot_states()
-    mpc.plot_duals()
+    plot_states(mpc)
+    plot_duals(mpc)
     # mpc.plot_pred_traj()
-    mpc.print_stats()
+    plot_states(mpc)

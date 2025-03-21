@@ -1,10 +1,11 @@
-name: "Jetracer"
+name: "Jetracer_centralised"
 decentralised: false
-N: 15
+N: 10
 integrator_step: 0.3
 n_discs: 0
 track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
 positive_track: false
+add_slack: true
 
 number_of_robots: 2
 robot_1:
@@ -18,17 +19,17 @@ robot_2:
 
 verbose: false
 debug_visuals: false
-dart_simulator: true
+dart_simulator: false
 
 solver_settings:
-  iterations: 2 #2 
+  iterations: 1 #2 
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
-control_frequency: 10.0
+control_frequency: 5.0
 braking_acceleration: 1.0
 
 polytopic:
-  d_min: 0.1
+  d_min: 0.2
   length: .4
   width: .4
   com_to_back: 0.0

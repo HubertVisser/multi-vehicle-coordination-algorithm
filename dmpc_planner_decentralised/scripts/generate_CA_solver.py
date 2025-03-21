@@ -53,7 +53,6 @@ def configuration_basic(settings, idx):
     modules.add_module(PolytopicSjdualConstraintModule(settings, idx))
     
     modules.add_module(s2normConstraintModule(settings, idx))
-    # TODO: add norm_2 for s_ij, atm numerically unstable
 
     return model, modules
 
