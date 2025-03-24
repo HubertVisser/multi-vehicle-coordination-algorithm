@@ -3,8 +3,7 @@ decentralised: true
 N: 20
 integrator_step: 0.3
 n_discs: 0
-track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
-positive_track: false
+track_choice: "merging" # 'straight_line', sinus, "t_junction", "merging"
 add_slack: true
 
 number_of_robots: 2
@@ -13,9 +12,9 @@ robot_1:
   start_y: 0.0
   start_theta: 0.0  # in radians
 robot_2:
-  start_x: 0.0
-  start_y: -3.0
-  start_theta: 0.5  # radians
+  start_x: -5.0
+  start_y: -2.0
+  start_theta: 0.0  # radians
 
 verbose: false
 debug_visuals: false

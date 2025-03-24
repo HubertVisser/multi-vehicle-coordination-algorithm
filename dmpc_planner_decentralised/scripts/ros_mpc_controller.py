@@ -80,8 +80,6 @@ class ROSMPCPlanner:
                             self._settings[f"robot_{self._idx}"]["start_y"], \
                             self._settings[f"robot_{self._idx}"]["start_theta"] * np.pi]
         
-        self._state[:2] += 5 if self._settings["positive_track"] else 0
-
         self._uinit = np.zeros(self._nu_ca)
         self.initialise_duals()
  
