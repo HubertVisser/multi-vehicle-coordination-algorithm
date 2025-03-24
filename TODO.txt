@@ -2,7 +2,7 @@ TODO:
 - [ ] Implement the car_number in the settings file
 - [ ] Fix the reset for rqt reconfigure
 - [ ] Fix the tests
-- [ ] Build a check in the different robots that only solves CA if all trajectories are received
+- [x] Build a check in the different robots that only solves CA if all trajectories are received
 - [ ] Option to run without compiling the solvers
+- [ ] Implement the cars to be plotted as polytopic sets
 
-Bij 17 stappen gaat het mis

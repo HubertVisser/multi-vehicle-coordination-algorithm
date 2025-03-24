@@ -14,20 +14,20 @@ from nav_msgs.msg import Odometry, Path
 from geometry_msgs.msg import PoseStamped, Pose, Twist
 from sensor_msgs.msg import Joy
 from robot_localization.srv import SetPose
-import std_srvs.srv
 
 from mpc_planner_msgs.msg import ObstacleArray
 from mpc_planner_msgs.msg import WeightArray
 
 import numpy as np
 from copy import deepcopy
-import math
 import matplotlib.pyplot as plt
 
 from util.files import load_settings, load_model
 from util.realtime_parameters import RealTimeParameters
 from util.convertion import quaternion_to_yaw, yaw_to_quaternion
 from util.logging import print_value 
+from util.math import get_A, get_b
+
 from timer import Timer
 from spline import Spline, Spline2D
 from dual_initialiser import dual_initialiser, set_initial_x_plan
@@ -481,15 +481,19 @@ class ROSMPCPlanner:
 
         trajectory_i = getattr(self, f'_trajectory_{self._idx}')
         if not np.all(trajectory_i == 0) and self._mpc_feasible:
-            cylinder = self._visuals.get_cylinder()
-            cylinder.set_color(2, alpha=0.25)
-            cylinder.set_scale(0.5, 0.5, 0.05)
+            polytope = self._visuals.get_polytope()
+            polytope.set_color(80, alpha=0.3)
+            polytope.set_scale(0.05)
 
-            pose = Pose()
+            length = self._settings["polytopic"]["length"]
+            width = self._settings["polytopic"]["width"]
+
             for k in range(1, self._N):
-                pose.position.x = float(self._planner.get_model_nmpc().get(k, f"x_{self._idx}"))
-                pose.position.y = float(self._planner.get_model_nmpc().get(k, f"y_{self._idx}"))
-                cylinder.add_marker(deepcopy(pose))
+                x = self._planner.get_model_nmpc().get(k, f"x_{self._idx}")
+                y = self._planner.get_model_nmpc().get(k, f"y_{self._idx}")
+                theta = self._planner.get_model_nmpc().get(k, f"theta_{self._idx}")
+                pos = [x,y]
+                polytope.add_polytope(get_A(theta), get_b(pos, theta, length, width))
         self._visuals.publish()
     
     # Callback functions

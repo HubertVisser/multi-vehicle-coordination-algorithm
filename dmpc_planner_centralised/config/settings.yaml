@@ -3,7 +3,7 @@ decentralised: false
 N: 10
 integrator_step: 0.3
 n_discs: 0
-track_choice: "t_junction" # 'straight_line', sinus, "t_junction"
+track_choice: "t_junction" # "t_junction", "merging"
 positive_track: false
 add_slack: true
 

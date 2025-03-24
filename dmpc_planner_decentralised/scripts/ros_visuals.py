@@ -1,7 +1,10 @@
 import rospy
+import numpy as np
 from visualization_msgs.msg import MarkerArray, Marker
 from geometry_msgs.msg import Pose, Point
 from copy import deepcopy
+from itertools import combinations
+from scipy.spatial.distance import euclidean
 
 COLORS = [[153, 51, 102], [0, 255, 0], [254, 254, 0], [254, 0, 254], [0, 255, 255], [255, 153, 0]]
 
@@ -79,6 +82,10 @@ class ROSMarkerPublisher:
 
     def get_line(self, frame_id="map"):
         new_marker = ROSLineMarker(frame_id, self)
+        return self.get_point_marker(new_marker)
+    
+    def get_polytope(self, frame_id="map"):
+        new_marker = ROSPolytopeMarker(frame_id, self)
         return self.get_point_marker(new_marker)
 
     def get_point_marker(self, new_marker):
@@ -215,6 +222,95 @@ class ROSLineMarker:
     def set_scale(self, thickness):
         self.marker_.scale.x = thickness
 
+class ROSPolytopeMarker:
+    def __init__(self, frame_id, ros_marker_publisher):
+        self.marker_ = Marker()
+        self.marker_.header.frame_id = frame_id
+        self.marker_.type = Marker.LINE_STRIP
+        self.ros_marker_publisher_ = ros_marker_publisher
+
+        self.marker_.scale.x = 0.25
+        self.marker_.pose.orientation.x = 0
+        self.marker_.pose.orientation.y = 0
+        self.marker_.pose.orientation.z = 0
+        self.marker_.pose.orientation.w = 1
+        self.set_color(1)
+
+    def set_color(self, int_val, alpha=1.0):
+        red, green, blue = get_viridis_color(int_val)
+        self.marker_.color.r = red
+        self.marker_.color.g = green
+        self.marker_.color.b = blue
+        self.marker_.color.a = alpha
+
+    def set_scale(self, thickness):
+        self.marker_.scale.x = thickness
+
+    def add_line(self, point_one, point_two):
+        self.marker_.id = self.ros_marker_publisher_.get_id_()
+
+        self.marker_.points.append(point_one)
+        self.marker_.points.append(point_two)
+
+        self.ros_marker_publisher_.add_marker_(deepcopy(self.marker_))
+
+        self.marker_.points = []
+
+    def find_intersection_points(self, A, b):
+        n = A.shape[0]
+        intersection_points = []
+
+        # Generate all combinations of half-spaces
+        for comb in combinations(range(n), 2):
+            A_comb = A[list(comb), :]
+            b_comb = b[list(comb)]
+
+            # Solve the system of linear equations A_comb x = b_comb
+            try:
+                x = np.linalg.solve(A_comb, b_comb)
+            except np.linalg.LinAlgError:
+                continue  # Skip if the system is singular
+
+            # Check if the intersection point satisfies all inequalities
+            if np.all(A @ x <= b):
+                intersection_points.append(x)
+
+        # Calculate the distances between all pairs of intersection points
+        max_distance = 0
+        max_pair = (0, 1)
+        for i, j in combinations(range(len(intersection_points)), 2):
+            dist = euclidean(intersection_points[i], intersection_points[j])
+            if dist > max_distance:
+                max_distance = dist
+                max_pair = (i, j)
+
+        # Reorder the points such that the points with the maximum distance are not next to each other
+        if len(intersection_points) > 2:
+            reordered_points = [intersection_points[max_pair[0]]]
+            remaining_points = [p for k, p in enumerate(intersection_points) if k != max_pair[0] and k != max_pair[1]]
+            reordered_points.extend(remaining_points)
+            reordered_points.append(intersection_points[max_pair[1]])
+            intersection_points = np.array(reordered_points)
+        return np.array(intersection_points)
+
+    def add_polytope(self, A, b):
+        intersection_points = self.find_intersection_points(A, b)
+        if len(intersection_points) == 0:
+            return
+
+        # Plot lines between intersection points
+        for i in range(len(intersection_points)):
+            p1 = Point()
+            p1.x = intersection_points[i][0]
+            p1.y = intersection_points[i][1]
+            p1.z = 0.0
+
+            p2 = Point()
+            p2.x = intersection_points[(i + 1) % len(intersection_points)][0]
+            p2.y = intersection_points[(i + 1) % len(intersection_points)][1]
+            p2.z = 0.0
+
+            self.add_line(p1, p2)
 
 def get_viridis_color(select):
     # Obtained from https://waldyrious.net/viridis-palette-generator/

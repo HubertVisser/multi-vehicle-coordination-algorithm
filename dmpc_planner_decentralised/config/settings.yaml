@@ -30,8 +30,8 @@ braking_acceleration: 1.0
 
 polytopic:
   d_min: 0.1
-  length: 0.2
-  width: 0.2
+  length: .5
+  width: .5
 
 contouring:
   num_segments: 5
