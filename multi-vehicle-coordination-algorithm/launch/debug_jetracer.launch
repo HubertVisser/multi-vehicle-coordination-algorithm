@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-
-<launch>
-
-  <node name="dmpc_planner_node" pkg="dmpc_planner_decentralised" type="main.py" output="screen">
-    <param name="skip_solver_generation" value="false"/>
-  </node>
-</launch>  

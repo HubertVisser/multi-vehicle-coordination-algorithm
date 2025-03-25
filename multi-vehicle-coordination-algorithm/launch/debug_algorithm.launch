@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <node name="multi-vehicle-coordination-algorithm_node" pkg="multi-vehicle-coordination-algorithm" type="main.py" output="screen">
+    <param name="skip_solver_generation" value="false"/>
+  </node>
+</launch>  
