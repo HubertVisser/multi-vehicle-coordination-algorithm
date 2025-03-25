@@ -199,7 +199,7 @@ class ROSMPCPlanner:
                 )
 
             # Set parameters for all k
-            for k in range(self._N + 1):
+            for k in range(self._N):
 
                 # Tuning parameters
                 for weight, value in self._weights.items():

@@ -80,20 +80,24 @@ def default_solver_path(settings):
     return os.path.join(os.getcwd(), f"{solver_name(settings)}")
 
 
-def solver_path(settings):
-    return os.path.join(get_solver_package_path(), f"{solver_name(settings)}")
-
+def solver_path(settings_or_name):
+    if isinstance(settings_or_name, str):
+        solver_name_value = settings_or_name
+    else:
+        solver_name_value = solver_name(settings_or_name)
+    return os.path.join(acados_solver_path(), solver_name_value)
 
 def default_acados_solver_path(settings):
     return os.path.join(get_package_path("solver_generator"), f"acados")
 
 
-def acados_solver_path(settings):
+def acados_solver_path():
     return os.path.join(get_solver_package_path(), f"acados")
 
 
 def parameter_map_path(parameter_map_name="parameter_map"):
     return os.path.join(save_config_path(), f"{parameter_map_name}.yaml")
+
 
 def model_map_path(model_map_name="model_map"):
     return os.path.join(save_config_path(), f"{model_map_name}.yaml")
@@ -109,6 +113,7 @@ def generated_src_file(settings):
 
 def planner_path():
     return get_package_path("dmpc_planner_decentralised")
+
 
 def rqt_config_path():
     return os.path.join(get_package_path("dmpc_planner"), "cfg/")

@@ -4,18 +4,19 @@ N: 10
 integrator_step: 0.3
 n_discs: 0
 track_choice: "t_junction" # "t_junction", "merging"
-positive_track: false
-add_slack: true
+
+add_slack: false
+slack_value: 1.0e1
 
 number_of_robots: 2
 robot_1:
-  start_x: -5.0
+  start_x: -6.0
   start_y: 0.0
   start_theta: 0.0  # in radians
 robot_2:
-  start_x: 1.0
-  start_y: -4.0
-  start_theta: 0.5  # radians
+  start_x: -5.0
+  start_y: -2.0
+  start_theta: 0.0  # radians
 
 verbose: false
 debug_visuals: false

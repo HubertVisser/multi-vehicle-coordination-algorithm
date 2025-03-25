@@ -15,126 +15,136 @@ import matplotlib.pyplot as plt
 from util.files import load_settings
 
 
-def raw_track(choice, start_x, start_y, positive_track):
-    n_checkpoints = 10
-    if choice == 't_junction' and len(start_x) == 2:
-        
-        # Straight segment from (1, -4) to (1, -2)
-        checkpoints_x_straight1 = np.ones(4) * start_x[1]
-        checkpoints_y_straight1 = np.linspace(start_y[1], -2, 4)
+class PathGenerator:
+    def __init__(self):
+        self.settings = load_settings(package="dmpc_planner_decentralised")
+        self.track_choice = self.settings["track_choice"]
+        self.num_robot = self.settings["number_of_robots"]
 
-        # 90 degree turn with radius 3 from (1, -2) to (-2, 1)
-        theta = np.linspace(0, 0.5*np.pi, 8)
-        checkpoints_x_turn = -2 + 3 * np.cos(theta)
-        checkpoints_y_turn = -2 + 3 * np.sin(theta)
+        self.n_pts = 10
+        self.start_x = []
+        self.start_y = []
+        self.paths = []
 
-        # Straight segment from (-2, 1) to (-4, 1)
-        checkpoints_x_straight2 = np.linspace(-2, -6, 4)
-        checkpoints_y_straight2 = np.ones(4) 
-        
-        
-        # Concatenate the segments
-        checkpoints_x_2 = np.concatenate((checkpoints_x_straight1[:-1], checkpoints_x_turn[:-1], checkpoints_x_straight2))
-        checkpoints_y_2 = np.concatenate((checkpoints_y_straight1[:-1], checkpoints_y_turn[:-1], checkpoints_y_straight2))
-        
-        checkpoints_x_1 = np.linspace(start_x[0], 7, n_checkpoints)
-        checkpoints_y_1 = np.ones(n_checkpoints) * start_y[0]
+        self.load_start_positions()
 
-        if positive_track:
-            return checkpoints_x_1 + 5, checkpoints_y_1 + 5, checkpoints_x_2 + 5, checkpoints_y_2 + 5
-        else:
-            return checkpoints_x_1, checkpoints_y_1, checkpoints_x_2, checkpoints_y_2
-    
-    elif choice == 'straight_line' or len(start_x) == 1:
-        checkpoints_x_1 = np.linspace(start_x[0], 5, n_checkpoints)
-        checkpoints_y_1 = np.zeros(n_checkpoints)
-        
-        return checkpoints_x_1, checkpoints_y_1
+        self.path_pub_1 = rospy.Publisher("roadmap/reference_1", Path, queue_size=1)
+        self.path_pub_2 = rospy.Publisher("roadmap/reference_2", Path, queue_size=1)
+        rospy.Timer(rospy.Duration(0.5), self.publish_path)
+        rospy.spin()
 
 
-def generate_path_msg():
-        settings = load_settings(package="dmpc_planner_centralised")
-        track_choice = settings["track_choice"]
-        num_robot = settings["number_of_robots"]
-        positive_track = settings["positive_track"]
-        start_x = []
-        start_y = []
-        paths = []
-        
-        if track_choice=='t_junction' and num_robot==2:
-            start_x.extend([settings[f"robot_1"]["start_x"], settings[f"robot_2"]["start_x"]])
-            start_y.extend([settings[f"robot_1"]["start_y"], settings[f"robot_2"]["start_y"]])
-                
-            checkpoints_x_1, checkpoints_y_1, checkpoints_x_2, checkpoints_y_2 = raw_track(track_choice, start_x, start_y, positive_track)
+    def load_start_positions(self):
+        for i in range(self.num_robot):
+            self.start_x.append(self.settings[f"robot_{i+1}"]["start_x"])
+            self.start_y.append(self.settings[f"robot_{i+1}"]["start_y"])
 
-            path_1 = Path()
-            path_1.header.frame_id = "map"
-            path_1.header.stamp = rospy.Time.now()
 
-            for x, y in zip(checkpoints_x_1, checkpoints_y_1):
-                pose = PoseStamped()
-                pose.header.frame_id = "map"
-                pose.header.stamp = rospy.Time.now()
-                pose.pose.position.x = float(x)
-                pose.pose.position.y = float(y)
-                pose.pose.position.z = 0
-                pose.pose.orientation.w = 1.0  # No rotation
-                path_1.poses.append(pose)
-            paths.append(path_1)
+    def generate_t_junction_track(self):
+        pts_x_strt1 = np.ones(4) * self.start_x[1]
+        pts_y_strt1 = np.linspace(self.start_y[1], -2, 4)
 
-            path_2 = Path()
-            path_2.header.frame_id = "map"
-            path_2.header.stamp = rospy.Time.now()
+        theta = np.linspace(0, 0.5 * np.pi, 8)
+        pts_x_turn = -3 + 3 * np.cos(theta)
+        pts_y_turn = -2 + 3 * np.sin(theta)
 
-            for x, y in zip(checkpoints_x_2, checkpoints_y_2):
-                pose = PoseStamped()
-                pose.header.frame_id = "map"
-                pose.header.stamp = rospy.Time.now()
-                pose.pose.position.x = float(x)
-                pose.pose.position.y = float(y)
-                pose.pose.position.z = 0
-                pose.pose.orientation.w = 1.0  # No rotation
-                path_2.poses.append(pose)
-            paths.append(path_2)
+        pts_x_strt2 = np.linspace(-3, -6, 4)
+        pts_y_strt2 = np.ones(4)
 
-        elif track_choice=='straight_line' or num_robot==1:
-            start_x.append(settings[f"robot_1"]["start_x"])
-            start_y.append(settings[f"robot_1"]["start_y"])
-                
-            checkpoints_x_1, checkpoints_y_1 = raw_track(track_choice, start_x, start_y, positive_track)
+        pts_x_2 = np.concatenate((pts_x_strt1[:-1], pts_x_turn[:-1], pts_x_strt2))
+        pts_y_2 = np.concatenate((pts_y_strt1[:-1], pts_y_turn[:-1], pts_y_strt2))
 
-            path_1 = Path()
-            path_1.header.frame_id = "map"
-            path_1.header.stamp = rospy.Time.now()
+        pts_x_1, pts_y_1 = self.generate_strt_line_track()
 
-            for x, y in zip(checkpoints_x_1, checkpoints_y_1):
-                pose = PoseStamped()
-                pose.header.frame_id = "map"
-                pose.header.stamp = rospy.Time.now()
-                pose.pose.position.x = x
-                pose.pose.position.y = y
-                pose.pose.position.z = 0
-                pose.pose.orientation.w = 1.0  # No rotation
-                path_1.poses.append(pose)
-            paths.append(path_1)
-    
-        return paths
+        return pts_x_1, pts_y_1, pts_x_2, pts_y_2
 
-def publish_path(event):
-    paths = generate_path_msg()
-    path_pub_1.publish(paths[0])
-    if len(paths) > 1: path_pub_2.publish(paths[1])
-    rospy.loginfo("Published paths")
+
+    def generate_strt_line_track(self):
+        pts_x_1 = np.linspace(self.start_x[0], 5, self.n_pts)
+        pts_y_1 = np.ones(self.n_pts) * self.start_y[0]
+
+        return pts_x_1, pts_y_1
+
+
+    def generate_merging_track(self):
+        pts_x_strt1 = np.linspace(self.start_x[1], -3, 4)
+        pts_y_strt1 = np.ones(4) * self.start_y[1]
+
+        # theta = np.linspace(0, 0.5 * np.pi, 8)
+        # pts_x_turn = -3 + 3 * np.cos(theta)
+        # pts_y_turn = -2 + 3 * np.sin(theta)
+
+        pts_x_strt2 = np.linspace(-1, 6, 4)
+        pts_y_strt2 = np.ones(4) * 0
+
+        pts_x_2 = np.concatenate((pts_x_strt1, pts_x_strt2))
+        pts_y_2 = np.concatenate((pts_y_strt1, pts_y_strt2))
+
+        pts_x_1, pts_y_1 = self.generate_strt_line_track()
+
+        return pts_x_1, pts_y_1, pts_x_2, pts_y_2
+
+    def generate_path_msg(self):
+        if self.track_choice == 't_junction':
+            assert self.num_robot == 2, "T-junction track only supports 2 robots"
+            pts_x_1, pts_y_1, pts_x_2, pts_y_2 = self.generate_t_junction_track()
+            path_1 = self.create_path(pts_x_1, pts_y_1)
+            self.paths.append(path_1)
+
+            path_2 = self.create_path(pts_x_2, pts_y_2)
+            self.paths.append(path_2)
+
+        elif self.track_choice == 'staight_line':
+            pts_x_1, pts_y_1 = self.generate_strt_line_track()
+
+            path_1 = self.create_path(pts_x_1, pts_y_1)
+            self.paths.append(path_1)
+
+        elif self.track_choice == 'merging':
+            assert self.num_robot == 2, "Merging track only supports 2 robots"
+
+            pts_x_1, pts_y_1, pts_x_2, pts_y_2 = self.generate_merging_track()
+            
+            path_1 = self.create_path(pts_x_1, pts_y_1)
+            self.paths.append(path_1)
+
+            path_2 = self.create_path(pts_x_2, pts_y_2)
+            self.paths.append(path_2)
+        else: 
+            raise ValueError(f"Invalid track choice: {self.track_choice}")
+
+        return self.paths
+
+    def create_path(self, pts_x, pts_y):
+        path = Path()
+        path.header.frame_id = "map"
+        path.header.stamp = rospy.Time.now()
+
+        for x, y in zip(pts_x, pts_y):
+            pose = PoseStamped()
+            pose.header.frame_id = "map"
+            pose.header.stamp = rospy.Time.now()
+            pose.pose.position.x = float(x)
+            pose.pose.position.y = float(y)
+            pose.pose.position.z = 0
+            pose.pose.orientation.w = 1.0  # No rotation
+            path.poses.append(pose)
+
+        return path
+
+    def publish_path(self, event):
+        paths = self.generate_path_msg()
+        self.path_pub_1.publish(paths[0])
+        if len(paths) > 1:
+            self.path_pub_2.publish(paths[1])
+        rospy.loginfo("Published paths")
 
 if __name__ == '__main__':
     rospy.init_node('path_publisher')
-    path_pub_1 = rospy.Publisher("roadmap/reference_1", Path, queue_size=1)
-    path_pub_2 = rospy.Publisher("roadmap/reference_2", Path, queue_size=1)
-    rospy.Timer(rospy.Duration(0.5), publish_path)  
-    rospy.spin()
+    path_generator = PathGenerator()
 
     # choice = 't_junction'
-    # start_x = [-4, 1]
+    # start_x = [-4, 0]
     # start_y = [0, -4]
     # raw_track = raw_track(choice, start_x, start_y, positive_track=False)
     # plt.plot(raw_track[0], raw_track[1])

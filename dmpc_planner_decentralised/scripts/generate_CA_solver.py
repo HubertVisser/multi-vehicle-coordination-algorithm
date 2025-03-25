@@ -61,7 +61,6 @@ def generate(idx):
     settings = load_settings(package="dmpc_planner_decentralised")
     settings["solver_name"] = f"solver_ca_{idx}"
     settings["idx"] = idx
-    # print(settings)
 
     model, modules = configuration_basic(settings, idx)
 

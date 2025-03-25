@@ -35,7 +35,6 @@ class MPCPlanner:
         self._dart_simulator = self._settings["dart_simulator"]
         self._idx = idx
 
-        self._skip_solver_generation = rospy.get_param("~skip_solver_generation", False)
         
         self.init_nmpc_solver()
         self.init_ca_solver()
@@ -52,16 +51,10 @@ class MPCPlanner:
         if hasattr(self, "_mpc_x_plan"):
             del self._mpc_x_plan, self._mpc_u_plan
 
+        self._solver_nmpc, _ = generate_NMPC_solver.generate(self._idx)
+        print_success(f"NMPC {self._idx} solver generated")
+
         self._solver_settings_nmpc = load_settings(f"solver_settings_nmpc_{self._idx}", package="mpc_planner_solver")
-        if self._skip_solver_generation:
-            solver_file = solver_path(f"nmpc_solver_{self._idx}.json")
-            self._solver_nmpc = AcadosOcpSolver(json_file=solver_file, build=False, generate=False)
-            print_success(f"NMPC {self._idx} solver loaded from file")
-        else:
-            self._solver_nmpc, _ = generate_NMPC_solver.generate(self._idx)
-            print_success(f"NMPC {self._idx} solver generated")
-
-
         self._model_nmpc = AcadosRealTimeModel(self._settings, self._solver_settings_nmpc, model_map_name=f"model_map_nmpc_{self._idx}", package="mpc_planner_solver")
         self._dynamic_model = BicycleModel2ndOrder(self._number_of_robots)
         self.reference_velocity = self._settings["weights"]["reference_velocity"]
@@ -79,14 +72,8 @@ class MPCPlanner:
         if hasattr(self, "_solver_ca"):
             del self._solver_ca, self._solver_settings_ca
 
-        if self._skip_solver_generation:
-            solver_file = solver_path(f"nmpc_solver_{self._idx}.json")
-            self._solver_ca = AcadosOcpSolver.create_from_file(solver_file)
-            print_success(f"CA {self._idx} solver loaded from file")
-        else:
-            self._solver_ca, _ = generate_NMPC_solver.generate(self._idx)
-            print_success(f"CA {self._idx} solver generated")
-
+        self._solver_ca, _ = generate_CA_solver.generate(self._idx)
+        print_success(f"CA {self._idx} solver generated")
 
         self._solver_settings_ca = load_settings(f"solver_settings_ca_{self._idx}", package="mpc_planner_solver")
         self._model_ca = AcadosRealTimeModel(self._settings, self._solver_settings_ca, model_map_name=f"model_map_ca_{self._idx}", package="mpc_planner_solver")

@@ -8,7 +8,7 @@
   
   <arg name="scenario" default="corridor"/>
   <arg name="experiment" default="none"/>
-  <param name="skip_solver_generation" value="false"/>
+  <arg name="skip_solver_generation" default="false"/>
 
   <!-- Add the scenario and experiment as rosparameters -->
   <rosparam param="scenario" subst_value="true">$(arg scenario)</rosparam>

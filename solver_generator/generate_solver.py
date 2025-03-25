@@ -1,4 +1,5 @@
 import sys, os, shutil
+import rospy
 
 import numpy as np
 import casadi as cd
@@ -57,7 +58,7 @@ def create_acados_model(settings, model, modules):
 
 def generate_solver(modules, model, settings=None):
 
-    skip_solver_generation = len(sys.argv) > 1 and sys.argv[1].lower() == "false"
+    skip_solver_generation = rospy.get_param("~skip_solver_generation", False)
 
     if settings is None:
         settings = load_settings()
@@ -90,6 +91,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.cost.cost_type_e = "EXTERNAL"
 
     # Number of inputs and states
+    solver_name = model_acados.name
     nx = model.nx
     nlam = model.nlam
     ns = model.ns
@@ -200,18 +202,23 @@ def generate_solver(modules, model, settings=None):
     if skip_solver_generation:
         print_header("Output")
         print_warning("Solver generation was disabled by the command line option. Skipped.", no_tab=True)
-        return None, None
+
+        solver_file = os.path.join(solver_path(solver_name), solver_name + ".json")
+        solver = AcadosOcpSolver(acados_ocp=ocp, json_file=solver_file, build=False, generate=False)
+
+        return solver, None
+    
     else:
         print_header("Generating solver")
         solver = AcadosOcpSolver(acados_ocp=ocp, json_file=json_file_name)
 
-        simulator = AcadosSimSolver(ocp, json_file=json_file_name)
+        # simulator = AcadosSimSolver(ocp, json_file=json_file_name)
         print_header("Output")
 
-        if os.path.exists(os.path.join(acados_solver_path(settings), f"{model_acados.name}")) and os.path.isdir(os.path.join(acados_solver_path(settings), f"{model_acados.name}")):
-            shutil.rmtree(os.path.join(acados_solver_path(settings), f"{model_acados.name}"))
+        if os.path.exists(os.path.join(acados_solver_path(), f"{model_acados.name}")) and os.path.isdir(os.path.join(acados_solver_path(), f"{model_acados.name}")):
+            shutil.rmtree(os.path.join(acados_solver_path(), f"{model_acados.name}"))
 
-        shutil.move(default_acados_solver_path(settings), os.path.join(acados_solver_path(settings), f"{model_acados.name}"))  # Move the solver to this directory
+        shutil.move(os.path.join(default_acados_solver_path(settings), f"{model_acados.name}"), os.path.join(acados_solver_path(), f"{model_acados.name}"))  # Move the solver to this directory
 
     settings["params"].save_map(settings)
     model.save_map()
@@ -239,7 +246,7 @@ def generate_solver(modules, model, settings=None):
     print_path("Solver", solver_path(settings), tab=True, end="")
     print_success(" -> generated")
 
-    return solver, simulator
+    return solver, None
 
 
 if __name__ == "__main__":

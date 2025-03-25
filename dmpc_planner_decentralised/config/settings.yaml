@@ -4,7 +4,7 @@ N: 20
 integrator_step: 0.3
 track_choice: "merging" # 'straight_line', sinus, "t_junction", "merging"
 
-add_slack: true
+add_slack: false
 slack_value: 1.0e1
 
 number_of_robots: 2

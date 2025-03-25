@@ -1,7 +1,10 @@
 <?xml version="1.0"?>
 
 <launch>
+  <arg name="skip_solver_generation" default="false"/>
 
-  <node name="dmpc_planner_node" pkg="dmpc_planner_centralised" type="jetracersimulator_mpc.py" output="screen"/>
+  <node name="dmpc_planner_node" pkg="dmpc_planner_centralised" type="jetracersimulator_mpc.py" output="screen">
+    <param name="skip_solver_generation" value="$(arg skip_solver_generation)"/>
+  </node>
 
 </launch>  

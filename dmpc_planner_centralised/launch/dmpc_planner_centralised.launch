@@ -5,6 +5,7 @@
   <arg name="gui" default="false" />
   <arg name="project_name" default="" />
   <arg name="silent" default="false"/>
+  <arg name="skip_solver_generation" default="false"/>
   
   <arg name="scenario" default="corridor"/>
   <arg name="experiment" default="none"/>
@@ -19,7 +20,9 @@
 
   <node name="path_node" pkg="dmpc_planner_centralised" type="path_generator.py" output="log"/> 
   <node name="dmpc_planner_node" pkg="dmpc_planner_centralised" type="run_dmpc.sh" output="log" if="$(arg silent)"/>
-  <node name="dmpc_planner_node" pkg="dmpc_planner_centralised" type="jetracersimulator_mpc.py" output="screen" unless="$(arg silent)"/>
+  <node name="dmpc_planner_node" pkg="dmpc_planner_centralised" type="jetracersimulator_mpc.py" output="screen" unless="$(arg silent)">
+    <param name="skip_solver_generation" value="$(arg skip_solver_generation)"/>
+  </node>
 
   <!-- <include file="$(find mpc_planner_standalone)/launch/decomp_node.launch"/> -->
 
