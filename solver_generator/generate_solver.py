@@ -118,9 +118,10 @@ def generate_solver(modules, model, settings=None):
 
     # Slack for constraints
     add_slack = settings["add_slack"]
+    slack_value = settings["slack_value"]
     if add_slack and 'nmpc' in settings["solver_name"]:
         add_constraint_slack = True
-        value = 1.0e0
+        value = float(slack_value)
 
         ns = nx + nu 
         if add_constraint_slack:
@@ -184,7 +185,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.qp_solver_iter_max = 100 # default = 50
+    ocp.solver_options.qp_solver_iter_max = 50 # default = 50
     ocp.solver_options.qp_solver_warm_start = 1  # cold start / 1 = warm, 2 = warm primal and dual
 
     # code generation options

@@ -189,8 +189,9 @@ class ROSMPCPlanner:
             self._save_lam.append(lam)
             self._save_s.append(s)
         
-        self.publish_throttle(output, self._mpc_feasible) if self._dart_simulator else None
-        self.publish_steering(output, self._mpc_feasible) if self._dart_simulator else None
+        control_output = self._outputs_save[-1]
+        self.publish_throttle(control_output, self._mpc_feasible) if self._dart_simulator else None
+        self.publish_steering(control_output, self._mpc_feasible) if self._dart_simulator else None
         
         self.visualize()
             
@@ -369,7 +370,7 @@ class ROSMPCPlanner:
                     self._uinit[map_value - self._nx_ca : (map_value - self._nx_ca) + 2] = s
                     
                         
-    def publish_throttle(self, output, exit_flag):
+    def publish_throttle(self, control, exit_flag):
         throttle = Float32()
         if not self._mpc_feasible or not self._enable_output:
             if not self._mpc_feasible:
@@ -379,16 +380,16 @@ class ROSMPCPlanner:
                 rospy.logwarn_throttle(1, "Output is disabled. Sending zero velocity!")
                 throttle.data = 0.0
         else:
-            throttle.data = output["throttle"]
+            throttle.data = control[0]
             rospy.loginfo_throttle(1000, "MPC is driving")
             self._th_pub.publish(throttle)
     
-    def publish_steering(self, output, exit_flag):
+    def publish_steering(self, control, exit_flag):
         steering = Float32()
         if not self._mpc_feasible or not self._enable_output:
             steering.data = 0.0
         else:
-            steering.data = output["steering"]
+            steering.data = control[1]
             self._st_pub.publish(steering)
 
     def publish_robot_state(self):
@@ -479,19 +480,24 @@ class ROSMPCPlanner:
 
         trajectory_i = getattr(self, f'_trajectory_{self._idx}')
         if not np.all(trajectory_i == 0) and self._mpc_feasible:
-            polytope = self._visuals.get_polytope()
-            polytope.set_color(80, alpha=0.3)
-            polytope.set_scale(0.05)
-
             length = self._settings["polytopic"]["length"]
             width = self._settings["polytopic"]["width"]
 
+            box = self._visuals.get_cube()
+            box.set_color(80, alpha=0.3)
+            box.set_scale(width, length, 0.05)
+            
+            pose = Pose()
             for k in range(1, self._N):
-                x = self._planner.get_model_nmpc().get(k, f"x_{self._idx}")
-                y = self._planner.get_model_nmpc().get(k, f"y_{self._idx}")
+                pose.position.x = self._planner.get_model_nmpc().get(k, f"x_{self._idx}")
+                pose.position.y = self._planner.get_model_nmpc().get(k, f"y_{self._idx}")
                 theta = self._planner.get_model_nmpc().get(k, f"theta_{self._idx}")
-                pos = [x,y]
-                polytope.add_polytope(get_A(theta), get_b(pos, theta, length, width))
+                quaternion = yaw_to_quaternion(theta)
+                pose.orientation.x = quaternion[0]
+                pose.orientation.y = quaternion[1]
+                pose.orientation.z = quaternion[2]
+                pose.orientation.w = quaternion[3]
+                box.add_marker(deepcopy(pose))
         self._visuals.publish()
     
     # Callback functions

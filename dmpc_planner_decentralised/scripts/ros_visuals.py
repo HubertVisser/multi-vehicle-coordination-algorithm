@@ -135,11 +135,13 @@ class ROSMarker:
     def add_marker(self, pose):
         self.marker_.id = self.ros_marker_publisher_.get_id_()
         self.marker_.pose = pose
-        self.marker_.pose.orientation.x = 0
-        self.marker_.pose.orientation.y = 0
-        self.marker_.pose.orientation.z = 0
-        self.marker_.pose.orientation.w = 1
+        if self.type_ is not Marker.CUBE:
+            self.marker_.pose.orientation.x = 0
+            self.marker_.pose.orientation.y = 0
+            self.marker_.pose.orientation.z = 0
+            self.marker_.pose.orientation.w = 1 
         self.ros_marker_publisher_.add_marker_(deepcopy(self.marker_)) # Note the deepcopy
+
 
 class ROSLineMarker:
 

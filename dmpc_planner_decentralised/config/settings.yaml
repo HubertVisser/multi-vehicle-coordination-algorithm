@@ -2,9 +2,10 @@ name: "Jetracer_decentralised"
 decentralised: true
 N: 20
 integrator_step: 0.3
-n_discs: 0
 track_choice: "merging" # 'straight_line', sinus, "t_junction", "merging"
+
 add_slack: true
+slack_value: 1.0e1
 
 number_of_robots: 2
 robot_1:
@@ -17,7 +18,7 @@ robot_2:
   start_theta: 0.0  # radians
 
 verbose: false
-debug_visuals: false
+debug_visuals: true
 dart_simulator: false
 
 solver_settings:
@@ -43,7 +44,7 @@ weights:
   s_dual: .1
   dmin_objective: .1
   velocity: 0.4
-  reference_velocity: 0.4
+  reference_velocity: 0.5
   lag: 0.6
   contour: 0.6
   terminal_angle: 1.0 #0.0
