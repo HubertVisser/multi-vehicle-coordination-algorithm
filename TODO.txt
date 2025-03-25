@@ -2,21 +2,7 @@ TODO:
 - [ ] Implement the car_number in the settings file
 - [ ] Fix the reset for rqt reconfigure
 - [ ] Fix the tests
+- [x] Build a check in the different robots that only solves CA if all trajectories are received
+- [ ] Option to run without compiling the solvers
+- [ ] Implement the cars to be plotted as polytopic sets
 
---DART:--
-rospy.Subscriber('steering_' + str(car_number), Float32, self.callback_steering)
-rospy.Subscriber('throttle_' + str(car_number), Float32, self.callback_throttle)
-rospy.Subscriber('safety_value', Float32, self.callback_safety)
-self.pub_motion_capture_state = rospy.Publisher('vicon/jetracer' + str(car_number), PoseWithCovarianceStamped, queue_size=10)
-self.pub_sens_input = rospy.Publisher("sensors_and_input_" + str(car_number), Float32MultiArray, queue_size=1)
-# for rviz
-self.pub_rviz_vehicle_visualization = rospy.Publisher('rviz_data_' + str(car_number), PoseStamped, queue_size=10)
-self.vx_publisher = rospy.Publisher('vx_' + str(car_number), Float32, queue_size=10)
-self.vy_publisher = rospy.Publisher('vy_' + str(car_number), Float32, queue_size=10)
-self.omega_publisher = rospy.Publisher('omega_' + str(car_number), Float32, queue_size=10)
-
---DMPC:--
-self._state_sub = rospy.Subscriber("robot_state", PoseStamped, self.state_pose_callback, queue_size=1)
-self._path_sub = rospy.Subscriber("roadmap/reference", Path, lambda msg: self.path_callback(msg), queue_size=1)
-
-Try: not publishing the state from state_pose_callback

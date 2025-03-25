@@ -17,9 +17,10 @@ class ContouringObjective:
         Objective for tracking a 2D reference path with contouring costs (MPCC - Lorenzo Lyons)
     """
 
-    def __init__(self, settings, robot_idx):
+    def __init__(self, settings, robot_idx=0):
         self.idx = robot_idx
         self.num_segments = settings["contouring"]["num_segments"]
+        self.decentralised = settings["decentralised"]
 
     def define_parameters(self, params):
         params.add("contour", add_to_rqt_reconfigure=True)
@@ -41,7 +42,6 @@ class ContouringObjective:
             params.add(f"spline_y{i}_d_{self.idx}", bundle_name=f"spline_y_d_{self.idx}")
 
             params.add(f"spline{i}_start_{self.idx}", bundle_name=f"spline_start_{self.idx}")
-
         return params
 
     def get_value(self, model, params, settings, stage_idx):
@@ -97,7 +97,7 @@ class ContouringObjective:
 
 class ContouringModule(ObjectiveModule):
 
-    def __init__(self, settings, robot_idx):
+    def __init__(self, settings, robot_idx=0):
         super().__init__()
         self.module_name = f"Contouring_{robot_idx}"  # Needs to correspond to the c++ name of the module
         self.import_name = "contouring.h"

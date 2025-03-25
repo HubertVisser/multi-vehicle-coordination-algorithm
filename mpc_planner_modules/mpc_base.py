@@ -68,9 +68,9 @@ class MPCBaseModule(ObjectiveModule):
     Weight states and inputs of an MPC problem
     """
 
-    def __init__(self, settings, robot_idx):
+    def __init__(self, settings):
         super().__init__()
-        self.module_name = f"MPCBaseModule_{robot_idx}"  # Needs to correspond to the c++ name of the module
+        self.module_name = f"MPCBaseModule"  # Needs to correspond to the c++ name of the module
         self.import_name = "mpc_base.h"
         self.description = "Contains input and state penalties with weights that can be tuned in rqt_reconfigure"
 

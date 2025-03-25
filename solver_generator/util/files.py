@@ -56,32 +56,55 @@ def load_test_settings(setting_file_name="settings"):
     return settings
 
 
+def load_model(model_map_name="model_map", package="mpc_planner_solver"):
+    path = os.path.normpath(os.path.join(get_package_path(package), "config", f"{model_map_name}.yaml"))
+    print(path)
+    print_path("Model_map", path, end="")
+    with open(path, "r") as stream:
+        model_map = yaml.safe_load(stream)
+    print_success(f" -> loaded")
+    return model_map
+
+
+def load_parameters(parameter_map_name="parameter_map", package="mpc_planner_solver"):
+    path = os.path.normpath(os.path.join(get_package_path(package), "config", f"{parameter_map_name}.yaml"))
+    print(path)
+    print_path("Parameters", path, end="")
+    with open(path, "r") as stream:
+        parameters = yaml.safe_load(stream)
+    print_success(f" -> loaded")
+    return parameters
+
+
 def default_solver_path(settings):
     return os.path.join(os.getcwd(), f"{solver_name(settings)}")
 
 
-def solver_path(settings):
-    return os.path.join(get_solver_package_path(), f"{solver_name(settings)}")
-
+def solver_path(settings_or_name):
+    if isinstance(settings_or_name, str):
+        solver_name_value = settings_or_name
+    else:
+        solver_name_value = solver_name(settings_or_name)
+    return os.path.join(acados_solver_path(), solver_name_value)
 
 def default_acados_solver_path(settings):
     return os.path.join(get_package_path("solver_generator"), f"acados")
 
 
-def acados_solver_path(settings):
+def acados_solver_path():
     return os.path.join(get_solver_package_path(), f"acados")
 
 
-def parameter_map_path():
-    return os.path.join(save_config_path(), f"parameter_map.yaml")
+def parameter_map_path(parameter_map_name="parameter_map"):
+    return os.path.join(save_config_path(), f"{parameter_map_name}.yaml")
 
 
-def model_map_path():
-    return os.path.join(save_config_path(), f"model_map.yaml")
+def model_map_path(model_map_name="model_map"):
+    return os.path.join(save_config_path(), f"{model_map_name}.yaml")
 
 
-def solver_settings_path():
-    return os.path.join(save_config_path(), f"solver_settings.yaml")
+def solver_settings_path(solver_settings_name="solver_settings"):
+    return os.path.join(save_config_path(), f"{solver_settings_name}.yaml")
 
 
 def generated_src_file(settings):
@@ -89,7 +112,8 @@ def generated_src_file(settings):
 
 
 def planner_path():
-    return get_package_path("dmpc_planner")
+    return get_package_path("dmpc_planner_decentralised")
+
 
 def rqt_config_path():
     return os.path.join(get_package_path("dmpc_planner"), "cfg/")
@@ -111,7 +135,7 @@ def generated_parameter_include_file(settings):
 
 
 def solver_name(settings):
-    return "Solver"
+    return settings.get("solver_name", "Solver")
 
 
 def write_to_yaml(filename, data):

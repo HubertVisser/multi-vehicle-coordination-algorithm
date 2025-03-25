@@ -7,7 +7,7 @@ import math
 
 sys.path.append(os.path.join(sys.path[0], "..", "solver_generator"))
 
-from util.math import rotation_matrix, haar_difference_without_abs
+from util.math import rotation_matrix_cd, haar_difference_without_abs
 from control_modules import ConstraintModule
 
 from spline import Spline2D, Spline

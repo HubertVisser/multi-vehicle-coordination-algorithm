@@ -1,0 +1,58 @@
+name: "Jetracer_decentralised"
+decentralised: true
+N: 20
+integrator_step: 0.3
+track_choice: "merging" # 'straight_line', sinus, "t_junction", "merging"
+
+add_slack: false
+slack_value: 1.0e1
+
+number_of_robots: 2
+robot_1:
+  start_x: -6.0
+  start_y: 0.0
+  start_theta: 0.0  # in radians
+robot_2:
+  start_x: -5.0
+  start_y: -2.0
+  start_theta: 0.0  # radians
+
+verbose: false
+debug_visuals: true
+dart_simulator: false
+
+solver_settings:
+  iterations: 2 #2 # 1
+  solver_type: SQP_RTI # SQP_RTI (default) or SQP
+
+control_frequency: 10.0
+braking_acceleration: 1.0
+
+polytopic:
+  d_min: 0.1
+  length: .5
+  width: .5
+
+contouring:
+  num_segments: 5
+  use_huber: false
+
+weights:
+  throttle: .1
+  steering: .1
+  lambda: .1
+  s_dual: .1
+  dmin_objective: .1
+  velocity: 0.4
+  reference_velocity: 0.5
+  lag: 0.6
+  contour: 0.6
+  terminal_angle: 1.0 #0.0
+  terminal_contour: 5.0 # 0.0
+  terminal_lag: 1.0 # 0.0
+
+
+
+
+
+

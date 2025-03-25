@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <arg name="gui" default="false" />
+  <arg name="project_name" default="" />
+  <arg name="silent" default="false"/>
+  
+  <arg name="scenario" default="corridor"/>
+  <arg name="experiment" default="none"/>
+  <arg name="skip_solver_generation" default="false"/>
+
+  <!-- Add the scenario and experiment as rosparameters -->
+  <rosparam param="scenario" subst_value="true">$(arg scenario)</rosparam>
+  <rosparam param="experiment" subst_value="true">$(arg experiment)</rosparam>
+
+  <!-- <include file="$(find jackal_socialsim)/launch/$(arg scenario).launch"/> -->
+  <node name="path_node" pkg="dmpc_planner_decentralised" type="path_generator.py" output="log"/> 
+
+  <node name="dmpc_planner_node" pkg="dmpc_planner_decentralised" type="run_dmpc.sh" output="log" if="$(arg silent)"/>
+
+  <node name="dmpc_planner_node" pkg="dmpc_planner_decentralised" type="main.py" output="screen" unless="$(arg silent)">
+    <param name="skip_solver_generation" value="$(arg skip_solver_generation)"/>
+  </node>
+
+  <!-- <include file="$(find mpc_planner_standalone)/launch/decomp_node.launch"/> -->
+
+
+  <!-- <node pkg="pedestrian_simulator" type="collision_checker_node" name="collision_checker_node" output="screen"/> -->
+
+  <!-- <include file="$(find jackal_gazebo)/launch/jackal_world.launch">
+    <arg name="world_name" value="$(find jackal_gazebo)/worlds/jackal_race.world" />
+    <arg name="gui" value="$(arg gui)" />
+  </include> -->
+
+  <!-- <include file="$(find mobile_robot_state_publisher)/launch/mobile_robot_publisher.launch"/> -->
+
+  <!-- Include dart_simulator.launch -->
+  <include file="$(find dart_simulator_pkg)/launch/dart_simulator_no_visuals.launch">
+  </include>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find dmpc_planner_decentralised)/rviz/simulator.rviz" output="screen"/>
+
+  <!-- <node pkg="rqt_reconfigure" type="rqt_reconfigure" name="rqt_reconfigure" output="log"/> -->
+
+  <!-- For Rviz camera stream -->
+  <group ns="camera1">
+  <node pkg="tf" type="static_transform_publisher" name="camera_broadcaster"
+    args="0.115 0.0 0.3 0.5 -0.5 0.5 -0.5 base_link camera1 1" />
+  <node name="camera_info" pkg="rostopic" type="rostopic"
+      args="pub camera_info sensor_msgs/CameraInfo
+     '{header: {seq: 0, stamp: {secs: 0, nsecs: 0}, frame_id: 'camera1'},
+      height: 480, width: 640, distortion_model: 'plumb_bob',
+      D: [0],
+      K: [500.0, 0.0, 320, 0.0, 500.0, 240.0, 0.0, 0.0, 1.0],
+      R: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+      P: [500.0, 0.0, 320, 0.0, 0.0, 500, 240, 0.0, 0.0, 0.0, 1.0, 0.0],
+      binning_x: 0, binning_y: 0,
+      roi: {x_offset: 0, y_offset: 0, height: 480, width: 640, do_rectify: false}}' -r 2"
+      output="screen"/>
+  </group>
+  <group ns="rviz1/camera1/image">
+  <rosparam param="disable_pub_plugins">
+    - 'image_transport/compressed'
+    - 'image_transport/compressedDepth'
+    - 'image_transport/theora'
+  </rosparam>
+  </group>
+
+</launch>  
