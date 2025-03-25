@@ -1,6 +1,6 @@
 import os, sys
-sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
-sys.path.append(os.path.join(sys.path[0], "..", "..", "mpc_planner_modules"))
+sys.path.append(os.path.join(sys.path[0], "..", "..", "..", "solver_generator"))
+sys.path.append(os.path.join(sys.path[0], "..", "..", "..", "mpc_planner_modules"))
 
 import numpy as np
 import casadi as cd

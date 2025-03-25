@@ -46,7 +46,7 @@ def load_settings(setting_file_name="settings", package=None):
     print_success(f" -> loaded")
     return settings
 
-
+# Not working and not used
 def load_test_settings(setting_file_name="settings"):
     path = f"{get_package_path('dmpc_planner')}/config/{setting_file_name}.yaml"
     print_path("Settings", path, end="")

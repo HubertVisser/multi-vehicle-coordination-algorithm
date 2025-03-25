@@ -58,7 +58,10 @@ def create_acados_model(settings, model, modules):
 
 def generate_solver(modules, model, settings=None):
 
-    skip_solver_generation = rospy.get_param("~skip_solver_generation", False)
+    if rospy.has_param("~skip_solver_generation"):
+        skip_solver_generation = rospy.get_param("~skip_solver_generation", False)
+    else:
+        skip_solver_generation = False
 
     if settings is None:
         settings = load_settings()
