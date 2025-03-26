@@ -12,7 +12,7 @@ slack_value: 1.0e0
 number_of_robots: 2
 robot_1:
   start_x: -6.0
-  start_y: 3.0
+  start_y: 0.0
   start_theta: 0.0  # in radians
 robot_2:
   start_x: -5.0
