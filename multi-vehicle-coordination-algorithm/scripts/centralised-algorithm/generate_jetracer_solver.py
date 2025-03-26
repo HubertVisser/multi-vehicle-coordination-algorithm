@@ -61,9 +61,8 @@ def configuration_basic(settings):
 
 
 def generate():
-    settings = load_settings(package="dmpc_planner_centralised")
-    print(settings)
-
+    settings = load_settings(package="multi-vehicle-coordination-algorithm")
+    settings["solver_name"] = 'solver_centralised'
     model, modules = configuration_basic(settings)
 
     solver, simulator = generate_solver(modules, model, settings)

@@ -34,9 +34,9 @@ class PolytopicSjdualConstraints:
         self.length = settings["polytopic"]["length"]
         self.width = settings["polytopic"]["width"]
         self.number_of_robots = settings["number_of_robots"]
-        self.decentralised = settings["decentralised"]
+        self.scheme = settings["scheme"]
         self.idx_i = idx_i
-        self.n_constraints = (self.number_of_robots - self.idx_i) * 2 if self.decentralised == False else (self.number_of_robots - 1) * 2
+        self.n_constraints = (self.number_of_robots - self.idx_i) * 2 if self.scheme == 'centralised' else (self.number_of_robots - 1) * 2
         self.nh = self.n_constraints
         self.use_slack = use_slack
         self.solver_name = settings.get("solver_name", None)
@@ -57,7 +57,7 @@ class PolytopicSjdualConstraints:
         return upper_bound
 
     def get_theta_j(self, model, params, idx_j):
-        if self.decentralised and self.solver_name.startswith("solver_ca"):
+        if self.scheme == 'distributed' and self.solver_name.startswith("solver_ca"):
             return params.get(f"theta_{idx_j}")
         return model.get(f"theta_{idx_j}")
     
@@ -79,7 +79,7 @@ class PolytopicSjdualConstraints:
         constraints = []
 
         # Constraints from all neighbouring robots (j) to the ego robot (i)
-        start_idx = 1 if self.decentralised else self.idx_i
+        start_idx = 1 if self.scheme == 'distributed' else self.idx_i
         for j in range(start_idx, self.number_of_robots+1): 
             if j != self.idx_i:
 

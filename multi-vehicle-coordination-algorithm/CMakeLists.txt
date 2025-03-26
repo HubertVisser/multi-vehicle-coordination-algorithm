@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(dmpc_planner_decentralised)
+project(multi-vehicle-coordination-algorithm)
 
 find_package(catkin REQUIRED COMPONENTS
   rospy
@@ -16,7 +16,8 @@ include_directories(
 )
 
 catkin_install_python(PROGRAMS 
-  scripts/main.py
+  scripts/centralised-algorithm/main_centralised.py
+  scripts/distributed-algorithm/main_distributed.py
   scripts/path_generator.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

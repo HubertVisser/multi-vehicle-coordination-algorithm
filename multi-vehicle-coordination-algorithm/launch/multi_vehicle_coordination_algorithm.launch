@@ -1,14 +1,15 @@
 <?xml version="1.0"?>
 
 <launch>
-
+  <!-- Load the settings YAML file -->
+  <rosparam file="$(find multi-vehicle-coordination-algorithm)/config/settings.yaml" command="load" />
+  
   <arg name="gui" default="false" />
   <arg name="project_name" default="" />
   <arg name="silent" default="false"/>
   
   <arg name="scenario" default="corridor"/>
   <arg name="experiment" default="none"/>
-  <arg name="skip_solver_generation" default="false"/>
 
   <!-- Add the scenario and experiment as rosparameters -->
   <rosparam param="scenario" subst_value="true">$(arg scenario)</rosparam>
@@ -17,18 +18,19 @@
   <!-- <include file="$(find jackal_socialsim)/launch/$(arg scenario).launch"/> -->
   <node name="path_node" pkg="multi-vehicle-coordination-algorithm" type="path_generator.py" output="log"/> 
 
-  <node name="multi-vehicle-coordination-algorithm_node" pkg="multi-vehicle-coordination-algorithm" type="run_dmpc.sh" output="log" if="$(arg silent)"/>
+  <!-- <node name="multi-vehicle-coordination-algorithm_node" pkg="multi-vehicle-coordination-algorithm" type="run_dmpc.sh" output="log" if="$(arg silent)"/> -->
 
-  <node name="multi-vehicle-coordination-algorithm_node" pkg="multi-vehicle-coordination-algorithm" type="main.py" output="screen" unless="$(arg silent)">
-    <param name="skip_solver_generation" value="$(arg skip_solver_generation)"/>
-  </node>
+  <node name="launch_wrapper_node" 
+        pkg="multi-vehicle-coordination-algorithm" 
+        type="launch_wrapper.py" 
+        output="screen" 
+        unless="$(arg silent)"/>
 
 
   <!-- Include dart_simulator.launch -->
-  <include file="$(find dart_simulator_pkg)/launch/dart_simulator_no_visuals.launch">
-  </include>
+  <include file="$(find dart_simulator_pkg)/launch/dart_simulator_no_visuals.launch"/>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find dmpc_planner_decentralised)/rviz/simulator.rviz" output="screen"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find multi-vehicle-coordination-algorithm)/rviz/simulator.rviz" output="screen"/>
 
   <!-- <node pkg="rqt_reconfigure" type="rqt_reconfigure" name="rqt_reconfigure" output="log"/> -->
 

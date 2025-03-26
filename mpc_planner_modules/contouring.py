@@ -20,7 +20,6 @@ class ContouringObjective:
     def __init__(self, settings, robot_idx=0):
         self.idx = robot_idx
         self.num_segments = settings["contouring"]["num_segments"]
-        self.decentralised = settings["decentralised"]
 
     def define_parameters(self, params):
         params.add("contour", add_to_rqt_reconfigure=True)

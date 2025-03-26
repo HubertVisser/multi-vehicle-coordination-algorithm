@@ -16,7 +16,6 @@ class PathReferenceVelocityObjective:
 
     def __init__(self, settings, robot_idx):
         self._idx = robot_idx
-        self._decentralised = settings["decentralised"]
 
     def define_parameters(self, params):
 

@@ -33,15 +33,15 @@ class PolytopicSidualConstraints:
         self.length = settings["polytopic"]["length"]
         self.width = settings["polytopic"]["width"]
         self.number_of_robots = settings["number_of_robots"]
-        self.decentralised = settings["decentralised"]
+        self.scheme = settings["scheme"]
         self.idx_i = idx_i
-        self.n_constraints = (self.number_of_robots - self.idx_i) * 2 if self.decentralised == False else (self.number_of_robots - 1) * 2
+        self.n_constraints = (self.number_of_robots - self.idx_i) * 2 if self.scheme == 'centralised' else (self.number_of_robots - 1) * 2
         self.nh = self.n_constraints
         self.use_slack = use_slack
         self.solver_name = settings.get("solver_name", None)
 
     def define_parameters(self, params):
-        if self.decentralised and self.solver_name.startswith("solver_nmpc"):
+        if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
             for i in range(1, self.number_of_robots+1):
                 for j in range(i, self.number_of_robots+1):
                         if i != j and (i == self.idx_i or j == self.idx_i):
@@ -61,13 +61,13 @@ class PolytopicSidualConstraints:
         return upper_bound
 
     def get_theta_i(self, model, params):
-        if self.decentralised and self.solver_name.startswith("solver_ca"):
+        if self.scheme == 'distributed' and self.solver_name.startswith("solver_ca"):
             return params.get(f"theta_{self.idx_i}")
         else:
             return model.get(f"theta_{self.idx_i}")
     
     def get_lam_ij(self, model, params, idx_j):
-        if self.decentralised and self.solver_name.startswith("solver_nmpc"):
+        if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
             return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
                                 params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
                                 params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
@@ -79,7 +79,7 @@ class PolytopicSidualConstraints:
                                 model.get(f"lam_{self.idx_i}_{idx_j}_3"))
         
     def get_s_ij(self, model, params, idx_j):
-        if self.decentralised and self.solver_name.startswith("solver_nmpc"):
+        if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
             if self.idx_i > idx_j:
                 return cd.vertcat(  params.get(f"s_{idx_j}_{self.idx_i}_0"), 
                                     params.get(f"s_{idx_j}_{self.idx_i}_1"))
@@ -101,7 +101,7 @@ class PolytopicSidualConstraints:
         theta_i = self.get_theta_i(model, params)
         A_i = get_A(theta_i)
 
-        start_idx = 1 if self.decentralised else self.idx_i
+        start_idx = 1 if self.scheme == 'distributed' else self.idx_i
         for j in range(start_idx, self.number_of_robots+1):  
             if j != self.idx_i:
                 lam_ij = self.get_lam_ij(model, params, j)

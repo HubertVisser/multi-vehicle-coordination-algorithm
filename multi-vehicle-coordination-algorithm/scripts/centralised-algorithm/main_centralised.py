@@ -4,8 +4,9 @@ import os, sys
 import pathlib
 path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(os.path.join(path))
-sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
-sys.path.append(os.path.join(sys.path[0], "..", "..", "mpc_planner_modules"))
+sys.path.append(os.path.join(sys.path[-1], "..", "..", "..", "solver_generator"))
+sys.path.append(os.path.join(sys.path[-2], "..", "..", "..", "mpc_planner_modules"))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import threading
 
@@ -27,23 +28,19 @@ import matplotlib.pyplot as plt
 
 from util.files import load_settings
 from util.realtime_parameters import RealTimeParameters
-from util.convertion import quaternion_to_yaw
+from util.convertion import quaternion_to_yaw, yaw_to_quaternion
 from util.logging import print_value 
 from timer import Timer
 from spline import Spline, Spline2D
 
 from contouring_spline import SplineFitter
-# from static_constraints import StaticConstraints
 from mpc_controller import MPCPlanner
 from ros_visuals import ROSMarkerPublisher
-from project_trajectory import project_trajectory_to_safety
-from pyplot import plot_x_traj, plot_splines
-# from path_generator import generate_path_msg
 
 
 class ROSMPCPlanner:
     def __init__(self):
-        self._settings = load_settings(package="dmpc_planner_centralised")
+        self._settings = load_settings(package="multi-vehicle-coordination-algorithm")
         self._N = self._settings["N"]
         self._integrator_step = self._settings["integrator_step"]
         self._braking_acceleration = self._settings["braking_acceleration"]
@@ -77,9 +74,9 @@ class ROSMPCPlanner:
                                                                                     self._settings[f"robot_{n}"]["start_y"], \
                                                                                     self._settings[f"robot_{n}"]["start_theta"] * np.pi]
 
-        self._visuals = ROSMarkerPublisher("mpc_visuals", 100)
-        self._path_visual = ROSMarkerPublisher("reference_path", 10)
-        self._debug_visuals_pub = ROSMarkerPublisher("mpc_planner_py/debug", 10)
+        self._visuals = ROSMarkerPublisher("mpc_visuals_1", 100)
+        self._path_visual = ROSMarkerPublisher("reference_path_1", 10)
+        self._debug_visuals_pub = ROSMarkerPublisher("mpc_planner_py/debug_1", 10)
 
         self._state_msg_1 = None
         self._state_msg_2 = None
@@ -307,15 +304,24 @@ class ROSMPCPlanner:
                 self._debug_visuals_pub.publish()
 
             if self._trajectory is not None and self._mpc_feasible:
-                cylinder = self._visuals.get_cylinder()
-                cylinder.set_color(n, alpha=0.25)
-                cylinder.set_scale(0.5, 0.5, 0.05)
+                length = self._settings["polytopic"]["length"]
+                width = self._settings["polytopic"]["width"]
 
+                box = self._visuals.get_cube()
+                box.set_color(80, alpha=0.3)
+                box.set_scale(width, length, 0.05)
+                
                 pose = Pose()
                 for k in range(1, self._N):
-                    pose.position.x = float(self._planner.get_model().get(k, f"x_{n}"))
-                    pose.position.y = float(self._planner.get_model().get(k, f"y_{n}"))
-                    cylinder.add_marker(deepcopy(pose))
+                    pose.position.x = self._planner.get_model().get(k, f"x_{n}")
+                    pose.position.y = self._planner.get_model().get(k, f"y_{n}")
+                    theta = self._planner.get_model().get(k, f"theta_{n}")
+                    quaternion = yaw_to_quaternion(theta)
+                    pose.orientation.x = quaternion[0]
+                    pose.orientation.y = quaternion[1]
+                    pose.orientation.z = quaternion[2]
+                    pose.orientation.w = quaternion[3]
+                    box.add_marker(deepcopy(pose))
         self._visuals.publish()
     
     # Callback functions
@@ -531,7 +537,6 @@ class ROSMPCPlanner:
 
         plt.plot(min_distances, label='Min Distance')
             
-
         plt.xlabel('Time Steps')
         plt.ylabel('Minimum Distance')
         plt.legend()
@@ -541,10 +546,12 @@ class ROSMPCPlanner:
         plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'min_dist_plot.png'))  # Save the plot to a file
         plt.close() 
 
-
-if __name__ == "__main__":
+def run_centralised_algorithm():
+    """
+    Initializes the ROS node and runs the centralised coordination algorithm.
+    """
     rospy.loginfo("Initializing MPC")
-    rospy.init_node("coordination-algorithm", anonymous=False)
+    rospy.init_node("multi_vehicle_coordination_algorithm", anonymous=False)
 
     mpc = ROSMPCPlanner()
 
@@ -557,3 +564,6 @@ if __name__ == "__main__":
     mpc.plot_min_distance()
     # mpc.plot_pred_traj()
     mpc.print_stats()
+
+if __name__ == "__main__":
+    run_centralised_algorithm()

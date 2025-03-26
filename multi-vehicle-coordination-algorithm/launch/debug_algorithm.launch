@@ -2,7 +2,9 @@
 
 <launch>
 
-  <node name="multi-vehicle-coordination-algorithm_node" pkg="multi-vehicle-coordination-algorithm" type="main.py" output="screen">
-    <param name="skip_solver_generation" value="false"/>
-  </node>
+  <!-- Load the settings YAML file -->
+  <rosparam file="$(find multi-vehicle-coordination-algorithm)/config/settings.yaml" command="load" />
+
+  <node name="multi_vehicle_coordination_algorithm_node" pkg="multi-vehicle-coordination-algorithm" type="launch_wrapper.py" output="screen"/>
+
 </launch>  

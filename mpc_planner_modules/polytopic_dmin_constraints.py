@@ -38,11 +38,11 @@ class PolytopicDminConstraints:
         self.n_constraints = self.number_of_robots - 1
         self.nh = self.n_constraints
         self.use_slack = use_slack
-        self.decentralised = settings["decentralised"]
         self.solver_name = settings.get("solver_name", None)
+        self.scheme = settings["scheme"]
 
     def define_parameters(self, params):
-        if self.decentralised and self.solver_name.startswith("solver_nmpc"):
+        if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
             for i in range(1, self.number_of_robots+1):
                 for j in range(1, self.number_of_robots+1):
                     if i != j and (j == self.idx_i or i == self.idx_i):
@@ -54,7 +54,7 @@ class PolytopicDminConstraints:
                     params.add(f"x_{i}")
                     params.add(f"y_{i}")
                     params.add(f"theta_{i}")
-        if self.decentralised and self.solver_name.startswith("solver_ca"):
+        if self.scheme == 'distributed' and self.solver_name.startswith("solver_ca"):
             for i in range(1, self.number_of_robots+1):
                 params.add(f"x_{i}")
                 params.add(f"y_{i}")
@@ -73,7 +73,7 @@ class PolytopicDminConstraints:
         return upper_bound
 
     def get_pos_theta_i(self, model, params):
-        if self.decentralised and self.solver_name.startswith("solver_ca"):
+        if self.scheme == 'distributed' and self.solver_name.startswith("solver_ca"):
             pos_x_i = params.get(f"x_{self.idx_i}")
             pos_y_i = params.get(f"y_{self.idx_i}")
             pos_i = cd.vertcat(pos_x_i, pos_y_i)   # Center of gravity
@@ -87,7 +87,7 @@ class PolytopicDminConstraints:
             return pos_i, theta_i
                 
     def get_pos_theta_j(self, model, params, idx_j):
-        if self.decentralised:
+        if self.scheme == 'distributed':
             pos_x_j = params.get(f"x_{idx_j}")
             pos_y_j = params.get(f"y_{idx_j}")
             theta_j = params.get(f"theta_{idx_j}")
@@ -99,7 +99,7 @@ class PolytopicDminConstraints:
             return cd.vertcat(pos_x_j, pos_y_j), theta_j
 
     def get_lam_ij(self, model, params, idx_j):
-        if self.decentralised and self.solver_name.startswith("solver_nmpc"):
+        if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
             return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
                                 params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
                                 params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
@@ -111,7 +111,7 @@ class PolytopicDminConstraints:
                                 model.get(f"lam_{self.idx_i}_{idx_j}_3"))
     
     def get_lam_ji(self, model, params, idx_j):
-        if self.decentralised and self.solver_name.startswith("solver_nmpc"):
+        if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
             return cd.vertcat(  params.get(f"lam_{idx_j}_{self.idx_i}_0"), 
                                 params.get(f"lam_{idx_j}_{self.idx_i}_1"), 
                                 params.get(f"lam_{idx_j}_{self.idx_i}_2"), 
@@ -130,7 +130,7 @@ class PolytopicDminConstraints:
         b_i = get_b(pos_i, theta_i, self.length, self.width)
         
         # Constraints for all neighbouring robots (j)
-        start_idx = 1 if self.decentralised else self.idx_i
+        start_idx = 1 if self.scheme == 'distributed' else self.idx_i
         for j in range(start_idx, self.number_of_robots+1): 
             if j != self.idx_i:
     

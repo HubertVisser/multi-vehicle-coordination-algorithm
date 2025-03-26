@@ -1,6 +1,6 @@
 import os, sys
-sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
-sys.path.append(os.path.join(sys.path[0], "..", "..", "mpc_planner_modules"))
+sys.path.append(os.path.join(sys.path[0], "..", "..", "..", "solver_generator"))
+sys.path.append(os.path.join(sys.path[0], "..", "..", "..", "mpc_planner_modules"))
 
 import numpy as np
 import casadi as cd
@@ -44,7 +44,7 @@ def configuration_basic(settings, idx):
 
 
 def generate(idx):
-    settings = load_settings(package="dmpc_planner_decentralised")
+    settings = load_settings(package="multi-vehicle-coordination-algorithm")
     settings["solver_name"] = f"solver_nmpc_{idx}"
     settings["idx"] = idx
     # print(settings)

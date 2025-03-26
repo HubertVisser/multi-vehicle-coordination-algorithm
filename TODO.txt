@@ -1,8 +1,9 @@
 TODO:
-- [ ] Implement the car_number in the settings file
+- [x] Implement the car_number in the settings file
 - [ ] Fix the reset for rqt reconfigure
 - [ ] Fix the tests
 - [x] Build a check in the different robots that only solves CA if all trajectories are received
-- [ ] Option to run without compiling the solvers
-- [ ] Implement the cars to be plotted as polytopic sets
+- [x] Option to run without compiling the solvers
+- [x] Implement the cars to be plotted as polytopic sets
+- [ ] Restructure the util plot functions to be used for centralised as well as for distributed
 

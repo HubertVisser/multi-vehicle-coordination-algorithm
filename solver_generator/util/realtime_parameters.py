@@ -1,6 +1,6 @@
 
 """
-For python real-time implementation of the controller
+For python real-time scheme of the controller
 """
 import numpy as np
 import matplotlib.pyplot as plt

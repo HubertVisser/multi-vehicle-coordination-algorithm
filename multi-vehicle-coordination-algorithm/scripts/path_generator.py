@@ -4,7 +4,7 @@ import os, sys
 import pathlib
 path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(os.path.join(path))
-sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
+sys.path.append(os.path.join(sys.path[-1], "..", "..", "solver_generator"))
 
 import numpy as np
 import rospy
@@ -16,7 +16,7 @@ from util.files import load_settings
 
 class PathGenerator:
     def __init__(self):
-        self.settings = load_settings(package="dmpc_planner_decentralised")
+        self.settings = load_settings(package="multi-vehicle-coordination-algorithm")
         self.track_choice = self.settings["track_choice"]
         self.num_robot = self.settings["number_of_robots"]
 

@@ -3,8 +3,9 @@ import os, sys
 import pathlib
 path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(os.path.join(path))
-sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
-sys.path.append(os.path.join(sys.path[0], "..", "..", "mpc_planner_modules"))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.join(sys.path[0], "..", "..", "..", "solver_generator"))
+sys.path.append(os.path.join(sys.path[0], "..", "..", "..", "mpc_planner_modules"))
 
 import threading
 
@@ -45,6 +46,7 @@ class ROSMPCPlanner:
         self._integrator_step = self._settings["integrator_step"]
         self._braking_acceleration = self._settings["braking_acceleration"]
         self._number_of_robots = self._settings["number_of_robots"]
+        self._scheme = self._settings["scheme"]
         self._idx = idx
 
         self._verbose = self._settings["verbose"]

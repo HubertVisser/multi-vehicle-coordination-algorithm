@@ -16,7 +16,6 @@ class MinimizeCollisionAvoidanceObjective:
 
     def __init__(self, settings, idx_i):
         self.idx_i = idx_i
-        self._decentralised = settings["decentralised"]
         self.length = settings["polytopic"]["length"]
         self.width = settings["polytopic"]["width"]
         self.number_of_robots = settings["number_of_robots"]

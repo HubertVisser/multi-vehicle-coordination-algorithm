@@ -4,8 +4,8 @@ import os, sys
 import pathlib
 path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(os.path.join(path))
-sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
-sys.path.append(os.path.join(sys.path[0], "..", "..", "mpc_planner_modules"))
+sys.path.append(os.path.join(sys.path[-1], "..", "..", "..", "solver_generator"))
+sys.path.append(os.path.join(sys.path[-2], "..", "..", "..", "mpc_planner_modules"))
 
 import threading
 
@@ -21,7 +21,6 @@ from util.files import load_settings
 from util.convertion import quaternion_to_yaw
 from util.logging import print_value 
 from util.parameters import GlobalParameters
-from timer import Timer
 
 from ros_mpc_controller import ROSMPCPlanner
 # from path_generator import generate_path_msg
@@ -30,7 +29,7 @@ import debugpy
 
 class ROSMPCCoordinator:
     def __init__(self):
-        self._settings = load_settings(package="dmpc_planner_decentralised")
+        self._settings = load_settings(package="multi-vehicle-coordination-algorithm")
         self._N = self._settings["N"]
         self._integrator_step = self._settings["integrator_step"]
         self._number_of_robots = self._settings["number_of_robots"]
@@ -116,7 +115,7 @@ class ROSMPCCoordinator:
 if __name__ == "__main__":
         
     rospy.loginfo("Initializing MPC")
-    rospy.init_node("dmpc_planner_coordinator", anonymous=False)
+    rospy.init_node("multi_vehicle_coordination_algorithm", anonymous=False)
 
     coordinator = ROSMPCCoordinator()
 

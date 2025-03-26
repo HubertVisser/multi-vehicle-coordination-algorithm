@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <node name="multi_vehicle_coordination_algorithm_node" 
+        pkg="multi-vehicle-coordination-algorithm" 
+        type="main_centralised.py" 
+        output="screen" 
+        />
+
+</launch>  

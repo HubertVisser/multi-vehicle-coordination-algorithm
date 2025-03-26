@@ -58,21 +58,19 @@ def create_acados_model(settings, model, modules):
 
 def generate_solver(modules, model, settings=None):
 
-    if rospy.has_param("~skip_solver_generation"):
-        skip_solver_generation = rospy.get_param("~skip_solver_generation", False)
-    else:
-        skip_solver_generation = False
-
     if settings is None:
         settings = load_settings()
 
-    print_header("Creating ACADOS" f"Solver: {settings['solver_name']}_solver") if settings["decentralised"] else print_header("Creating ACADOS" f"Solver: {settings['name']}_solver")
+    scheme = settings["scheme"]
+    solver_settings = settings["solver_settings"]
+    skip_solver_generation = settings["skip_solver_generation"]
+
+    print_header("Creating ACADOS" f"Solver: {settings['solver_name']}_solver") if scheme == 'distributed' else print_header("Creating ACADOS" f"Solver: {settings['name']}_solver")
 
     params = AcadosParameters()
     define_parameters(modules, params, settings)
     params.load_acados_parameters()
     settings["params"] = params
-    solver_settings = settings["solver_settings"]
 
     modules.print()
     params.print()
@@ -100,7 +98,7 @@ def generate_solver(modules, model, settings=None):
     ns = model.ns
     nu = model.nu 
 
-    if not settings["decentralised"]:
+    if scheme == 'centralised':
         nu = nu + ns + nlam
 
     # Set initial constraint

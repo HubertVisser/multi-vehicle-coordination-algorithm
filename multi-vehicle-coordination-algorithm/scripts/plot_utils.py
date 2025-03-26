@@ -77,7 +77,7 @@ def plot_states(planner):
     plt.title(f'Robot {planner._idx} Outputs')
 
     plt.tight_layout()
-    plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f'states_outputs_plot_{planner._idx}.png'))  # Save the plot to a file
+    plt.savefig(os.path.join(os.path.dirname(__file__), f'{planner._scheme}-algorithm/plots', f'states_outputs_plot_{planner._idx}.png'))  # Save the plot to a file
     plt.close()
 
 def plot_duals(planner):

@@ -3,9 +3,9 @@ import os, sys
 import pathlib
 path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(os.path.join(path))
-sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
+sys.path.append(os.path.join(sys.path[0], "..", "..", "..", "solver_generator"))
 
-acados_path = os.path.join(path, "..", "..", "mpc_planner_solver", "acados", "solver")
+acados_path = os.path.join(path, "..", "..", "..", "mpc_planner_solver", "acados", "solver")
 
 import numpy as np
 import math
