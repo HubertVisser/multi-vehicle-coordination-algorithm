@@ -1,6 +1,6 @@
 name: "Jetracer"
-scheme: centralised # centralised or distributed
-skip_solver_generation: true
+scheme: distributed # centralised or distributed
+skip_solver_generation: false
 
 N: 20
 integrator_step: 0.3
@@ -12,7 +12,7 @@ slack_value: 1.0e0
 number_of_robots: 2
 robot_1:
   start_x: -6.0
-  start_y: 0.0
+  start_y: 3.0
   start_theta: 0.0  # in radians
 robot_2:
   start_x: -5.0
@@ -32,8 +32,8 @@ braking_acceleration: 1.0
 
 polytopic:
   d_min: 0.1
-  length: .2
-  width: .2
+  length: .5
+  width: .5
 
 contouring:
   num_segments: 5
