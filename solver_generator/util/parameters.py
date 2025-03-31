@@ -120,12 +120,6 @@ class AcadosParameters(Parameters):
     def __init__(self):
         super().__init__()
 
-    def load_global_parameters(self):
-        global_params = load_parameters("parameter_map_global", package="mpc_planner_solver")
-        self._param_idx = global_params["num parameters"]
-        self._params.update(global_params)
-
-        
     def load_acados_parameters(self):
        
         self._p = []
@@ -147,15 +141,3 @@ class AcadosParameters(Parameters):
 
     def get_acados_p(self):
         return self._p
-
-class GlobalParameters(Parameters):
-
-    def __init__(self):
-        super().__init__()
-
-    def save_map(self):
-        file_path = parameter_map_path(parameter_map_name="parameter_map_global")
-
-        map = self._params
-        map["num parameters"] = self._param_idx
-        write_to_yaml(file_path, self._params)

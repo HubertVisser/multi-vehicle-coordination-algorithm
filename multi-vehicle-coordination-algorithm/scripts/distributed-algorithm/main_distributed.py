@@ -20,7 +20,6 @@ import matplotlib.pyplot as plt
 from util.files import load_settings
 from util.convertion import quaternion_to_yaw
 from util.logging import print_value 
-from util.parameters import GlobalParameters
 
 from ros_mpc_controller import ROSMPCPlanner
 # from path_generator import generate_path_msg

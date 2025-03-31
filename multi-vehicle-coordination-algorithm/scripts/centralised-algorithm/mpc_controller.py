@@ -10,7 +10,7 @@ acados_path = os.path.join(path, "..", "..", "..", "mpc_planner_solver", "acados
 import numpy as np
 import math
 
-import generate_jetracer_solver
+import generate_centralised_solver
 from solver_model import BicycleModel2ndOrderMultiRobot
 from acados_template import AcadosModel
 from acados_template import AcadosOcp, AcadosOcpSolver, AcadosSimSolver
@@ -47,7 +47,7 @@ class MPCPlanner:
         if hasattr(self, "_mpc_x_plan"):
             del self._mpc_x_plan, self._mpc_u_plan
 
-        self._solver, self._simulator = generate_jetracer_solver.generate()
+        self._solver, self._simulator = generate_centralised_solver.generate()
         self._solver_settings = load_settings("solver_settings", package="mpc_planner_solver")
 
         # acados_ocp = AcadosOcp(acados_path=acados_path)

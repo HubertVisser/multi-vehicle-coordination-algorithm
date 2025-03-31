@@ -33,18 +33,18 @@ def configuration_basic(settings, idx):
 
     # Penalize ||steering||_2^2
     base_module = modules.add_module(MPCBaseModule(settings))
-    for j in range(1,num_robots+1):
-        if j != idx:
-            base_module.weigh_variable(var_name=f"lam_{idx}_{j}_0", weight_names="lambda",)
-            base_module.weigh_variable(var_name=f"lam_{idx}_{j}_1", weight_names="lambda",)
-            base_module.weigh_variable(var_name=f"lam_{idx}_{j}_2", weight_names="lambda",)
-            base_module.weigh_variable(var_name=f"lam_{idx}_{j}_3", weight_names="lambda",)
-            if idx > j:
-                base_module.weigh_variable(var_name=f"s_{j}_{idx}_0", weight_names="s_dual",)
-                base_module.weigh_variable(var_name=f"s_{j}_{idx}_1", weight_names="s_dual",)
-            else:
-                base_module.weigh_variable(var_name=f"s_{idx}_{j}_0", weight_names="s_dual",)
-                base_module.weigh_variable(var_name=f"s_{idx}_{j}_1", weight_names="s_dual",)
+    # for j in range(1,num_robots+1):
+    #     if j != idx:
+    #         base_module.weigh_variable(var_name=f"lam_{idx}_{j}_0", weight_names="lambda",)
+    #         base_module.weigh_variable(var_name=f"lam_{idx}_{j}_1", weight_names="lambda",)
+    #         base_module.weigh_variable(var_name=f"lam_{idx}_{j}_2", weight_names="lambda",)
+    #         base_module.weigh_variable(var_name=f"lam_{idx}_{j}_3", weight_names="lambda",)
+    #         if idx > j:
+    #             base_module.weigh_variable(var_name=f"s_{j}_{idx}_0", weight_names="s_dual",)
+    #             base_module.weigh_variable(var_name=f"s_{j}_{idx}_1", weight_names="s_dual",)
+    #         else:
+    #             base_module.weigh_variable(var_name=f"s_{idx}_{j}_0", weight_names="s_dual",)
+    #             base_module.weigh_variable(var_name=f"s_{idx}_{j}_1", weight_names="s_dual",)
     
     modules.add_module(MinimizeCollisionAvoidanceModule(settings, idx))
     

@@ -7,16 +7,16 @@ integrator_step: 0.3
 track_choice: "straight_line" # 'straight_line', sinus, "t_junction", "merging"
 
 add_slack: true
-slack_value: 1.0e0
+slack_value: 1.0e1
 
 number_of_robots: 2
 robot_1:
-  start_x: -6.0
-  start_y: 0.0
+  start_x: -5.0
+  start_y: 1.0
   start_theta: 0.0  # in radians
 robot_2:
-  start_x: -5.0
-  start_y: -2.0
+  start_x: -4.0
+  start_y: -1.0
   start_theta: 0.0  # radians
 
 verbose: false
@@ -24,10 +24,10 @@ debug_visuals: false
 dart_simulator: false
 
 solver_settings:
-  iterations: 1 #2 # 1
+  iterations: 2 #2 # 1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
-control_frequency: 10.0
+control_frequency: 5.0
 braking_acceleration: 1.0
 
 polytopic:
@@ -47,8 +47,8 @@ weights:
   dmin_objective: .1
   velocity: 0.4
   reference_velocity: 0.4
-  lag: 0.8
-  contour: 0.8
+  lag: 0.5
+  contour: 0.5
   terminal_angle: 1.0 #0.0
   terminal_contour: 5.0 # 0.0
   terminal_lag: 1.0 # 0.0

@@ -3,6 +3,10 @@
 import os, sys
 import pathlib
 path = pathlib.Path(__file__).parent.resolve()
+
+
+# Add the project root directory to sys.path
+sys.path.append("/home/dock_user/ros_ws/src/multi-vehicle-coordination-algorithm")
 sys.path.append(os.path.join(path))
 sys.path.append(os.path.join(sys.path[-1], "..", "..", "..", "solver_generator"))
 sys.path.append(os.path.join(sys.path[-2], "..", "..", "..", "mpc_planner_modules"))
@@ -14,24 +18,17 @@ import rospy
 from std_msgs.msg import Int32, Float32, Empty
 from nav_msgs.msg import Odometry, Path
 from geometry_msgs.msg import PoseStamped, Pose, Twist
-from sensor_msgs.msg import Joy
-from robot_localization.srv import SetPose
-import std_srvs.srv
-
-from mpc_planner_msgs.msg import ObstacleArray
-from mpc_planner_msgs.msg import WeightArray
 
 import numpy as np
 from copy import deepcopy
 import math
 import matplotlib.pyplot as plt
 
-from util.files import load_settings
-from util.realtime_parameters import RealTimeParameters
-from util.convertion import quaternion_to_yaw, yaw_to_quaternion
-from util.logging import print_value 
+from solver_generator.util.files import load_settings
+from solver_generator.util.realtime_parameters import RealTimeParameters
+from solver_generator.util.convertion import quaternion_to_yaw, yaw_to_quaternion
+from solver_generator.util.logging import print_value 
 from timer import Timer
-from spline import Spline, Spline2D
 
 from contouring_spline import SplineFitter
 from mpc_controller import MPCPlanner
@@ -60,7 +57,7 @@ class ROSMPCPlanner:
         )
 
         # Tied to the solver
-        self._params = RealTimeParameters(self._settings)  # This maps to parameters used in the solver by name
+        self._params = RealTimeParameters(self._settings, parameter_map_name='parameter_map_centralised' )  # This maps to parameters used in the solver by name
         self._weights = self._settings["weights"]
 
         self._nx = self._solver_settings["nx"]

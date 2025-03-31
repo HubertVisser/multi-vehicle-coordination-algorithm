@@ -13,11 +13,6 @@ import rospy
 from std_msgs.msg import Int32, Float32, Empty
 from nav_msgs.msg import Odometry, Path
 from geometry_msgs.msg import PoseStamped, Pose, Twist
-from sensor_msgs.msg import Joy
-from robot_localization.srv import SetPose
-
-from mpc_planner_msgs.msg import ObstacleArray
-from mpc_planner_msgs.msg import WeightArray
 
 import numpy as np
 from copy import deepcopy
@@ -305,30 +300,30 @@ class ROSMPCPlanner:
             for weight, value in self._weights.items():
                 self._params_ca.set(k, weight, value)
 
-            for j in range(1, self._number_of_robots+1):
-                if j != self._idx:
-                    trajectory_j = getattr(self, f'_trajectory_{j}')
+            # for j in range(1, self._number_of_robots+1):
+            #     if j != self._idx:
+            #         trajectory_j = getattr(self, f'_trajectory_{j}')
 
-                    if np.all(trajectory_j == 0):
-                        xinit_j = np.array([self._settings[f"robot_{j}"]["start_x"], self._settings[f"robot_{j}"]["start_y"], self._settings[f"robot_{j}"]["start_theta"] * np.pi])
-                        x_plan_j = set_initial_x_plan(self._settings, xinit_j)
-                        # Shift with + 1 so similiar to received trajectories
-                        if k == self._N - 1:
-                            self._params_ca.set(k, f"x_{j}", x_plan_j[0, k])
-                            self._params_ca.set(k, f"y_{j}", x_plan_j[1, k])
-                            self._params_ca.set(k, f"theta_{j}", x_plan_j[2, k])
-                        else:
-                            self._params_ca.set(k, f"x_{j}", x_plan_j[0, k+1])
-                            self._params_ca.set(k, f"y_{j}", x_plan_j[1, k+1])
-                            self._params_ca.set(k, f"theta_{j}", x_plan_j[2, k+1])
+            #         if np.all(trajectory_j == 0):
+            #             xinit_j = np.array([self._settings[f"robot_{j}"]["start_x"], self._settings[f"robot_{j}"]["start_y"], self._settings[f"robot_{j}"]["start_theta"] * np.pi])
+            #             x_plan_j = set_initial_x_plan(self._settings, xinit_j)
+            #             # Shift with + 1 so similiar to received trajectories
+            #             if k == self._N - 1:
+            #                 self._params_ca.set(k, f"x_{j}", x_plan_j[0, k])
+            #                 self._params_ca.set(k, f"y_{j}", x_plan_j[1, k])
+            #                 self._params_ca.set(k, f"theta_{j}", x_plan_j[2, k])
+            #             else:
+            #                 self._params_ca.set(k, f"x_{j}", x_plan_j[0, k+1])
+            #                 self._params_ca.set(k, f"y_{j}", x_plan_j[1, k+1])
+            #                 self._params_ca.set(k, f"theta_{j}", x_plan_j[2, k+1])
                         
-                    else:
-                        self._params_ca.set(k, f"x_{j}", trajectory_j[0, k])
-                        self._params_ca.set(k, f"y_{j}", trajectory_j[1, k])
-                        self._params_ca.set(k, f"theta_{j}", trajectory_j[2, k])
-                        self._params_nmpc.set(k, f"x_{j}", trajectory_j[0, k])
-                        self._params_nmpc.set(k, f"y_{j}", trajectory_j[1, k])
-                        self._params_nmpc.set(k, f"theta_{j}", trajectory_j[2, k])
+            #         else:
+            #             self._params_ca.set(k, f"x_{j}", trajectory_j[0, k])
+            #             self._params_ca.set(k, f"y_{j}", trajectory_j[1, k])
+            #             self._params_ca.set(k, f"theta_{j}", trajectory_j[2, k])
+            #             self._params_nmpc.set(k, f"x_{j}", trajectory_j[0, k])
+            #             self._params_nmpc.set(k, f"y_{j}", trajectory_j[1, k])
+            #             self._params_nmpc.set(k, f"theta_{j}", trajectory_j[2, k])
 
             # Set ego trajectory with one timestep shifted
             trajectory_i = getattr(self, f'_trajectory_{self._idx}')
