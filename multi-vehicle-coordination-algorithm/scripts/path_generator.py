@@ -98,7 +98,7 @@ class PathGenerator:
             path_2 = self.create_path(pts_x_2, pts_y_2)
             self.paths.append(path_2)
 
-        elif self.track_choice == 'staight_line':
+        elif self.track_choice == 'straight_line':
             pts_x_1, pts_y_1 = self.generate_strt_line_track_2_robot()
 
             path_1 = self.create_path(pts_x_1, pts_y_1)

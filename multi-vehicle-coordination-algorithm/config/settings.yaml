@@ -1,10 +1,10 @@
 name: "Jetracer"
-scheme: distributed # centralised or distributed
+scheme: centralised # centralised or distributed
 skip_solver_generation: false
 
 N: 20
 integrator_step: 0.3
-track_choice: "merging" # 'straight_line', sinus, "t_junction", "merging"
+track_choice: "straight_line" # 'straight_line', sinus, "t_junction", "merging"
 
 add_slack: true
 slack_value: 1.0e0
@@ -24,7 +24,7 @@ debug_visuals: false
 dart_simulator: false
 
 solver_settings:
-  iterations: 2 #2 # 1
+  iterations: 1 #2 # 1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 10.0
