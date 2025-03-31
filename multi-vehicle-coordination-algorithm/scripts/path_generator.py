@@ -53,17 +53,22 @@ class PathGenerator:
         pts_x_2 = np.concatenate((pts_x_strt1[:-1], pts_x_turn[:-1], pts_x_strt2))
         pts_y_2 = np.concatenate((pts_y_strt1[:-1], pts_y_turn[:-1], pts_y_strt2))
 
-        pts_x_1, pts_y_1 = self.generate_strt_line_track()
+        pts_x_1, pts_y_1 = self.generate_strt_line_track_1_robot()
 
         return pts_x_1, pts_y_1, pts_x_2, pts_y_2
 
 
-    def generate_strt_line_track(self):
+    def generate_strt_line_track_1_robot(self):
         pts_x_1 = np.linspace(self.start_x[0], 5, self.n_pts)
         pts_y_1 = np.ones(self.n_pts) * self.start_y[0]
 
         return pts_x_1, pts_y_1
+    
+    def generate_strt_line_track_2_robot(self):
+        pts_x_1 = np.linspace(-4, 5, self.n_pts)
+        pts_y_1 = np.zeros(self.n_pts)
 
+        return pts_x_1, pts_y_1
 
     def generate_merging_track(self):
         pts_x_strt1 = np.linspace(self.start_x[1], -3, 4)
@@ -79,7 +84,7 @@ class PathGenerator:
         pts_x_2 = np.concatenate((pts_x_strt1, pts_x_strt2))
         pts_y_2 = np.concatenate((pts_y_strt1, pts_y_strt2))
 
-        pts_x_1, pts_y_1 = self.generate_strt_line_track()
+        pts_x_1, pts_y_1 = self.generate_strt_line_track_1_robot()
 
         return pts_x_1, pts_y_1, pts_x_2, pts_y_2
 
@@ -94,10 +99,10 @@ class PathGenerator:
             self.paths.append(path_2)
 
         elif self.track_choice == 'staight_line':
-            pts_x_1, pts_y_1 = self.generate_strt_line_track()
+            pts_x_1, pts_y_1 = self.generate_strt_line_track_2_robot()
 
             path_1 = self.create_path(pts_x_1, pts_y_1)
-            self.paths.append(path_1)
+            self.paths.extend([path_1, path_1])
 
         elif self.track_choice == 'merging':
             assert self.num_robot == 2, "Merging track only supports 2 robots"
