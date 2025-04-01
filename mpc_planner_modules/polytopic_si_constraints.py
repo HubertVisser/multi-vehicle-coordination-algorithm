@@ -41,12 +41,13 @@ class PolytopicSidualConstraints:
         self.solver_name = settings.get("solver_name", None)
 
     def define_parameters(self, params):
-        if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
-            for i in range(1, self.number_of_robots+1):
-                for j in range(i, self.number_of_robots+1):
-                        if i != j and (i == self.idx_i or j == self.idx_i):
-                            params.add(f"s_{i}_{j}_0")
-                            params.add(f"s_{i}_{j}_1")
+        pass
+        # if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
+        #     for i in range(1, self.number_of_robots+1):
+        #         for j in range(i, self.number_of_robots+1):
+        #                 if i != j and (i == self.idx_i or j == self.idx_i):
+        #                     params.add(f"s_{i}_{j}_0")
+        #                     params.add(f"s_{i}_{j}_1")
 
     def get_lower_bound(self):
         lower_bound = []
@@ -67,26 +68,26 @@ class PolytopicSidualConstraints:
             return model.get(f"theta_{self.idx_i}")
     
     def get_lam_ij(self, model, params, idx_j):
-        if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
-            return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
-                                params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
-                                params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
-                                params.get(f"lam_{self.idx_i}_{idx_j}_3"))
-        else:
+        # if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
+        #     return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
+        #                         params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
+        #                         params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
+        #                         params.get(f"lam_{self.idx_i}_{idx_j}_3"))
+        # else:
             return cd.vertcat(  model.get(f"lam_{self.idx_i}_{idx_j}_0"), 
                                 model.get(f"lam_{self.idx_i}_{idx_j}_1"), 
                                 model.get(f"lam_{self.idx_i}_{idx_j}_2"), 
                                 model.get(f"lam_{self.idx_i}_{idx_j}_3"))
         
     def get_s_ij(self, model, params, idx_j):
-        if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
-            if self.idx_i > idx_j:
-                return cd.vertcat(  params.get(f"s_{idx_j}_{self.idx_i}_0"), 
-                                    params.get(f"s_{idx_j}_{self.idx_i}_1"))
-            else:
-                return cd.vertcat(  params.get(f"s_{self.idx_i}_{idx_j}_0"), 
-                                    params.get(f"s_{self.idx_i}_{idx_j}_1"))
-        else:
+        # if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
+        #     if self.idx_i > idx_j:
+        #         return cd.vertcat(  params.get(f"s_{idx_j}_{self.idx_i}_0"), 
+        #                             params.get(f"s_{idx_j}_{self.idx_i}_1"))
+        #     else:
+        #         return cd.vertcat(  params.get(f"s_{self.idx_i}_{idx_j}_0"), 
+        #                             params.get(f"s_{self.idx_i}_{idx_j}_1"))
+        # else:
             if self.idx_i > idx_j:
                 return cd.vertcat(  model.get(f"s_{idx_j}_{self.idx_i}_0"), 
                                     model.get(f"s_{idx_j}_{self.idx_i}_1"))

@@ -54,7 +54,7 @@ class MPCPlanner:
 
         self._solver_settings_nmpc = load_settings(f"solver_settings_nmpc_{self._idx}", package="mpc_planner_solver")
         self._model_nmpc = AcadosRealTimeModel(self._settings, self._solver_settings_nmpc, model_map_name=f"model_map_nmpc_{self._idx}", package="mpc_planner_solver")
-        self._dynamic_model = BicycleModel2ndOrder(self._number_of_robots)
+        self._dynamic_model = BicycleModel2ndOrder(self._idx, self._number_of_robots)
         self.reference_velocity = self._settings["weights"]["reference_velocity"]
 
         self._nx_nmpc = self._solver_settings_nmpc["nx"]

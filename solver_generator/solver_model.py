@@ -51,7 +51,7 @@ class DynamicsModel:
         return 
     
     def get_acados_dynamics(self):
-        f_expl = self.continuous_model(self._z[: self.nx], self._z[self.nx :])
+        f_expl = self.continuous_model(self._z[: self.nx], self._z[self.nx : self.nx + 2])  # (x, u)
         return f_expl
 
     def get_x(self):
@@ -119,16 +119,16 @@ class DynamicsModel:
         if state_or_input in self.states:
             i = self.states.index(state_or_input)
             return (
-                self.lower_bound.item([self.nu + i][0]),
-                self.upper_bound.item([self.nu + i][0]),
-                self.upper_bound.item([self.nu + i][0]) - self.lower_bound.item([self.nu + i][0]),
+                self.lower_bound.item([i][0]),
+                self.upper_bound.item([i][0]),
+                self.upper_bound.item([i][0]) - self.lower_bound.item([i][0]),
             )
         elif state_or_input in self.inputs:
             i = self.inputs.index(state_or_input)
             return (
-                self.lower_bound.item([i][0]),
-                self.upper_bound.item([i][0]),
-                self.upper_bound.item([i][0]) - self.lower_bound.item([i][0]),
+                self.lower_bound.item([self.nx + i][0]),
+                self.upper_bound.item([self.nx + i][0]),
+                self.upper_bound.item([self.nx + i][0]) - self.lower_bound.item([self.nx + i][0]),
             )
         else:
             raise IOError(f"Requested a state or input `{state_or_input}' that was neither a state nor an input for the selected model")
@@ -309,17 +309,27 @@ class MultiRobotDynamicsModel():
 # Bicycle model
 class BicycleModel2ndOrder(DynamicsModel):
 
-    def __init__(self, idx):
+    def __init__(self, idx, n):
         super().__init__()
         self.nx = 7     
-        self.nu = 2
+        self.nlam = (n-1) * 4  # ego lambda variables
+        self.ns = (n-1) * 2 # s variables
+        self.nu = 2 + self.nlam + self.ns 
         self.idx = idx # robot index
 
         self.states = [f"x_{idx}", f"y_{idx}", f"theta_{idx}", f"vx_{idx}", f"vy_{idx}", f"w_{idx}", f"s_{idx}"]
         self.inputs = [f"throttle_{idx}", f"steering_{idx}"] #, "slack"]
 
-        self.lower_bound = np.array([-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, 0.0, -1.0]) # [x, u]
-        self.upper_bound = np.array([1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1.0, 1.0]) # [x, u]
+        for j in range(1, n+1): 
+            if idx != j:
+                self.inputs.extend([f"lam_{idx}_{j}_0", f"lam_{idx}_{j}_1", f"lam_{idx}_{j}_2", f"lam_{idx}_{j}_3"])
+        for i in range(1, n+1):
+            for j in range(i, n+1):
+                if i != j and (i == idx or j == idx):
+                    self.inputs.extend([f"s_{i}_{j}_0", f"s_{i}_{j}_1"])
+
+        self.lower_bound = np.array([-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, 0.0, -1.0] + [0.0]* self.nlam + [-10.0]* self.ns) # [x, u]
+        self.upper_bound = np.array([1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1.0, 1.0]+ [1000.0]* self.nlam + [10.0]* self.ns) # [x, u]
 
         self.lower_bound_states = self.lower_bound[:self.nx]
         self.upper_bound_states = self.upper_bound[:self.nx]
