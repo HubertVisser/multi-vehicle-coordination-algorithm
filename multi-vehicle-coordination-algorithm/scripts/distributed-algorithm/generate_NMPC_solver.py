@@ -53,6 +53,8 @@ def configuration_basic(settings, idx):
     
     modules.add_module(PolytopicDminConstraintModule(settings, idx))
     modules.add_module(PolytopicSidualConstraintModule(settings, idx))
+
+    modules.add_module(s2normConstraintModule(settings, idx))
             
     return model, modules
 

@@ -6,16 +6,16 @@ N: 20
 integrator_step: 0.3
 track_choice: "straight_line" # 'straight_line', sinus, "t_junction", "merging"
 
-add_slack: true
-slack_value: 1.0e1
+add_slack: false
+slack_value: 1.0e4
 
 number_of_robots: 2
 robot_1:
   start_x: -5.0
   start_y: 1.0
-  start_theta: 0.0  # in radians
+  start_theta: 0.0  # radians
 robot_2:
-  start_x: -4.0 
+  start_x: -4.0
   start_y: -1.0
   start_theta: 0.0  # radians
 
@@ -31,7 +31,7 @@ control_frequency: 5.0
 braking_acceleration: 1.0
 
 polytopic:
-  d_min: 0.1
+  d_min: 0.3
   length: .5
   width: .5
 

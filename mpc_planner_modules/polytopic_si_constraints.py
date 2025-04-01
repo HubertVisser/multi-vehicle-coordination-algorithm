@@ -43,11 +43,11 @@ class PolytopicSidualConstraints:
     def define_parameters(self, params):
         pass
         # if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
-        #     for i in range(1, self.number_of_robots+1):
-        #         for j in range(i, self.number_of_robots+1):
-        #                 if i != j and (i == self.idx_i or j == self.idx_i):
-        #                     params.add(f"s_{i}_{j}_0")
-        #                     params.add(f"s_{i}_{j}_1")
+            # for i in range(1, self.number_of_robots+1):
+                # for j in range(i, self.number_of_robots+1):
+                        # if i != j and (i == self.idx_i or j == self.idx_i):
+                            # params.add(f"s_{i}_{j}_0")
+                            # params.add(f"s_{i}_{j}_1")
 
     def get_lower_bound(self):
         lower_bound = []
