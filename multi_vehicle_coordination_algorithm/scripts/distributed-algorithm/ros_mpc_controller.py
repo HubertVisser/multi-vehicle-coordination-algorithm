@@ -92,6 +92,7 @@ class ROSMPCPlanner:
 
         for n in range(1, self._number_of_robots+1):
             setattr(self, f'_trajectory_{n}', np.zeros((3, self._N)))
+            setattr(self, f'_lambda_{n}', np.zeros((self._N, 4)))
 
         self._enable_output = False
         self._mpc_feasible = True
@@ -112,6 +113,11 @@ class ROSMPCPlanner:
 
         # Subscriber path generator
         self._path_sub = rospy.Subscriber(f"roadmap/reference_{self._idx}", Path, lambda msg: self.path_callback(msg), queue_size=1)
+        
+        for i in range(1, self._number_of_robots+1):
+            setattr(self, f'_traj_{i}_sub', rospy.Subscriber(f"trajectory_{i}", Path, self.trajectory_callback, callback_args=i))
+            setattr(self, f'_lam_{i}_sub', rospy.Subscriber(f"lambda_{i}", LambdaArrayList, self.lambda_callback, callback_args=i))
+            
 
         # Publishers
         self._th_pub = rospy.Publisher(f"throttle_{self._idx}", Float32, queue_size=1) 
@@ -337,7 +343,6 @@ class ROSMPCPlanner:
                 self._params_ca.set(k, f"x_{self._idx}", x_plan_i[0, k])
                 self._params_ca.set(k, f"y_{self._idx}", x_plan_i[1, k])
                 self._params_ca.set(k, f"theta_{self._idx}", x_plan_i[2, k])
-
             else:
                 if k == self._N-1:
                     self._params_ca.set(k, f"x_{self._idx}", trajectory_i[0, k-1] + (trajectory_i[0, k-1] - trajectory_i[0, k - 2]))
@@ -347,6 +352,8 @@ class ROSMPCPlanner:
                     self._params_ca.set(k, f"x_{self._idx}", trajectory_i[0, k+1])
                     self._params_ca.set(k, f"y_{self._idx}", trajectory_i[1, k+1])
                     self._params_ca.set(k, f"theta_{self._idx}", trajectory_i[2, k+1])
+
+            # lambdas
 
     def initialise_duals(self):
 
@@ -377,8 +384,7 @@ class ROSMPCPlanner:
                 s = self._save_s[0][s_name]
                 map_value = self._map[s_name + "_0"][1]
                 self._uinit[map_value - self._nx_ca : (map_value - self._nx_ca) + 2] = s
-                    
-                        
+                                            
     def publish_throttle(self, control, exit_flag):
         throttle = Float32()
         if not self._mpc_feasible or not self._enable_output:
@@ -580,6 +586,17 @@ class ROSMPCPlanner:
                 trajectory[1, k] = pose.pose.position.y
                 trajectory[2, k] = quaternion_to_yaw(pose.pose.orientation)
     
+    def lambda_callback(self, msg, i):
+
+        if not msg.rows:
+            rospy.logwarn(f"Received empty lambda robot {i}")
+            return
+        
+        if i != self._idx:
+            lam = getattr(self, f"_lambda_{i}")
+            for k, lam_msg in enumerate(msg.rows):
+                lam[k] = [lam_msg.data[0], lam_msg.data[1], lam_msg.data[2], lam_msg.data[3]]
+                
     def print_stats(self):
         self._planner.print_stats()
         # self._decomp_constraints.print_stats()

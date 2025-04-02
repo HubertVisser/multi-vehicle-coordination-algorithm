@@ -48,19 +48,19 @@ class ROSMPCCoordinator:
             rospy.Duration(1.0 / self._settings["control_frequency"]), self.run
         )
 
-    def initialize_subscribers(self):
-        for i in range(1, self._number_of_robots + 1):
-            rospy.Subscriber(f"trajectory_{i}", Path, self.trajectory_callback, callback_args=i)
+    # def initialize_subscribers(self):
+    #     for i in range(1, self._number_of_robots + 1):
+    #         rospy.Subscriber(f"trajectory_{i}", Path, self.trajectory_callback, callback_args=i)
 
-    def trajectory_callback(self, msg, i):
-        # Update the trajectory for the robot
-        for robot in self._robots:
-            robot.trajectory_callback(msg, i)
+    # def trajectory_callback(self, msg, i):
+    #     # Update the trajectory for the robot
+    #     for robot in self._robots:
+    #         robot.trajectory_callback(msg, i)
 
-        with self._trajectory_lock:
-            self._trajectory_counter += 1
-            if self._trajectory_counter == self._number_of_robots:
-                self._trajectory_condition.notify_all()
+    #     with self._trajectory_lock:
+    #         self._trajectory_counter += 1
+    #         if self._trajectory_counter == self._number_of_robots:
+    #             self._trajectory_condition.notify_all()
 
     def run(self, timer):
         
