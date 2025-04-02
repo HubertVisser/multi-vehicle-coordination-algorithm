@@ -16,7 +16,7 @@ from util.files import load_settings
 
 class PathGenerator:
     def __init__(self):
-        self.settings = load_settings(package="multi-vehicle-coordination-algorithm")
+        self.settings = load_settings(package="multi_vehicle_coordination_algorithm")
         self.track_choice = self.settings["track_choice"]
         self.num_robot = self.settings["number_of_robots"]
 

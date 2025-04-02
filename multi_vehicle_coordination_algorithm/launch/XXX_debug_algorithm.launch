@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <!-- Load the settings YAML file -->
+  <rosparam file="$(find multi_vehicle_coordination_algorithm)/config/settings.yaml" command="load" />
+
+  <node name="multi_vehicle_coordination_algorithm_node" pkg="multi_vehicle_coordination_algorithm" type="launch_wrapper.py" output="screen"/>
+
+</launch>  

@@ -10,7 +10,7 @@ def main():
     scheme = rospy.get_param("scheme", "default_scheme")  # Use default if missing
 
     # Construct the launch file path dynamically
-    launch_file = f"/home/dock_user/ros_ws/src/multi-vehicle-coordination-algorithm/multi-vehicle-coordination-algorithm/launch/{scheme}_algorithm.launch"
+    launch_file = f"/home/dock_user/ros_ws/src/multi-vehicle-coordination-algorithm/multi_vehicle_coordination_algorithm/launch/{scheme}_algorithm.launch"
     
     # Run the launch file using roslaunch
     subprocess.call(["roslaunch", launch_file])

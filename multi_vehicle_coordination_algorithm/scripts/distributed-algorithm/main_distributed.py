@@ -28,7 +28,7 @@ import debugpy
 
 class ROSMPCCoordinator:
     def __init__(self):
-        self._settings = load_settings(package="multi-vehicle-coordination-algorithm")
+        self._settings = load_settings(package="multi_vehicle_coordination_algorithm")
         self._N = self._settings["N"]
         self._integrator_step = self._settings["integrator_step"]
         self._number_of_robots = self._settings["number_of_robots"]
@@ -64,8 +64,6 @@ class ROSMPCCoordinator:
 
     def run(self, timer):
         
-        for robot in self._robots:
-            robot.run_ca(timer)
 
         # Run NMPC for each robot
         for robot in self._robots:
@@ -75,6 +73,9 @@ class ROSMPCCoordinator:
                 rospy.logwarn("Splines have not been computed yet. Waiting for splines to be available.")
                 return
         
+        for robot in self._robots:
+            if robot._spline_fitter._splines:
+                robot.run_ca(timer)
 
         # Run CA for all robots after all trajectories are received
         # self.run_ca_for_all_robots(timer)

@@ -13,6 +13,7 @@ import rospy
 from std_msgs.msg import Int32, Float32, Empty
 from nav_msgs.msg import Odometry, Path
 from geometry_msgs.msg import PoseStamped, Pose, Twist
+from multi_vehicle_coordination_algorithm.msg import LambdaArrayList, LambdaArray
 
 import numpy as np
 from copy import deepcopy
@@ -112,12 +113,11 @@ class ROSMPCPlanner:
         # Subscriber path generator
         self._path_sub = rospy.Subscriber(f"roadmap/reference_{self._idx}", Path, lambda msg: self.path_callback(msg), queue_size=1)
 
-        # Trajectory publisher
-        self._traj_pub = rospy.Publisher(f"trajectory_{self._idx}", Path, queue_size=1)
-
         # Publishers
-        self._th_pub = rospy.Publisher(f"throttle_{self._idx}", Float32, queue_size=1) # Throttle publisher
-        self._st_pub = rospy.Publisher(f"steering_{self._idx}", Float32, queue_size=1) # Steering publisher
+        self._th_pub = rospy.Publisher(f"throttle_{self._idx}", Float32, queue_size=1) 
+        self._st_pub = rospy.Publisher(f"steering_{self._idx}", Float32, queue_size=1) 
+        self._traj_pub = rospy.Publisher(f"trajectory_{self._idx}", Path, queue_size=1)
+        self._lam_pub = rospy.Publisher(f"lambda_{self._idx}", LambdaArrayList, queue_size=1)
 
     def run_nmpc(self, timer):
         # Check if splines exist
@@ -436,6 +436,22 @@ class ROSMPCPlanner:
             assert len(traj_msg.poses) == self._N
             
             self._traj_pub.publish(traj_msg)
+    
+    def publish_lambdas(self, trajectory):
+        if trajectory is not None:
+            msg = LambdaArrayList()
+            for k in range(1, self._N+1):
+                if k != self._N:
+                    lam_msg = LambdaArray()
+                    lam_msg.data = [trajectory[2, k+1], trajectory[3, k+1], trajectory[4, k+1], trajectory[5, k+1]]
+                    msg.rows.append(lam_msg)
+                elif k == self._N:  
+                    lam_msg = LambdaArray()
+                    lam_msg.data = [trajectory[2, k], trajectory[3, k], trajectory[4, k], trajectory[5, k]]
+                    msg.rows.append(lam_msg)
+            assert len(msg.rows) == self._N
+            
+            self._lam_pub.publish(msg)
     
     def visualize(self): 
         if self._state_msg is not None:

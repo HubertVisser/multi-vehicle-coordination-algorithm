@@ -9,7 +9,7 @@
   <arg name="scenario" default="corridor"/>
   <arg name="experiment" default="none"/>
 
-  <node name="path_node" pkg="multi-vehicle-coordination-algorithm" type="path_generator.py" output="log" cwd="node"/> 
+  <node name="path_node" pkg="multi_vehicle_coordination_algorithm" type="path_generator.py" output="log" cwd="node"/> 
   <!-- Add the scenario and experiment as rosparameters -->
   <rosparam param="scenario" subst_value="true">$(arg scenario)</rosparam>
   <rosparam param="experiment" subst_value="true">$(arg experiment)</rosparam>
@@ -19,7 +19,7 @@
   <include file="$(find dart_simulator_pkg)/launch/dart_simulator_no_visuals.launch">
   </include>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find multi-vehicle-coordination-algorithm)/rviz/simulator.rviz" output="screen"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find multi_vehicle_coordination_algorithm)/rviz/simulator.rviz" output="screen"/>
 
   <!-- <node pkg="rqt_reconfigure" type="rqt_reconfigure" name="rqt_reconfigure" output="log"/> -->
 

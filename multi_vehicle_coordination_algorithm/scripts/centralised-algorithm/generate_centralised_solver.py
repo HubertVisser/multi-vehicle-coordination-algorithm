@@ -62,7 +62,7 @@ def configuration_basic(settings):
 
 
 def generate():
-    settings = load_settings(package="multi-vehicle-coordination-algorithm")
+    settings = load_settings(package="multi_vehicle_coordination_algorithm")
     settings["solver_name"] = 'solver_centralised'
     model, modules = configuration_basic(settings)
 

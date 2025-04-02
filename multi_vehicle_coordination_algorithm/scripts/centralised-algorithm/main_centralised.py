@@ -37,7 +37,7 @@ from ros_visuals import ROSMarkerPublisher
 
 class ROSMPCPlanner:
     def __init__(self):
-        self._settings = load_settings(package="multi-vehicle-coordination-algorithm")
+        self._settings = load_settings(package="multi_vehicle_coordination_algorithm")
         self._N = self._settings["N"]
         self._integrator_step = self._settings["integrator_step"]
         self._braking_acceleration = self._settings["braking_acceleration"]

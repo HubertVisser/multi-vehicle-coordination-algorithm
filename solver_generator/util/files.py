@@ -48,7 +48,7 @@ def load_settings(setting_file_name="settings", package=None):
 
 # Not working and not used
 def load_test_settings(setting_file_name="settings"):
-    path = f"{get_package_path('multi-vehicle-coordination-algorithm')}/config/{setting_file_name}.yaml"
+    path = f"{get_package_path('multi_vehicle_coordination_algorithm')}/config/{setting_file_name}.yaml"
     print_path("Settings", path, end="")
     with open(path, "r") as stream:
         settings = yaml.safe_load(stream)
@@ -112,11 +112,11 @@ def generated_src_file(settings):
 
 
 def planner_path():
-    return get_package_path("multi-vehicle-coordination-algorithm")
+    return get_package_path("multi_vehicle_coordination_algorithm")
 
 
 def rqt_config_path():
-    return os.path.join(get_package_path("multi-vehicle-coordination-algorithm"), "config-rqt/")
+    return os.path.join(get_package_path("multi_vehicle_coordination_algorithm"), "config-rqt/")
 
 
 def generated_include_file(settings):
