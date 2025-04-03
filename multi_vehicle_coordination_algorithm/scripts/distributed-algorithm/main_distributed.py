@@ -42,8 +42,6 @@ class ROSMPCCoordinator:
         self._trajectory_lock = threading.Lock()
         self._trajectory_condition = threading.Condition(self._trajectory_lock)
 
-        self.initialize_subscribers()
-
         self._timer = rospy.Timer(
             rospy.Duration(1.0 / self._settings["control_frequency"]), self.run
         )
@@ -63,7 +61,6 @@ class ROSMPCCoordinator:
     #             self._trajectory_condition.notify_all()
 
     def run(self, timer):
-        
 
         # Run NMPC for each robot
         for robot in self._robots:

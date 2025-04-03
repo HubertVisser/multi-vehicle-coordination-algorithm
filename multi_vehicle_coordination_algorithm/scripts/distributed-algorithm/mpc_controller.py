@@ -205,15 +205,15 @@ class MPCPlanner:
 
             for j in range(1, self._number_of_robots+1):
                 if j != self._idx:
-                    output[f"lam_{self._idx}_{j}_0"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_0")
-                    output[f"lam_{self._idx}_{j}_1"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_1")
-                    output[f"lam_{self._idx}_{j}_2"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_2")
-                    output[f"lam_{self._idx}_{j}_3"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_3")
+                    # output[f"lam_{self._idx}_{j}_0"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_0")
+                    # output[f"lam_{self._idx}_{j}_1"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_1")
+                    # output[f"lam_{self._idx}_{j}_2"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_2")
+                    # output[f"lam_{self._idx}_{j}_3"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_3")
                     
-                    output[f"lam_{j}_{self._idx}_0"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_0")
-                    output[f"lam_{j}_{self._idx}_1"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_1")
-                    output[f"lam_{j}_{self._idx}_2"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_2")
-                    output[f"lam_{j}_{self._idx}_3"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_3")
+                    # output[f"lam_{j}_{self._idx}_0"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_0")
+                    # output[f"lam_{j}_{self._idx}_1"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_1")
+                    # output[f"lam_{j}_{self._idx}_2"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_2")
+                    # output[f"lam_{j}_{self._idx}_3"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_3")
 
                     if self._idx > j:
                         output[f"s_{j}_{self._idx}_0"] = self._model_ca.get(1, f"s_{j}_{self._idx}_0")
