@@ -196,7 +196,7 @@ class MPCPlanner:
            
 
             output = dict()
-            if status != 0: #and status != 2: # infeasible
+            if status != 0: # infeasible
                 print_warning(f"Optimization for CA {self._idx} was infeasible (exitflag = {status})")
                 
                 return output, False, None

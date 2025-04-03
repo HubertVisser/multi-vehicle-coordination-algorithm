@@ -314,7 +314,7 @@ class ROSMPCPlanner:
                     lambda_j = getattr(self, f'_lambda_{j}')
 
                     # If the trajectory of neighbour j is not received yet, set with initial trajectory and lambdas
-                    if np.all(trajectory_j == 0):
+                    if np.all(trajectory_j == 0) or np.all(lambda_j == 0):
                         xinit_j = np.array([self._settings[f"robot_{j}"]["start_x"], self._settings[f"robot_{j}"]["start_y"], self._settings[f"robot_{j}"]["start_theta"] * np.pi])
                         x_plan_j = set_initial_x_plan(self._settings, xinit_j)
                         initial_duals = getattr(self, f'initial_duals_{j}')
