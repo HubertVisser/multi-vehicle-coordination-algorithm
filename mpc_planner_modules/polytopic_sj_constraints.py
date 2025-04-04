@@ -42,14 +42,15 @@ class PolytopicSjdualConstraints:
         self.solver_name = settings.get("solver_name", None)
 
     def define_parameters(self, params):
-        if self.scheme == 'distributed' and self.solver_name.startswith("solver_ca"):
-            for i in range(1, self.number_of_robots+1):
-                for j in range(1, self.number_of_robots+1):
-                        if i != j and (j == self.idx_i):
-                            params.add(f"lam_{i}_{j}_0")
-                            params.add(f"lam_{i}_{j}_1")
-                            params.add(f"lam_{i}_{j}_2")
-                            params.add(f"lam_{i}_{j}_3")
+        pass
+        # if self.scheme == 'distributed' and self.solver_name.startswith("solver_ca"):
+        #     for i in range(1, self.number_of_robots+1):
+        #         for j in range(1, self.number_of_robots+1):
+        #                 if i != j and (j == self.idx_i):
+        #                     params.add(f"lam_{i}_{j}_0")
+        #                     params.add(f"lam_{i}_{j}_1")
+        #                     params.add(f"lam_{i}_{j}_2")
+        #                     params.add(f"lam_{i}_{j}_3")
 
     def get_lower_bound(self):
         lower_bound = []

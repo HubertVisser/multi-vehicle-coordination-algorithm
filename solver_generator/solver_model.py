@@ -321,8 +321,9 @@ class BicycleModel2ndOrder(DynamicsModel):
         self.inputs = [f"throttle_{idx}", f"steering_{idx}"] #, "slack"]
 
         for j in range(1, n+1): 
-            if idx != j:
-                self.inputs.extend([f"lam_{idx}_{j}_0", f"lam_{idx}_{j}_1", f"lam_{idx}_{j}_2", f"lam_{idx}_{j}_3"])
+            if j == idx:
+                continue
+            self.inputs.extend([f"lam_{idx}_{j}_0", f"lam_{idx}_{j}_1", f"lam_{idx}_{j}_2", f"lam_{idx}_{j}_3"])
         # for i in range(1, n+1):
         #     for j in range(i, n+1):
         #         if i != j and (i == idx or j == idx):
@@ -608,22 +609,22 @@ class CollisionAvoidanceModel(DynamicsModel):
         self.num_of_robots = n
         self.idx = idx # robot index
         self.nx = 1
-        self.nlam = (self.num_of_robots-1) *4 *2 # lambda variables
+        self.nlam = (self.num_of_robots-1) *4 # lambda variables
         self.ns = (self.num_of_robots-1) *2 # s variables
-        self.nu = self.ns #+ self.nlam
+        self.nu = self.ns + self.nlam
 
         self.states = [f"unused_x_{idx}"]
-        # for j in range(1, n+1):
-        #     if idx != j:
+        for j in range(1, n+1):
+            if idx != j:
         #         self.inputs.extend([f"lam_{idx}_{j}_0", f"lam_{idx}_{j}_1", f"lam_{idx}_{j}_2", f"lam_{idx}_{j}_3"])
-        #         self.inputs.extend([f"lam_{j}_{idx}_0", f"lam_{j}_{idx}_1", f"lam_{j}_{idx}_2", f"lam_{j}_{idx}_3"])
+                self.inputs.extend([f"lam_{j}_{idx}_0", f"lam_{j}_{idx}_1", f"lam_{j}_{idx}_2", f"lam_{j}_{idx}_3"])
         for i in range(1, n+1):
             for j in range(i, n+1):
                 if i != j and (i == idx or j == idx):
                     self.inputs.extend([f"s_{i}_{j}_0", f"s_{i}_{j}_1"])
 
-        self.lower_bound = np.array([0.0] + [-10.0]* self.ns)# + [0.0]* self.nlam  ) # [x, u]
-        self.upper_bound = np.array([0.0]+ [10.0]* self.ns)#+ [1000.0]* self.nlam  ) # [x, u]
+        self.lower_bound = np.array([0.0]  + [0.0]* self.nlam + [-10.0]* self.ns) # [x, u]
+        self.upper_bound = np.array([0.0] + [1000.0]* self.nlam + [10.0]* self.ns) # [x, u]
 
         self.lower_bound_states = self.lower_bound[:self.nx]
         self.upper_bound_states = self.upper_bound[:self.nx]

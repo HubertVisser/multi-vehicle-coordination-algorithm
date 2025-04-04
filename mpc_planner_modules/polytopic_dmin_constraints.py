@@ -99,12 +99,12 @@ class PolytopicDminConstraints:
             return cd.vertcat(pos_x_j, pos_y_j), theta_j
 
     def get_lam_ij(self, model, params, idx_j):
-        # if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
-        #     return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
-        #                         params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
-        #                         params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
-        #                         params.get(f"lam_{self.idx_i}_{idx_j}_3"))
-        # else:
+        if self.scheme == 'distributed' and self.solver_name.startswith("solver_ca"):
+            return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
+                                params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
+                                params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
+                                params.get(f"lam_{self.idx_i}_{idx_j}_3"))
+        else:
             return cd.vertcat(  model.get(f"lam_{self.idx_i}_{idx_j}_0"), 
                                 model.get(f"lam_{self.idx_i}_{idx_j}_1"), 
                                 model.get(f"lam_{self.idx_i}_{idx_j}_2"), 

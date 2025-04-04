@@ -21,7 +21,6 @@ class MinimizeCollisionAvoidanceObjective:
         self.number_of_robots = settings["number_of_robots"]
 
     def define_parameters(self, params):
-        
         params.add("dmin_objective")
     
     def get_pos_theta_i(self, params):
@@ -38,11 +37,11 @@ class MinimizeCollisionAvoidanceObjective:
         theta_j = params.get(f"theta_{idx_j}")
         return pos_j, theta_j
         
-    def get_lam_ij(self, model, idx_j):
-        return cd.vertcat(  model.get(f"lam_{self.idx_i}_{idx_j}_0"), 
-                            model.get(f"lam_{self.idx_i}_{idx_j}_1"), 
-                            model.get(f"lam_{self.idx_i}_{idx_j}_2"), 
-                            model.get(f"lam_{self.idx_i}_{idx_j}_3"))
+    def get_lam_ij(self, params, idx_j):
+        return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
+                            params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
+                            params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
+                            params.get(f"lam_{self.idx_i}_{idx_j}_3"))
     
     def get_lam_ji(self, model, idx_j):
         return cd.vertcat(  model.get(f"lam_{idx_j}_{self.idx_i}_0"), 
@@ -51,7 +50,7 @@ class MinimizeCollisionAvoidanceObjective:
                             model.get(f"lam_{idx_j}_{self.idx_i}_3"))
         
     def get_value(self, model, params, settings, stage_idx):
-        cost = 0
+        cost = 0.0
 
         pos_i, theta_i = self.get_pos_theta_i(params)
         b_i = get_b(pos_i, theta_i, self.length, self.width)
@@ -59,16 +58,17 @@ class MinimizeCollisionAvoidanceObjective:
 
         # Objective for all neighbouring robots (j)
         for j in range(1, self.number_of_robots+1): 
-            if j != self.idx_i:
+            if j == self.idx_i:
+                continue
     
-                pos_j, theta_j = self.get_pos_theta_j(params, j)
-                lam_ij = self.get_lam_ij(model, j)
-                lam_ji = self.get_lam_ji(model, j)
-                assert lam_ij.shape == (4,1)
+            pos_j, theta_j = self.get_pos_theta_j(params, j)
+            lam_ij = self.get_lam_ij(params, j)
+            lam_ji = self.get_lam_ji(model, j)
+            assert lam_ij.shape == (4,1)
 
-                b_j = get_b(pos_j, theta_j, self.length, self.width)
+            b_j = get_b(pos_j, theta_j, self.length, self.width)
 
-                cost += -1 * dmin_weight *(- b_i.T @ lam_ij - b_j.T @ lam_ji)
+            cost += -1 * dmin_weight *(- b_i.T @ lam_ij - b_j.T @ lam_ji)
         
         return cost
         
