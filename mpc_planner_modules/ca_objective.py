@@ -37,11 +37,11 @@ class MinimizeCollisionAvoidanceObjective:
         theta_j = params.get(f"theta_{idx_j}")
         return pos_j, theta_j
         
-    def get_lam_ij(self, params, idx_j):
-        return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
-                            params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
-                            params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
-                            params.get(f"lam_{self.idx_i}_{idx_j}_3"))
+    def get_lam_ij(self, model, idx_j):
+        return cd.vertcat(  model.get(f"lam_{self.idx_i}_{idx_j}_0"), 
+                            model.get(f"lam_{self.idx_i}_{idx_j}_1"), 
+                            model.get(f"lam_{self.idx_i}_{idx_j}_2"), 
+                            model.get(f"lam_{self.idx_i}_{idx_j}_3"))
     
     def get_lam_ji(self, model, idx_j):
         return cd.vertcat(  model.get(f"lam_{idx_j}_{self.idx_i}_0"), 
@@ -62,7 +62,7 @@ class MinimizeCollisionAvoidanceObjective:
                 continue
     
             pos_j, theta_j = self.get_pos_theta_j(params, j)
-            lam_ij = self.get_lam_ij(params, j)
+            lam_ij = self.get_lam_ij(model, j)
             lam_ji = self.get_lam_ji(model, j)
             assert lam_ij.shape == (4,1)
 

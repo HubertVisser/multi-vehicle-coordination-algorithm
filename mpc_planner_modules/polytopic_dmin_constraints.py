@@ -44,16 +44,18 @@ class PolytopicDminConstraints:
     def define_parameters(self, params):
         if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
             for i in range(1, self.number_of_robots+1):
-                for j in range(1, self.number_of_robots+1):
-                    if i != j and (j == self.idx_i): # or i == self.idx_i):
-                        params.add(f"lam_{i}_{j}_0")
-                        params.add(f"lam_{i}_{j}_1")
-                        params.add(f"lam_{i}_{j}_2")
-                        params.add(f"lam_{i}_{j}_3")
-                if i != self.idx_i:
-                    params.add(f"x_{i}")
-                    params.add(f"y_{i}")
-                    params.add(f"theta_{i}")
+                if i == self.idx_i:
+                    continue
+                params.add(f"x_{i}")
+                params.add(f"y_{i}")
+                params.add(f"theta_{i}")
+                # for j in range(1, self.number_of_robots+1):
+                #     if i == j or j != self.idx_i: # or i == self.idx_i):
+                #         continue
+                #     params.add(f"lam_{i}_{j}_0")
+                #     params.add(f"lam_{i}_{j}_1")
+                #     params.add(f"lam_{i}_{j}_2")
+                #     params.add(f"lam_{i}_{j}_3")
         if self.scheme == 'distributed' and self.solver_name.startswith("solver_ca"):
             for i in range(1, self.number_of_robots+1):
                 params.add(f"x_{i}")
@@ -99,24 +101,24 @@ class PolytopicDminConstraints:
             return cd.vertcat(pos_x_j, pos_y_j), theta_j
 
     def get_lam_ij(self, model, params, idx_j):
-        if self.scheme == 'distributed' and self.solver_name.startswith("solver_ca"):
-            return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
-                                params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
-                                params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
-                                params.get(f"lam_{self.idx_i}_{idx_j}_3"))
-        else:
+        # if self.scheme == 'distributed' and self.solver_name.startswith("solver_ca"):
+        #     return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
+        #                         params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
+        #                         params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
+        #                         params.get(f"lam_{self.idx_i}_{idx_j}_3"))
+        # else:
             return cd.vertcat(  model.get(f"lam_{self.idx_i}_{idx_j}_0"), 
                                 model.get(f"lam_{self.idx_i}_{idx_j}_1"), 
                                 model.get(f"lam_{self.idx_i}_{idx_j}_2"), 
                                 model.get(f"lam_{self.idx_i}_{idx_j}_3"))
     
     def get_lam_ji(self, model, params, idx_j):
-        if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
-            return cd.vertcat(  params.get(f"lam_{idx_j}_{self.idx_i}_0"), 
-                                params.get(f"lam_{idx_j}_{self.idx_i}_1"), 
-                                params.get(f"lam_{idx_j}_{self.idx_i}_2"), 
-                                params.get(f"lam_{idx_j}_{self.idx_i}_3"))
-        else:
+        # if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
+        #     return cd.vertcat(  params.get(f"lam_{idx_j}_{self.idx_i}_0"), 
+        #                         params.get(f"lam_{idx_j}_{self.idx_i}_1"), 
+        #                         params.get(f"lam_{idx_j}_{self.idx_i}_2"), 
+        #                         params.get(f"lam_{idx_j}_{self.idx_i}_3"))
+        # else:
             return cd.vertcat(  model.get(f"lam_{idx_j}_{self.idx_i}_0"), 
                                 model.get(f"lam_{idx_j}_{self.idx_i}_1"), 
                                 model.get(f"lam_{idx_j}_{self.idx_i}_2"), 
@@ -130,17 +132,18 @@ class PolytopicDminConstraints:
         b_i = get_b(pos_i, theta_i, self.length, self.width)
         
         # Constraints for all neighbouring robots (j)
-        start_idx = 1 if self.scheme == 'distributed' else self.idx_i
+        start_idx = 1 #if self.scheme == 'distributed' else self.idx_i
         for j in range(start_idx, self.number_of_robots+1): 
-            if j != self.idx_i:
+            if j == self.idx_i:
+                continue
     
-                pos_j, theta_j = self.get_pos_theta_j(model, params, j)
-                lam_ij = self.get_lam_ij(model, params, j)
-                lam_ji = self.get_lam_ji(model, params, j)
-                assert lam_ij.shape == (4,1)
+            pos_j, theta_j = self.get_pos_theta_j(model, params, j)
+            lam_ij = self.get_lam_ij(model, params, j)
+            lam_ji = self.get_lam_ji(model, params, j)
+            assert lam_ij.shape == (4,1)
 
-                b_j = get_b(pos_j, theta_j, self.length, self.width)
+            b_j = get_b(pos_j, theta_j, self.length, self.width)
 
-                constraints.append(- b_i.T @ lam_ij - b_j.T @ lam_ji)
+            constraints.append(- b_i.T @ lam_ij - b_j.T @ lam_ji)
 
         return constraints

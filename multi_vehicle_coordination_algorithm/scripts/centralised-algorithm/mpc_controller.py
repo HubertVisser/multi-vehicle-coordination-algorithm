@@ -50,8 +50,6 @@ class MPCPlanner:
         self._solver, self._simulator = generate_centralised_solver.generate()
         self._solver_settings = load_settings("solver_settings", package="mpc_planner_solver")
 
-        # acados_ocp = AcadosOcp(acados_path=acados_path)
-        # self._solver = AcadosOcpSolver(acados_ocp)
         self._model = AcadosRealTimeModel(self._settings, self._solver_settings, package="mpc_planner_solver")
         self._dynamic_model = BicycleModel2ndOrderMultiRobot(self._number_of_robots)
         self.reference_velocity = self._settings["weights"]["reference_velocity"]
@@ -152,11 +150,12 @@ class MPCPlanner:
                 output[f"throttle_{n}"] = self._model.get(0, f"throttle_{n}")
                 output[f"steering_{n}"] = self._model.get(0, f"steering_{n}")
                 for j in range(1, self._number_of_robots+1):
-                    if j != n:
-                        output[f"lam_{n}_{j}_0"] = self._model.get(1, f"lam_{n}_{j}_0")
-                        output[f"lam_{n}_{j}_1"] = self._model.get(1, f"lam_{n}_{j}_1")
-                        output[f"lam_{n}_{j}_2"] = self._model.get(1, f"lam_{n}_{j}_2")
-                        output[f"lam_{n}_{j}_3"] = self._model.get(1, f"lam_{n}_{j}_3")
+                    if j == n:
+                        continue
+                    output[f"lam_{n}_{j}_0"] = self._model.get(1, f"lam_{n}_{j}_0")
+                    output[f"lam_{n}_{j}_1"] = self._model.get(1, f"lam_{n}_{j}_1")
+                    output[f"lam_{n}_{j}_2"] = self._model.get(1, f"lam_{n}_{j}_2")
+                    output[f"lam_{n}_{j}_3"] = self._model.get(1, f"lam_{n}_{j}_3")
                 for j in range(n, self._number_of_robots+1):
                     if j != n and n > j:
                         output[f"s_{j}_{n}_0"] = self._model.get(1, f"s_{j}_{n}_0")

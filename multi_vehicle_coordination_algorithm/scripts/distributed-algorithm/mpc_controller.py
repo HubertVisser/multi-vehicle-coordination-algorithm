@@ -33,7 +33,6 @@ class MPCPlanner:
         self._dart_simulator = self._settings["dart_simulator"]
         self._idx = idx
 
-        
         self.init_nmpc_solver()
         self.init_ca_solver()
 
@@ -136,7 +135,7 @@ class MPCPlanner:
                 solve_time += float(self._solver_nmpc.get_stats('time_tot')) * 1000.
            
             output = dict()
-            if status != 0: #and status != 2: # infeasible
+            if status != 0: # infeasible
                 print_warning(f"Optimization for NMPC {self._idx} was infeasible (exitflag = {status})")
                 
                 output["status"] = status
@@ -204,23 +203,24 @@ class MPCPlanner:
             self._model_ca.load(self._solver_ca)
 
             for j in range(1, self._number_of_robots+1):
-                if j != self._idx:
-                    # output[f"lam_{self._idx}_{j}_0"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_0")
-                    # output[f"lam_{self._idx}_{j}_1"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_1")
-                    # output[f"lam_{self._idx}_{j}_2"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_2")
-                    # output[f"lam_{self._idx}_{j}_3"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_3")
-                    
-                    # output[f"lam_{j}_{self._idx}_0"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_0")
-                    # output[f"lam_{j}_{self._idx}_1"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_1")
-                    # output[f"lam_{j}_{self._idx}_2"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_2")
-                    # output[f"lam_{j}_{self._idx}_3"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_3")
+                if j == self._idx:
+                    continue
+                output[f"lam_{self._idx}_{j}_0"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_0")
+                output[f"lam_{self._idx}_{j}_1"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_1")
+                output[f"lam_{self._idx}_{j}_2"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_2")
+                output[f"lam_{self._idx}_{j}_3"] = self._model_ca.get(1, f"lam_{self._idx}_{j}_3")
+                
+                output[f"lam_{j}_{self._idx}_0"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_0")
+                output[f"lam_{j}_{self._idx}_1"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_1")
+                output[f"lam_{j}_{self._idx}_2"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_2")
+                output[f"lam_{j}_{self._idx}_3"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_3")
 
-                    if self._idx > j:
-                        output[f"s_{j}_{self._idx}_0"] = self._model_ca.get(1, f"s_{j}_{self._idx}_0")
-                        output[f"s_{j}_{self._idx}_1"] = self._model_ca.get(1, f"s_{j}_{self._idx}_1")
-                    else:    
-                        output[f"s_{self._idx}_{j}_0"] = self._model_ca.get(1, f"s_{self._idx}_{j}_0")
-                        output[f"s_{self._idx}_{j}_1"] = self._model_ca.get(1, f"s_{self._idx}_{j}_1")
+                if self._idx > j:
+                    output[f"s_{j}_{self._idx}_0"] = self._model_ca.get(1, f"s_{j}_{self._idx}_0")
+                    output[f"s_{j}_{self._idx}_1"] = self._model_ca.get(1, f"s_{j}_{self._idx}_1")
+                else:    
+                    output[f"s_{self._idx}_{j}_0"] = self._model_ca.get(1, f"s_{self._idx}_{j}_0")
+                    output[f"s_{self._idx}_{j}_1"] = self._model_ca.get(1, f"s_{self._idx}_{j}_1")
                         
             
             self.time_tracker.add(solve_time)

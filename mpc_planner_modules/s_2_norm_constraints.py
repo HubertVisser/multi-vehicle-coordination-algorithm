@@ -31,7 +31,7 @@ class s2normConstraintConstraints:
     def __init__(self, n_robots, idx):
         self.n_robots = n_robots
         self.idx = idx
-        self.n_constraints = ((n_robots * n_robots)- n_robots)
+        self.n_constraints = (n_robots-1) * 2
         self.nh = self.n_constraints
 
     def define_parameters(self, params):
@@ -53,15 +53,17 @@ class s2normConstraintConstraints:
         constraints = []
 
         for j in range(1, self.n_robots+1): 
-            if j != self.idx:
-                if self.idx < j:
-                    s_ij_0 = model.get(f"s_{self.idx}_{j}_0")
-                    s_ij_1 = model.get(f"s_{self.idx}_{j}_1")
-                    
-                else:
-                    s_ij_0 = model.get(f"s_{j}_{self.idx}_0")
-                    s_ij_1 = model.get(f"s_{j}_{self.idx}_1")
-                constraints.append(cd.norm_2(s_ij_0))
-                constraints.append(cd.norm_2(s_ij_1))
+            if j== self.idx:
+                continue
+
+            if self.idx < j:
+                s_ij_0 = model.get(f"s_{self.idx}_{j}_0")
+                s_ij_1 = model.get(f"s_{self.idx}_{j}_1")
+            else:
+                s_ij_0 = model.get(f"s_{j}_{self.idx}_0")
+                s_ij_1 = model.get(f"s_{j}_{self.idx}_1")
+
+            constraints.append(cd.norm_2(s_ij_0))
+            constraints.append(cd.norm_2(s_ij_1))
 
         return constraints

@@ -37,26 +37,29 @@ def configuration_basic(settings):
         base_module.weigh_variable(var_name=f"steering_{n}", weight_names="steering")
         base_module.weigh_variable(var_name=f"throttle_{n}", weight_names="throttle")
         for j in range(1,num_robots+1):
-            if j != n:
-                base_module.weigh_variable(var_name=f"lam_{n}_{j}_0", weight_names="lambda",)
-                base_module.weigh_variable(var_name=f"lam_{n}_{j}_1", weight_names="lambda",)
-                base_module.weigh_variable(var_name=f"lam_{n}_{j}_2", weight_names="lambda",)
-                base_module.weigh_variable(var_name=f"lam_{n}_{j}_3", weight_names="lambda",)
-                if n > j:
-                    base_module.weigh_variable(var_name=f"s_{j}_{n}_0", weight_names="s_dual",)
-                    base_module.weigh_variable(var_name=f"s_{j}_{n}_1", weight_names="s_dual",)
-                else:
-                    base_module.weigh_variable(var_name=f"s_{n}_{j}_0", weight_names="s_dual",)
-                    base_module.weigh_variable(var_name=f"s_{n}_{j}_1", weight_names="s_dual",)
+            if j == n:
+                continue
+            base_module.weigh_variable(var_name=f"lam_{n}_{j}_0", weight_names="lambda",)
+            base_module.weigh_variable(var_name=f"lam_{n}_{j}_1", weight_names="lambda",)
+            base_module.weigh_variable(var_name=f"lam_{n}_{j}_2", weight_names="lambda",)
+            base_module.weigh_variable(var_name=f"lam_{n}_{j}_3", weight_names="lambda",)
+            if n > j:
+                base_module.weigh_variable(var_name=f"s_{j}_{n}_0", weight_names="s_dual",)
+                base_module.weigh_variable(var_name=f"s_{j}_{n}_1", weight_names="s_dual",)
+            else:
+                base_module.weigh_variable(var_name=f"s_{n}_{j}_0", weight_names="s_dual",)
+                base_module.weigh_variable(var_name=f"s_{n}_{j}_1", weight_names="s_dual",)
             
         modules.add_module(ContouringModule(settings, n))
         modules.add_module(PathReferenceVelocityModule(settings, n))
-    for n in range(1,num_robots):
+
+     
+        # for n in range(1,num_robots):
         modules.add_module(PolytopicDminConstraintModule(settings, n))
         modules.add_module(PolytopicSidualConstraintModule(settings, n))
         modules.add_module(PolytopicSjdualConstraintModule(settings, n))
     
-    modules.add_module(s2normConstraintModule(settings, n))
+        modules.add_module(s2normConstraintModule(settings, n))
         
     return model, modules
 

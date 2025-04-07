@@ -6,6 +6,7 @@ TODO:
 - [x] Option to run without compiling the solvers
 - [x] Implement the cars to be plotted as polytopic sets
 - [ ] Restructure the util plot functions to be used for centralised as well as for distributed
+- [ ] Model_map centralised
 
 NOTE:
 * Did not communicate lambdas from the first NMPC solution as the lambdas will result in the same values in the CA solution (version nmpc <-> ca)

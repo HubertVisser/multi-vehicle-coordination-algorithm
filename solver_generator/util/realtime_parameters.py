@@ -55,29 +55,6 @@ class RealTimeParameters:
                 if key != "num parameters" and np.isnan(self._params[k, value]):
                     print(f"NaN detected for {key} at k = {k}: {self._params[k, value]}")
     
-    def plot_parameters(self, parameters):
-        """
-        Plot the specified slices of the _params array.
-
-        Args:
-            parameters (list of int): List of indices of the slices to plot.
-        """
-        plt.figure(figsize=(10, 6))
-        for parameter in parameters:
-            for key, value in self._map.items():
-                if key == parameter:
-                    plt.plot(self._params[:, value], label=key)
-        
-        plt.xlabel('Time Step')
-        plt.ylabel('Parameter Value')
-        plt.legend()
-        plt.grid(True)
-        plt.title('Parameter of _params Array')
-        plt.tight_layout()
-        plt.savefig(os.path.join(planner_path(), 'scripts/plots', f'parameter_values.png'))
-        plt.close()
-    
-
 # Python real-time
 class RealTimeModel:
     def __init__(self, settings, solver_settings, model_map_name="model_map", package=None):

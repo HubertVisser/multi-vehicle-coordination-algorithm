@@ -98,7 +98,7 @@ def plot_duals(planner):
     plt.grid(True)
     plt.title(f'Lam Values')
     plt.tight_layout()
-    plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f'lam_values_plot.png'))  # Save the plot to a file
+    plt.savefig(os.path.join(os.path.dirname(__file__), f'{planner._scheme}-algorithm/plots', f'lam_values_plot_{planner._idx}.png'))  # Save the plot to a file
     plt.close()
     
     keys = planner._save_s[0].keys()  # Get the keys from the first dictionary
@@ -118,7 +118,7 @@ def plot_duals(planner):
     plt.grid(True)
     plt.title(f's Values')
     plt.tight_layout()
-    plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f's_values_plot.png'))  # Save the plot to a file
+    plt.savefig(os.path.join(os.path.dirname(__file__), f'{planner._scheme}-algorithm/plots', f's_values_plot_{planner._idx}.png'))  # Save the plot to a file
     plt.close()
 
 def plot_pred_traj(planner):
