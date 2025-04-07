@@ -190,7 +190,7 @@ class MultiRobotDynamicsModel():
     
     def acados_symbolics_d(self):
         s = cd.SX.sym("s", self.n, self.n)               
-        lam = cd.SX.sym("lam", self.n *4, self.n)               
+        lam = cd.SX.sym("lam", self.n * 4, self.n)               
         d = cd.vertcat(s, lam) 
         self.load_d(d)
         return d
@@ -461,7 +461,7 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
                 self.lams[i*4:(i+1)*4,j] = [f"lam_{i+1}_{j+1}_0", f"lam_{i+1}_{j+1}_1", f"lam_{i+1}_{j+1}_2", f"lam_{i+1}_{j+1}_3"]             
                 if i > j:
                     self.s[i,j] = f"s_{j+1}_{i+1}_1"
-                elif i <= j:
+                else:
                     self.s[i,j] = f"s_{i+1}_{j+1}_0"
 
             if len(self.states) == 0:
@@ -481,8 +481,8 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
         self.lower_bound_inputs = np.tile([[0.0],[-1.0]], (1, n)) 
         self.upper_bound_inputs = np.tile([[1.0], [1.0]], (1, n))
 
-        lower_bound_s = np.ones_like(self.s)* - 1
-        upper_bound_s = np.ones_like(self.s)* 1
+        lower_bound_s = np.ones_like(self.s)* -10
+        upper_bound_s = np.ones_like(self.s)* 10
 
         self.lower_bound_lams = np.zeros_like(self.lams)  # lambda
         self.upper_bound_lams = np.ones_like(self.lams)*1000  # lambda  

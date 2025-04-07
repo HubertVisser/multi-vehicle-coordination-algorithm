@@ -51,15 +51,14 @@ def configuration_basic(settings):
                 base_module.weigh_variable(var_name=f"s_{n}_{j}_1", weight_names="s_dual",)
             
         modules.add_module(ContouringModule(settings, n))
-        modules.add_module(PathReferenceVelocityModule(settings, n))
 
-     
         # for n in range(1,num_robots):
         modules.add_module(PolytopicDminConstraintModule(settings, n))
         modules.add_module(PolytopicSidualConstraintModule(settings, n))
         modules.add_module(PolytopicSjdualConstraintModule(settings, n))
     
         modules.add_module(s2normConstraintModule(settings, n))
+        modules.add_module(PathReferenceVelocityModule(settings, n))
         
     return model, modules
 

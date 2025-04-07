@@ -48,7 +48,7 @@ class MPCPlanner:
             del self._mpc_x_plan, self._mpc_u_plan
 
         self._solver, self._simulator = generate_centralised_solver.generate()
-        self._solver_settings = load_settings("solver_settings", package="mpc_planner_solver")
+        self._solver_settings = load_settings("solver_settings_centralised", package="mpc_planner_solver")
 
         self._model = AcadosRealTimeModel(self._settings, self._solver_settings, package="mpc_planner_solver")
         self._dynamic_model = BicycleModel2ndOrderMultiRobot(self._number_of_robots)
@@ -127,7 +127,7 @@ class MPCPlanner:
                 solve_time += float(self._solver.get_stats('time_tot')) * 1000.
            
             output = dict()
-            if status != 0: #and status != 2: # infeasible
+            if status != 0: # infeasible
                 print_warning(f"Optimization was infeasible (exitflag = {status})")
                 
                 self.set_infeasible(output)
@@ -156,11 +156,10 @@ class MPCPlanner:
                     output[f"lam_{n}_{j}_1"] = self._model.get(1, f"lam_{n}_{j}_1")
                     output[f"lam_{n}_{j}_2"] = self._model.get(1, f"lam_{n}_{j}_2")
                     output[f"lam_{n}_{j}_3"] = self._model.get(1, f"lam_{n}_{j}_3")
-                for j in range(n, self._number_of_robots+1):
-                    if j != n and n > j:
+                    if n > j:
                         output[f"s_{j}_{n}_0"] = self._model.get(1, f"s_{j}_{n}_0")
                         output[f"s_{j}_{n}_1"] = self._model.get(1, f"s_{j}_{n}_1")
-                    elif j != n and n < j:
+                    else:
                         output[f"s_{n}_{j}_0"] = self._model.get(1, f"s_{n}_{j}_0")
                         output[f"s_{n}_{j}_1"] = self._model.get(1, f"s_{n}_{j}_1")
             

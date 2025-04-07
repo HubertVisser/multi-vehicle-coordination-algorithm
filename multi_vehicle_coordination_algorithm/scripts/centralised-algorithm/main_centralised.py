@@ -55,7 +55,7 @@ class ROSMPCPlanner:
         self._spline_fitter_2 = SplineFitter(self._settings)
 
         self._solver_settings = load_settings(
-            "solver_settings", package="mpc_planner_solver"
+            "solver_settings_centralised", package="mpc_planner_solver"
         )
 
         # Tied to the solver
@@ -420,26 +420,27 @@ class ROSMPCPlanner:
         for n in range(1, self._number_of_robots+1):
             path_msg = getattr(self, f'_path_msg_{n}')
             spline_fitter = getattr(self, f'_spline_fitter_{n}')
-            if path_msg is not None:
-                line = self._path_visual.get_line()
-                line.set_scale(0.05)
-                line.set_color(1, alpha=1.0)
-                points = self._path_visual.get_cube()
-                points.set_color(3)
-                points.set_scale(0.1, 0.1, 0.1)
-                s = 0.0
-                for i in range(50):
-                    a = spline_fitter.evaluate(s)
-                    b = spline_fitter.evaluate(s + dist)
-                    pose_a = Pose()
-                    pose_a.position.x = float(a[0])
-                    pose_a.position.y = float(a[1])
-                    points.add_marker(pose_a)
-                    pose_b = Pose()
-                    pose_b.position.x = float(b[0])
-                    pose_b.position.y = float(b[1])
-                    s += dist
-                    line.add_line_from_poses(pose_a, pose_b)
+            if path_msg is None:
+                continue
+            line = self._path_visual.get_line()
+            line.set_scale(0.05)
+            line.set_color(1, alpha=1.0)
+            points = self._path_visual.get_cube()
+            points.set_color(3)
+            points.set_scale(0.1, 0.1, 0.1)
+            s = 0.0
+            for i in range(50):
+                a = spline_fitter.evaluate(s)
+                b = spline_fitter.evaluate(s + dist)
+                pose_a = Pose()
+                pose_a.position.x = float(a[0])
+                pose_a.position.y = float(a[1])
+                points.add_marker(pose_a)
+                pose_b = Pose()
+                pose_b.position.x = float(b[0])
+                pose_b.position.y = float(b[1])
+                s += dist
+                line.add_line_from_poses(pose_a, pose_b)
         self._path_visual.publish()
         
     def print_stats(self):
