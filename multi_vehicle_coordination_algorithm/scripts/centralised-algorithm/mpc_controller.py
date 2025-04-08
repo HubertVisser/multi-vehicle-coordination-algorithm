@@ -122,7 +122,8 @@ class MPCPlanner:
             self._solver.set(self._N, 'p', np.array(p[(self._N-1)*npar : (self._N)*npar])) # Repeats the final set of parameters
 
             solve_time = 0.
-            for it in range(self._settings["solver_settings"]["iterations"]):
+            # for it in range(self._settings["solver_settings"]["iterations"]):
+            for it in range(2):
                 status = self._solver.solve()
                 solve_time += float(self._solver.get_stats('time_tot')) * 1000.
            

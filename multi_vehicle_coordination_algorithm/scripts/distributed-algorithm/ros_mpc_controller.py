@@ -161,12 +161,18 @@ class ROSMPCPlanner:
                     output_keys = [f"x_{self._idx}", f"y_{self._idx}", f"theta_{self._idx}", f"vx_{self._idx}", f"vy_{self._idx}", f"w_{self._idx}", f"s_{self._idx}"]
                     self._state = [output[key] for key in output_keys]
                     self._states_save.append(deepcopy(self._state))
-            
+                lam = {}
+                # for j in range(1, self._number_of_robots+1):
+                    # if j == self._idx:
+                        # continue
+                    # lam[f"lam_{self._idx}_{j}"] = [output[f"lam_{self._idx}_{j}_0"], output[f"lam_{self._idx}_{j}_1"], output[f"lam_{self._idx}_{j}_2"], output[f"lam_{self._idx}_{j}_3"]]
+                    # lam[f"lam_{j}_{self._idx}"] = [output[f"lam_{j}_{self._idx}_0"], output[f"lam_{j}_{self._idx}_1"], output[f"lam_{j}_{self._idx}_2"], output[f"lam_{j}_{self._idx}_3"]]
+                
+                # self._save_lam.append(lam)
                 lambdas = trajectory[-self._nlam:]
                 setattr(self, f'_trajectory_{self._idx}', trajectory)
 
                 self._outputs_save.append([output["throttle"], output["steering"]])
-                # self.plot_pred_traj() # slows down the simulation
             
             
             
@@ -200,9 +206,8 @@ class ROSMPCPlanner:
                 else:
                     s[f"s_{j}_{self._idx}"] = [output[f"s_{j}_{self._idx}_0"], output[f"s_{j}_{self._idx}_1"]]
         
-            # self._save_lam.append(lam)
-            self._save_s.append(s)
             self._save_lam.append(lam)
+            self._save_s.append(s)
         
             if self._dart_simulator:
                 control_output = self._outputs_save[-1] 
@@ -269,12 +274,12 @@ class ROSMPCPlanner:
                     # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", initial_duals[k][6])
                     # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", initial_duals[k][7])
 
-                    if self._idx < j:
-                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", initial_duals[k][8])
-                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", initial_duals[k][9])
-                    else:
-                        self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", initial_duals[k][8])
-                        self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", initial_duals[k][9])
+                    # if self._idx < j:
+                    #     self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", initial_duals[k][8])
+                    #     self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", initial_duals[k][9])
+                    # else:
+                    #     self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", initial_duals[k][8])
+                    #     self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", initial_duals[k][9])
                 else:
                     # Hardcoded for 2 robots TODO: Generalize
                     # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", self._ca_solution[5, k])

@@ -122,7 +122,7 @@ def generate_solver(modules, model, settings=None):
     # Slack for constraints
     add_slack = settings["add_slack"]
     slack_value = settings["slack_value"]
-    if add_slack: # and 'nmpc' in settings["solver_name"]:
+    if add_slack and ('nmpc' or 'centralised') in settings["solver_name"]:
         add_constraint_slack = True
         value = float(slack_value)
 
@@ -131,7 +131,7 @@ def generate_solver(modules, model, settings=None):
             ns += nc
             ocp.constraints.idxsh = np.array(range(nc))
             # ns += 1
-            # ocp.constraints.idxsh = np.array([0])
+            # ocp.constraints.idxsh = np.array([0])  # dmin constraint
 
         ocp.constraints.idxsbx = np.array(range(nx))
         ocp.constraints.idxsbu = np.array(range(nu)) 
@@ -157,7 +157,7 @@ def generate_solver(modules, model, settings=None):
 
     # horizon
     ocp.solver_options.tf = settings["N"] * settings["integrator_step"]
-    ocp.solver_options.tol = 1e-3 #1e-6  # 1e-2
+    ocp.solver_options.tol = 1e-4 # 1e-6  # 1e-2
 
     # Solver options
     # integrator option
@@ -188,7 +188,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.qp_solver_iter_max = 200 # default = 50
+    ocp.solver_options.qp_solver_iter_max = 500 # default = 50
     ocp.solver_options.qp_solver_warm_start = 1  # cold start / 1 = warm, 2 = warm primal and dual
 
     # code generation options

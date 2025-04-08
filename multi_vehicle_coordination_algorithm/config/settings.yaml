@@ -14,7 +14,7 @@ robot_1:
   start_y: 1.0
   start_theta: 0.0  # radians
 robot_2:
-  start_x: -4.0
+  start_x: -3.0
   start_y: -1.0
   start_theta: 0.0  # radians
 
@@ -23,7 +23,7 @@ debug_visuals: false
 dart_simulator: false
 
 solver_settings:
-  iterations: 2 #1
+  iterations: 4 #1 #2  # centralised only works with 2 iterations?
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 5.0
@@ -41,12 +41,12 @@ contouring:
 weights:
   throttle: .1
   steering: .1
-  lambda: .05
-  s_dual: .05
-  dmin_objective: .05
+  lambda: .05   # centralised very sensitive on this weight
+  s_dual: .05   # centralised very sensitive on this weight
+  dmin_objective: .1
   velocity: 0.4
   reference_velocity: 0.4
-  lag: 0.6
+  lag: 0.5
   contour: 0.5
   terminal_angle: 1.0 #0.0
   terminal_contour: 5.0 # 0.0
