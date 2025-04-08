@@ -80,10 +80,12 @@ def plot_states(planner):
     plt.savefig(os.path.join(os.path.dirname(__file__), f'{planner._scheme}-algorithm/plots', f'states_outputs_plot_{planner._idx}.png'))  # Save the plot to a file
     plt.close()
 
-def plot_duals(planner):
+def plot_duals(planner, idx=None):
+    if idx: planner._idx = idx
     keys = planner._save_lam[0].keys()  # Get the keys from the first dictionary
     time_steps = range(len(planner._save_lam))  # Time steps based on the number of dictionaries
     num_elements = len(next(iter(planner._save_lam[0].values())))  # Number of elements in each list
+
 
     plt.figure(figsize=(12, 6))
     for element_index in range(num_elements):

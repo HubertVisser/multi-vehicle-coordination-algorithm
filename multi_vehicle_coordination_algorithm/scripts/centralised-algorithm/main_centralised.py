@@ -257,7 +257,7 @@ class ROSMPCPlanner:
         for n in range(1, self._number_of_robots+1):
             state_msg = getattr(self, f'_state_msg_{n}')
             splineFitter = getattr(self, f'_spline_fitter_{n}')
-            if state_msg is not None:
+            if state_msg:
                 robot_pos = self._visuals.get_sphere()
                 robot_pos.set_color(0)
                 robot_pos.set_scale(0.3, 0.3, 0.3)
@@ -528,7 +528,7 @@ class ROSMPCPlanner:
         plt.close() 
     
     def plot_duals(self):
-        plot_duals(self)
+        plot_duals(self, "1-2")
 
 def run_centralised_algorithm():
     """

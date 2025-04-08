@@ -6,7 +6,7 @@ track_choice: "straight_line" # 'straight_line', sinus, "t_junction", "merging"
 skip_solver_generation: false
 
 add_slack: true
-slack_value: 1.0e5
+slack_value: 1.0e4
 
 number_of_robots: 2
 robot_1:
@@ -23,14 +23,14 @@ debug_visuals: false
 dart_simulator: false
 
 solver_settings:
-  iterations: 2 #2 # 1
+  iterations: 2 #1
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 5.0
 braking_acceleration: 1.0
 
 polytopic:
-  d_min: 0.3
+  d_min: 0.1
   length: .5
   width: .5
 
@@ -41,12 +41,12 @@ contouring:
 weights:
   throttle: .1
   steering: .1
-  lambda: .1
-  s_dual: .1
-  dmin_objective: .1
+  lambda: .05
+  s_dual: .05
+  dmin_objective: .05
   velocity: 0.4
   reference_velocity: 0.4
-  lag: 0.5
+  lag: 0.6
   contour: 0.5
   terminal_angle: 1.0 #0.0
   terminal_contour: 5.0 # 0.0

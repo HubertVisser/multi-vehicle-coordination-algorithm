@@ -43,24 +43,24 @@ class PolytopicDminConstraints:
 
     def define_parameters(self, params):
         if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
-            for i in range(1, self.number_of_robots+1):
-                if i == self.idx_i:
+            for j in range(1, self.number_of_robots+1):
+                if j == self.idx_i:
                     continue
-                params.add(f"x_{i}")
-                params.add(f"y_{i}")
-                params.add(f"theta_{i}")
-                # for j in range(1, self.number_of_robots+1):
-                #     if i == j or j != self.idx_i: # or i == self.idx_i):
+                params.add(f"x_{j}")
+                params.add(f"y_{j}")
+                params.add(f"theta_{j}")
+                # for k in range(1, self.number_of_robots+1):
+                #     if j == k or k != self.idx_i: # or k == self.idx_i):
                 #         continue
-                #     params.add(f"lam_{i}_{j}_0")
-                #     params.add(f"lam_{i}_{j}_1")
-                #     params.add(f"lam_{i}_{j}_2")
-                #     params.add(f"lam_{i}_{j}_3")
+                #     params.add(f"lam_{j}_{k}_0")
+                #     params.add(f"lam_{j}_{k}_1")
+                #     params.add(f"lam_{j}_{k}_2")
+                #     params.add(f"lam_{j}_{k}_3")
         if self.scheme == 'distributed' and self.solver_name.startswith("solver_ca"):
-            for i in range(1, self.number_of_robots+1):
-                params.add(f"x_{i}")
-                params.add(f"y_{i}")
-                params.add(f"theta_{i}")
+            for j in range(1, self.number_of_robots+1):
+                params.add(f"x_{j}")
+                params.add(f"y_{j}")
+                params.add(f"theta_{j}")
 
     def get_lower_bound(self):
         lower_bound = []

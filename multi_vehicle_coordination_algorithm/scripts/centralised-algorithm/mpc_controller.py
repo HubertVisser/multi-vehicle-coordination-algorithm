@@ -47,7 +47,7 @@ class MPCPlanner:
         if hasattr(self, "_mpc_x_plan"):
             del self._mpc_x_plan, self._mpc_u_plan
 
-        self._solver, self._simulator = generate_centralised_solver.generate()
+        self._solver, _ = generate_centralised_solver.generate()
         self._solver_settings = load_settings("solver_settings_centralised", package="mpc_planner_solver")
 
         self._model = AcadosRealTimeModel(self._settings, self._solver_settings, package="mpc_planner_solver")
@@ -233,7 +233,7 @@ class MPCPlanner:
         self._mpc_u_plan[0, :] = throttle_initial_guess
         if self._number_of_robots == 2 : 
             self._mpc_u_plan[2, :] = throttle_initial_guess
-            self._mpc_u_plan[-self._nlam+4:-self._nlam+12, :] = self._dmin
+            # self._mpc_u_plan[-self._nlam+4:-self._nlam+12, :] = self._dmin
 
     def get_cost_acados(self):
         return self._solver.get_cost()

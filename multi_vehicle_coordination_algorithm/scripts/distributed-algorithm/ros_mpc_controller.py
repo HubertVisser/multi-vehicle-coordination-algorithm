@@ -42,6 +42,7 @@ class ROSMPCPlanner:
         self._integrator_step = self._settings["integrator_step"]
         self._braking_acceleration = self._settings["braking_acceleration"]
         self._number_of_robots = self._settings["number_of_robots"]
+        self._iterations = self._settings["solver_settings"]["iterations"]
         self._scheme = self._settings["scheme"]
         self._idx = idx
 
@@ -126,7 +127,9 @@ class ROSMPCPlanner:
         self._traj_pub = rospy.Publisher(f"trajectory_{self._idx}", Path, queue_size=1)
         
 
-    def run_nmpc(self, timer):
+    def run_nmpc(self, timer, it=None):
+        if not it: it = self._iterations
+
         # Check if splines exist
         if not self._spline_fitter._splines:
             rospy.logwarn("Splines have not been computed yet. Waiting for splines to be available.")
@@ -150,22 +153,25 @@ class ROSMPCPlanner:
             time = timer.stop_and_print()
 
         if self._mpc_feasible:
-            if self._dart_simulator == False:
-                output_keys = [f"x_{self._idx}", f"y_{self._idx}", f"theta_{self._idx}", f"vx_{self._idx}", f"vy_{self._idx}", f"w_{self._idx}", f"s_{self._idx}"]
-                self._state = [output[key] for key in output_keys]
-                self._states_save.append(deepcopy(self._state))
-            
-            lambdas = trajectory[-self._nlam:]
-            setattr(self, f'_trajectory_{self._idx}', trajectory)
-
-            self._outputs_save.append([output["throttle"], output["steering"]])
-            # self.plot_pred_traj() # slows down the simulation
-            
-            # self.publish_lambdas(lambdas)
+                # self.publish_lambdas(lambdas)
             self.publish_trajectory(trajectory)
-            # self.visualize()
+
+            if it == self._iterations:
+                if self._dart_simulator == False:
+                    output_keys = [f"x_{self._idx}", f"y_{self._idx}", f"theta_{self._idx}", f"vx_{self._idx}", f"vy_{self._idx}", f"w_{self._idx}", f"s_{self._idx}"]
+                    self._state = [output[key] for key in output_keys]
+                    self._states_save.append(deepcopy(self._state))
+            
+                lambdas = trajectory[-self._nlam:]
+                setattr(self, f'_trajectory_{self._idx}', trajectory)
+
+                self._outputs_save.append([output["throttle"], output["steering"]])
+                # self.plot_pred_traj() # slows down the simulation
+            
+            
+            
     
-    def run_ca(self, timer):
+    def run_ca(self, timer, it):
         # Check if splines exist
         
         timer = Timer("loop")
@@ -175,14 +181,13 @@ class ROSMPCPlanner:
         # self._params.check_for_nan()
 
         ca_timer = Timer("CA")
-        # self._params_ca.plot_parameters(["x_1", "x_2", "y_1", "y_2", "theta_1", "theta_2"])
         output, self._ca_feasible, self._ca_solution = self._planner.solve_ca(self._uinit, self._params_ca.get_solver_params())
         del ca_timer
 
         if self._verbose:
             time = timer.stop_and_print()
 
-        if self._ca_feasible:
+        if self._ca_feasible and it == self._iterations:
             lam = {}
             s = {}
             for j in range(1, self._number_of_robots+1):
@@ -199,12 +204,12 @@ class ROSMPCPlanner:
             self._save_s.append(s)
             self._save_lam.append(lam)
         
-        if self._dart_simulator:
-            control_output = self._outputs_save[-1] 
-            self.publish_throttle(control_output, self._mpc_feasible) 
-            self.publish_steering(control_output, self._mpc_feasible) 
-        
-        self.visualize()
+            if self._dart_simulator:
+                control_output = self._outputs_save[-1] 
+                self.publish_throttle(control_output, self._mpc_feasible) 
+                self.publish_steering(control_output, self._mpc_feasible) 
+            
+            self.visualize()
             
 
     def set_nmpc_parameters(self):

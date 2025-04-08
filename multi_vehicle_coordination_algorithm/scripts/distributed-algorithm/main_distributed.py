@@ -32,6 +32,7 @@ class ROSMPCCoordinator:
         self._N = self._settings["N"]
         self._integrator_step = self._settings["integrator_step"]
         self._number_of_robots = self._settings["number_of_robots"]
+        self._iterations = self._settings['solver_settings']['iterations']
 
         self._robots = []
         for i in range(1, self._number_of_robots+1):
@@ -62,20 +63,22 @@ class ROSMPCCoordinator:
 
     def run(self, timer):
                 
-        for robot in self._robots:
-            if robot._spline_fitter._splines:
-                robot.run_ca(timer)
-        
-        # Run NMPC for each robot
-        for robot in self._robots:
-            if robot._spline_fitter._splines:
-                robot.run_nmpc(timer)
-            else:
-                rospy.logwarn("Splines have not been computed yet. Waiting for splines to be available.")
-                return
-        
-        # Run CA for all robots after all trajectories are received
-        # self.run_ca_for_all_robots(timer)
+        for it in range(1, self._iterations+1):
+
+            # Run NMPC for each robot
+            for robot in self._robots:
+                if robot._spline_fitter._splines:
+                    robot.run_nmpc(timer, it)
+                else:
+                    rospy.logwarn("Splines have not been computed yet. Waiting for splines to be available.")
+                    return
+            
+            for robot in self._robots:
+                if robot._spline_fitter._splines:
+                    robot.run_ca(timer, it)
+
+            # Run CA for all robots after all trajectories are received
+            # self.run_ca_for_all_robots(timer)
 
     def run_ca_for_all_robots(self, timer):
         with self._trajectory_condition:
