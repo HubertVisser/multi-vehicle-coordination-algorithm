@@ -33,7 +33,7 @@ class ROSMPCCoordinator:
         self._N = self._settings["N"]
         self._integrator_step = self._settings["integrator_step"]
         self._number_of_robots = self._settings["number_of_robots"]
-        self._iterations = self._settings['solver_settings']['iterations']
+        self._iterations = self._settings['solver_settings']['iterations_distributed']
 
         self._robots = []
         for i in range(1, self._number_of_robots+1):
@@ -44,24 +44,10 @@ class ROSMPCCoordinator:
         self._trajectory_lock = threading.Lock()
         self._trajectory_condition = threading.Condition(self._trajectory_lock)
 
-        self.time_tracker = TimeTracker(self._settings["solver_settings"])
+        self.time_tracker = TimeTracker(f"Distributed - iterations: {self._iterations} vehicles: {self._number_of_robots}")
         self._timer = rospy.Timer(
             rospy.Duration(1.0 / self._settings["control_frequency"]), self.run
         )
-
-    # def initialize_subscribers(self):
-    #     for i in range(1, self._number_of_robots + 1):
-    #         rospy.Subscriber(f"trajectory_{i}", Path, self.trajectory_callback, callback_args=i)
-
-    # def trajectory_callback(self, msg, i):
-    #     # Update the trajectory for the robot
-    #     for robot in self._robots:
-    #         robot.trajectory_callback(msg, i)
-
-    #     with self._trajectory_lock:
-    #         self._trajectory_counter += 1
-    #         if self._trajectory_counter == self._number_of_robots:
-    #             self._trajectory_condition.notify_all()
 
     def run(self, timer):
 
@@ -123,9 +109,9 @@ if __name__ == "__main__":
     for robot in coordinator._robots:
         robot.plot_states()
         robot.plot_duals()
-        robot.print_stats()
 
     coordinator.plot_distance()
+    coordinator.time_tracker.print_stats()
     
     
 

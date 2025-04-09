@@ -168,7 +168,7 @@ def generate_solver(modules, model, settings=None):
     # nlp solver options
     ocp.solver_options.nlp_solver_type = settings["solver_settings"]["solver_type"]
     if ocp.solver_options.nlp_solver_type == "SQP":
-        ocp.solver_options.nlp_solver_max_iter = settings["solver_settings"]["iterations"]
+        ocp.solver_options.nlp_solver_max_iter = settings["solver_settings"]["iterations_centralised"]
     # ocp.solver_options.nlp_solver_warm_start_first_qp = 1
     # ocp.solver_options.hessian_approx = "GAUSS_NEWTON"
     ocp.solver_options.hessian_approx = "EXACT"
@@ -188,7 +188,7 @@ def generate_solver(modules, model, settings=None):
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
     # ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM" 
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.qp_solver_iter_max = 500 # default = 50
+    ocp.solver_options.qp_solver_iter_max = 50 # default = 50
     ocp.solver_options.qp_solver_warm_start = 1  # cold start / 1 = warm, 2 = warm primal and dual
 
     # code generation options

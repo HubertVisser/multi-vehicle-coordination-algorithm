@@ -538,7 +538,7 @@ def run_centralised_algorithm():
     # mpc.plot_outputs()
     mpc.plot_states()
     mpc.plot_duals()
-    mpc.plot_min_distance()
+    mpc.plot_distance()
     # mpc.plot_pred_traj()
     mpc.print_stats()
     mpc.plot_distance()

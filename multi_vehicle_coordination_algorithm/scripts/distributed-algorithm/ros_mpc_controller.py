@@ -42,7 +42,7 @@ class ROSMPCPlanner:
         self._integrator_step = self._settings["integrator_step"]
         self._braking_acceleration = self._settings["braking_acceleration"]
         self._number_of_robots = self._settings["number_of_robots"]
-        self._iterations = self._settings["solver_settings"]["iterations"]
+        self._iterations = self._settings["solver_settings"]["iterations_distributed"]
         self._scheme = self._settings["scheme"]
         self._idx = idx
 
@@ -135,8 +135,6 @@ class ROSMPCPlanner:
             rospy.logwarn("Splines have not been computed yet. Waiting for splines to be available.")
             return
         
-        
-
         self.set_nmpc_parameters()
         # self._params.print()
         # self._params.check_for_nan()
@@ -146,7 +144,6 @@ class ROSMPCPlanner:
 
         output, self._mpc_feasible, trajectory = self._planner.solve_nmpc(self._state, self._params_nmpc.get_solver_params())
         
-
         del mpc_timer
 
         if self._verbose:
@@ -165,21 +162,9 @@ class ROSMPCPlanner:
                     self._state = [output[key] for key in output_keys]
                     self._states_save.append(deepcopy(self._state))
                 lam = {}
-                # for j in range(1, self._number_of_robots+1):
-                    # if j == self._idx:
-                        # continue
-                    # lam[f"lam_{self._idx}_{j}"] = [output[f"lam_{self._idx}_{j}_0"], output[f"lam_{self._idx}_{j}_1"], output[f"lam_{self._idx}_{j}_2"], output[f"lam_{self._idx}_{j}_3"]]
-                    # lam[f"lam_{j}_{self._idx}"] = [output[f"lam_{j}_{self._idx}_0"], output[f"lam_{j}_{self._idx}_1"], output[f"lam_{j}_{self._idx}_2"], output[f"lam_{j}_{self._idx}_3"]]
-                
-                # self._save_lam.append(lam)
-                
-                
-
+    
                 self._outputs_save.append([output["throttle"], output["steering"]])
             
-            
-            
-    
     def run_ca(self, timer, it):
         # Check if splines exist
         

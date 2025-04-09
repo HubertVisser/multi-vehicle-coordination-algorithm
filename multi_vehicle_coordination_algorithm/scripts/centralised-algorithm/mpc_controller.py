@@ -32,11 +32,12 @@ class MPCPlanner:
         self._number_of_robots = self._settings["number_of_robots"]
         self._dart_simulator = self._settings["dart_simulator"]
         self._dmin = self._settings["polytopic"]["d_min"]
+        self._solver_iterations = self._settings["solver_settings"]["iterations_centralised"]
 
         self.init_acados_solver()
 
         self._mpc_feasible = True
-        self.time_tracker = TimeTracker(self._settings["solver_settings"])
+        self.time_tracker = TimeTracker(f"Centralised - iterations: {self._solver_iterations}")
 
         print_header("Starting MPC with DART simulator") if self._dart_simulator else print_header("Starting MPC without simulator")
 
@@ -122,8 +123,8 @@ class MPCPlanner:
             self._solver.set(self._N, 'p', np.array(p[(self._N-1)*npar : (self._N)*npar])) # Repeats the final set of parameters
 
             solve_time = 0.
-            # for it in range(self._settings["solver_settings"]["iterations"]):
-            for it in range(2):
+            # for it in range(self._settings["solver_settings"]["iterations_centralised"]):
+            for it in range(self._solver_iterations):
                 status = self._solver.solve()
                 solve_time += float(self._solver.get_stats('time_tot')) * 1000.
            
