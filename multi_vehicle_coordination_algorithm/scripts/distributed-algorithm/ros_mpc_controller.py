@@ -135,7 +135,7 @@ class ROSMPCPlanner:
             rospy.logwarn("Splines have not been computed yet. Waiting for splines to be available.")
             return
         
-        timer = Timer("loop")
+        
 
         self.set_nmpc_parameters()
         # self._params.print()
@@ -151,6 +151,9 @@ class ROSMPCPlanner:
 
         if self._verbose:
             time = timer.stop_and_print()
+
+        setattr(self, f'_trajectory_{self._idx}', trajectory)
+        # lambdas = trajectory[-self._nlam:]
 
         if self._mpc_feasible:
                 # self.publish_lambdas(lambdas)
@@ -169,8 +172,8 @@ class ROSMPCPlanner:
                     # lam[f"lam_{j}_{self._idx}"] = [output[f"lam_{j}_{self._idx}_0"], output[f"lam_{j}_{self._idx}_1"], output[f"lam_{j}_{self._idx}_2"], output[f"lam_{j}_{self._idx}_3"]]
                 
                 # self._save_lam.append(lam)
-                lambdas = trajectory[-self._nlam:]
-                setattr(self, f'_trajectory_{self._idx}', trajectory)
+                
+                
 
                 self._outputs_save.append([output["throttle"], output["steering"]])
             
@@ -267,6 +270,7 @@ class ROSMPCPlanner:
 
                 # Set duals
                 if self._ca_solution is None: #np.all(lambda_j == 0) or :
+                    pass
                     initial_duals = getattr(self, f'initial_duals_{j}')
 
                     # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", initial_duals[k][4])

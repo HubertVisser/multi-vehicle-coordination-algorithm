@@ -20,10 +20,11 @@ import matplotlib.pyplot as plt
 
 from util.files import load_settings
 from util.convertion import quaternion_to_yaw
-from util.logging import print_value 
+from util.logging import print_value, TimeTracker
 
 from ros_mpc_controller import ROSMPCPlanner
 from plot_utils import plot_distance
+from timer import Timer
 
 
 class ROSMPCCoordinator:
@@ -43,6 +44,7 @@ class ROSMPCCoordinator:
         self._trajectory_lock = threading.Lock()
         self._trajectory_condition = threading.Condition(self._trajectory_lock)
 
+        self.time_tracker = TimeTracker(self._settings["solver_settings"])
         self._timer = rospy.Timer(
             rospy.Duration(1.0 / self._settings["control_frequency"]), self.run
         )
@@ -62,7 +64,8 @@ class ROSMPCCoordinator:
     #             self._trajectory_condition.notify_all()
 
     def run(self, timer):
-                
+
+        nmpc_ca_timer = Timer("NMPC-CA")
         for it in range(1, self._iterations+1):
 
             # Run NMPC for each robot
@@ -79,6 +82,10 @@ class ROSMPCCoordinator:
 
             # Run CA for all robots after all trajectories are received
             # self.run_ca_for_all_robots(timer)
+        
+        self.time_tracker.add(nmpc_ca_timer.stop())
+        del nmpc_ca_timer
+        
 
     def run_ca_for_all_robots(self, timer):
         with self._trajectory_condition:

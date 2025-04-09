@@ -79,10 +79,10 @@ def plot_states(planner):
     plt.ylabel('Output Values')
     plt.legend()
     plt.grid(True)
-    plt.title(f'Robot {planner._idx} Outputs')
+    plt.title(f'Robot {planner._idx} States {planner._scheme}')
 
     plt.tight_layout()
-    plt.savefig(os.path.join(os.path.dirname(__file__), f'{planner._scheme}-algorithm/plots', f'states_outputs_plot_{planner._idx}.png'))  # Save the plot to a file
+    plt.savefig(os.path.join(os.path.dirname(__file__), f'{planner._scheme}-algorithm/plots', f'states_{planner._idx}_{planner._scheme}.png'))  # Save the plot to a file
     plt.close()
 
 def plot_duals(planner, idx=None):
@@ -103,9 +103,9 @@ def plot_duals(planner, idx=None):
     plt.ylabel('Lam Values')
     plt.legend()
     plt.grid(True)
-    plt.title(f'Lam Values')
+    plt.title(f'Lam Values - {planner._scheme}')
     plt.tight_layout()
-    plt.savefig(os.path.join(os.path.dirname(__file__), f'{planner._scheme}-algorithm/plots', f'lam_values_plot_{planner._idx}.png'))  # Save the plot to a file
+    plt.savefig(os.path.join(os.path.dirname(__file__), f'{planner._scheme}-algorithm/plots', f'lambda_{planner._idx}_{planner._scheme}.png'))  # Save the plot to a file
     plt.close()
     
     keys = planner._save_s[0].keys()  # Get the keys from the first dictionary
@@ -123,9 +123,9 @@ def plot_duals(planner, idx=None):
     plt.ylabel('s Values')
     plt.legend()
     plt.grid(True)
-    plt.title(f's Values')
+    plt.title(f's Values - {planner._scheme}')
     plt.tight_layout()
-    plt.savefig(os.path.join(os.path.dirname(__file__), f'{planner._scheme}-algorithm/plots', f's_values_plot_{planner._idx}.png'))  # Save the plot to a file
+    plt.savefig(os.path.join(os.path.dirname(__file__), f'{planner._scheme}-algorithm/plots', f's_{planner._idx}_{planner._scheme}.png'))  # Save the plot to a file
     plt.close()
 
 def plot_pred_traj(planner):
@@ -180,9 +180,9 @@ def plot_distance(poses_1, poses_2, length, width, scheme='centralised'):
     
     plt.xlabel("Index")
     plt.ylabel("Distance")
-    plt.title("Distances Between Points")
+    plt.title(f"Distances Between Points - {scheme}")
     plt.legend()
     plt.grid(True)
-    plt.savefig(os.path.join(os.path.dirname(__file__), f'{scheme}-algorithm/plots', 'distance_plot.png'))  # Save the plot to a file
+    plt.savefig(os.path.join(os.path.dirname(__file__), f'{scheme}-algorithm/plots', f'distance_{scheme}.png'))  # Save the plot to a file
 
 

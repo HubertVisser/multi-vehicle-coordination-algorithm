@@ -201,10 +201,9 @@ class MPCPlanner:
 
             self._solver_ca.set(self._N, 'p', np.array(p[(self._N - 1)*npar : self._N*npar])) # Repeats the final set of parameters
 
-            solve_time = 0.
-            for it in range(self._settings["solver_settings"]["iterations"]):
-                status = self._solver_ca.solve()
-                solve_time += float(self._solver_ca.get_stats('time_tot')) * 1000.
+
+            # for it in range(self._settings["solver_settings"]["iterations"]):
+            status = self._solver_ca.solve()
            
 
             output = dict()
@@ -236,7 +235,7 @@ class MPCPlanner:
                     output[f"s_{self._idx}_{j}_1"] = self._model_ca.get(1, f"s_{self._idx}_{j}_1")
                         
             
-            self.time_tracker.add(solve_time)
+            
 
             print_value(f"Current cost (ca {self._idx}):", f"{self.get_cost_ca():.2f}")
             self._prev_solution_ca = self._model_ca.get_solution_ca(self._solver_ca, self._x_init_ca, self._u_init_ca)

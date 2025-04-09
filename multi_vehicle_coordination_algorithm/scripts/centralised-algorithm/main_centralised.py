@@ -483,7 +483,7 @@ class ROSMPCPlanner:
             plt.title(f'Robot {n} Outputs')
 
             plt.tight_layout()
-            plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f'states_outputs_plot_{n}.png'))  # Save the plot to a file
+            plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f'states_{n}_{self._scheme}.png'))  # Save the plot to a file
             plt.close()
 
     def plot_pred_traj(self):
@@ -507,24 +507,6 @@ class ROSMPCPlanner:
 
         plt.tight_layout()
         plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'prediction_plot.png'))  # Save the plot to a file
-        plt.close() 
-    
-    def plot_min_distance(self):
-        
-        min_distances = []
-        for state1, state2 in zip(self._states_save_1, self._states_save_2):
-            dist = np.linalg.norm(np.array([state1[0], state1[1]]) - np.array([state2[0], state2[1]]))
-            min_distances.append(dist)
-
-        plt.plot(min_distances, label='Min Distance')
-            
-        plt.xlabel('Time Steps')
-        plt.ylabel('Minimum Distance')
-        plt.legend()
-        plt.grid(True)
-
-        plt.tight_layout()
-        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'min_dist_plot.png'))  # Save the plot to a file
         plt.close() 
     
     def plot_duals(self):
