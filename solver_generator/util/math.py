@@ -1,6 +1,7 @@
 import numpy as np
 import casadi as cd
 from itertools import combinations
+import cvxpy as cp
 
 
 def rotation_matrix_cd(angle):
@@ -66,3 +67,40 @@ def get_b(position, theta, length, width):
         return dim_vector + _A @ position
     else:
         raise ValueError("position must be a NumPy array, list, or a CasADi variable")
+    
+def min_distance_polytopes(pose1, pose2, length, width):
+    """
+    Calculates the minimum distance between two polytopes defined by their position and orientation.
+
+    args:
+    poses: list of tuples (x, y, orientation) for each polytope
+    """
+    
+    A1 = get_A(pose1[2])
+    A2 = get_A(pose2[2])
+    b1 = get_b([pose1[0],pose1[1]], pose1[2], length, width)
+    b2 = get_b([pose2[0],pose2[1]], pose2[2], length, width)
+
+    dim = 2
+    # Define optimization variables
+    x = cp.Variable(dim)
+    y = cp.Variable(dim)
+
+    # Define the objective function: minimize ||x - y||_2^2
+    objective = cp.Minimize(cp.sum_squares(x - y))
+
+    # Define the constraints
+    constraints = [
+        A1 @ x <= b1,
+        A2 @ y <= b2
+    ]
+
+    # Define and solver the problem
+    problem = cp.Problem(objective, constraints)
+    problem.solve()
+
+    # Check if the problem was solved successfully
+    if problem.status not in ["infeasible", "unbounded"]:
+        return x.value, y.value, problem.value  # Return x, y, and the minimum distance
+    else:
+        raise ValueError("Optimization problem is infeasible or unbounded.")

@@ -33,7 +33,7 @@ from timer import Timer
 from contouring_spline import SplineFitter
 from mpc_controller import MPCPlanner
 from ros_visuals import ROSMarkerPublisher
-from plot_utils import plot_warmstart, plot_path, plot_states, plot_duals
+from plot_utils import plot_warmstart, plot_path, plot_states, plot_duals, plot_distance
 
 
 class ROSMPCPlanner:
@@ -529,6 +529,17 @@ class ROSMPCPlanner:
     
     def plot_duals(self):
         plot_duals(self, "1-2")
+    
+    def plot_distance(self):    
+        
+        assert len(self._states_save_1) == len(self._states_save_2), "The two lists must have the same length."
+        poses1 = self._states_save_1
+        poses2 = self._states_save_2
+
+        length = self._settings["polytopic"]["length"]
+        width = self._settings["polytopic"]["width"]
+
+        plot_distance(poses1, poses2, width, length, scheme=self._settings["scheme"])
 
 def run_centralised_algorithm():
     """
@@ -548,6 +559,7 @@ def run_centralised_algorithm():
     mpc.plot_min_distance()
     # mpc.plot_pred_traj()
     mpc.print_stats()
+    mpc.plot_distance()
 
 if __name__ == "__main__":
     run_centralised_algorithm()

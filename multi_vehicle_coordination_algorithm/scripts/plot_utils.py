@@ -1,10 +1,15 @@
 import os
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from copy import deepcopy
+sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
 
 from geometry_msgs.msg import PoseStamped, Pose
 from nav_msgs.msg import Odometry, Path
+from util.math import min_distance_polytopes
+
+
 
 def plot_warmstart(planner): 
     warmstart_u, warmstart_x = planner._planner.get_initial_guess() 
@@ -144,3 +149,40 @@ def plot_pred_traj(planner):
     plt.tight_layout()
     plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'prediction_plot.png'))  # Save the plot to a file
     plt.close()
+
+def plot_distance(poses_1, poses_2, length, width, scheme='centralised'):
+
+    assert len(poses_1) == len(poses_2), "The two lists must have the same length."
+
+    distances = []
+    for pose_1, pose_2 in zip(poses_1, poses_2):
+        _, _, distance = min_distance_polytopes(pose_1, pose_2, length=length, width=width)
+        distances.append(distance)
+
+    # Convert distances to a NumPy array for easier indexing
+    distances = np.array(distances)
+
+    # Find the minimum distance and its index
+    min_index = np.argmin(distances)
+    min_distance = distances[min_index]
+    
+    # Mark the minimum distance
+    plt.figure()
+    plt.plot(distances, label='Distances')
+    plt.scatter(min_index, min_distance, color="red", label="Minimum Distance")
+
+    # Annotate the minimum distance
+    plt.annotate(f"Min: {min_distance:.2f}",
+                 xy=(min_index, min_distance),
+                 xytext=(min_index + 1, min_distance + 0.5),  # Offset the text for better visibility
+                 arrowprops=dict(facecolor="black", arrowstyle="->"),
+                 fontsize=10)
+    
+    plt.xlabel("Index")
+    plt.ylabel("Distance")
+    plt.title("Distances Between Points")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(os.path.join(os.path.dirname(__file__), f'{scheme}-algorithm/plots', 'distance_plot.png'))  # Save the plot to a file
+
+

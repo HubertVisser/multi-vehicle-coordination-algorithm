@@ -6,6 +6,7 @@ path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(os.path.join(path))
 sys.path.append(os.path.join(sys.path[-1], "..", "..", "..", "solver_generator"))
 sys.path.append(os.path.join(sys.path[-2], "..", "..", "..", "mpc_planner_modules"))
+sys.path.append(os.path.join(sys.path[-3], ".."))
 
 import threading
 
@@ -22,8 +23,7 @@ from util.convertion import quaternion_to_yaw
 from util.logging import print_value 
 
 from ros_mpc_controller import ROSMPCPlanner
-# from path_generator import generate_path_msg
-import debugpy
+from plot_utils import plot_distance
 
 
 class ROSMPCCoordinator:
@@ -91,25 +91,15 @@ class ROSMPCCoordinator:
 
             self._trajectory_counter = 0
 
-    def plot_min_distance(self):
+    def plot_distance(self):
         
-        min_distances = []
-        for state1, state2 in zip(self._states_save_1, self._states_save_2):
-            dist = np.linalg.norm(np.array([state1[0], state1[1]]) - np.array([state2[0], state2[1]]))
-            min_distances.append(dist)
+        poses1 = self._robots[0]._states_save
+        poses2 = self._robots[1]._states_save
 
-        plt.plot(min_distances, label='Min Distance')
-            
+        length = self._settings["polytopic"]["length"]
+        width = self._settings["polytopic"]["width"]
 
-        plt.xlabel('Time Steps')
-        plt.ylabel('Minimum Distance')
-        plt.legend()
-        plt.grid(True)
-
-        plt.tight_layout()
-        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'min_dist_plot.png'))  # Save the plot to a file
-        plt.close()
-        
+        plot_distance(poses1, poses2, width, length, scheme=self._settings["scheme"])
 
         
 
@@ -127,6 +117,11 @@ if __name__ == "__main__":
         robot.plot_states()
         robot.plot_duals()
         robot.print_stats()
+
+    coordinator.plot_distance()
+    
+    
+
 
  
    
