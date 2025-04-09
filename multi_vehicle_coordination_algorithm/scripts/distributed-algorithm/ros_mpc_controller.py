@@ -292,7 +292,7 @@ class ROSMPCPlanner:
 
             # Set ego trajectory
             trajectory_i = getattr(self, f'_trajectory_{self._idx}')
-            lambda_i = trajectory_i[-self._nlam:]
+            # lambda_i = trajectory_i[-self._nlam:]
             
             if np.all(trajectory_i == 0):   # If CA is computed first
                 xinit_i = np.array([self._settings[f"robot_{self._idx}"]["start_x"], self._settings[f"robot_{self._idx}"]["start_y"], self._settings[f"robot_{self._idx}"]["start_theta"] * np.pi])
