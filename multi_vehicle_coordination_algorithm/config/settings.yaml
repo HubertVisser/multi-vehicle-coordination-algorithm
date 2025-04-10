@@ -1,8 +1,8 @@
 name: "Jetracer"
-scheme: centralised # centralised or distributed
-N: 20
+scheme: distributed # centralised or distributed
+N: 30
 integrator_step: 0.3
-track_choice: "straight_line" # 'straight_line', sinus, "t_junction", "merging"
+track_choice: "t_junction" # 'straight_line', sinus, "t_junction", "merging"
 skip_solver_generation: false
 
 add_slack: true
@@ -11,12 +11,12 @@ slack_value: 1.0e4
 number_of_robots: 2
 robot_1:
   start_x: -5.0
-  start_y: 1.0
+  start_y: 0.0
   start_theta: 0.0  # radians
 robot_2:
-  start_x: -3.0
-  start_y: -1.0
-  start_theta: 0.0  # radians
+  start_x: 0.0
+  start_y: -4.0
+  start_theta: 0.5  # radians
 
 verbose: false
 debug_visuals: false
@@ -28,7 +28,7 @@ solver_settings:
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 5.0
-braking_acceleration: 1.0
+braking_acceleration: 0.4
 
 polytopic:
   d_min: 0.1
@@ -42,8 +42,8 @@ contouring:
 weights:
   throttle: .1
   steering: .1
-  lambda: .01   # centralised very sensitive on this weight
-  s_dual: .01  # centralised very sensitive on this weight
+  lambda: .1    # centralised very sensitive on this weight
+  s_dual: .1    # centralised very sensitive on this weight
   dmin_objective: .1
   velocity: 0.4
   reference_velocity: 0.4

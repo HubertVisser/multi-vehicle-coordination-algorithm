@@ -36,6 +36,8 @@ def configuration_basic(settings):
         base_module = modules.add_module(MPCBaseModule(settings))
         base_module.weigh_variable(var_name=f"steering_{n}", weight_names="steering")
         base_module.weigh_variable(var_name=f"throttle_{n}", weight_names="throttle")
+
+        # Performance is significantly better with minimization on dual variables
         for j in range(1,num_robots+1):
             if j == n:
                 continue
@@ -46,19 +48,16 @@ def configuration_basic(settings):
             if n > j:
                 base_module.weigh_variable(var_name=f"s_{j}_{n}_0", weight_names="s_dual",)
                 base_module.weigh_variable(var_name=f"s_{j}_{n}_1", weight_names="s_dual",)
-            else:
-                base_module.weigh_variable(var_name=f"s_{n}_{j}_0", weight_names="s_dual",)
-                base_module.weigh_variable(var_name=f"s_{n}_{j}_1", weight_names="s_dual",)
             
         modules.add_module(ContouringModule(settings, n))
         modules.add_module(PathReferenceVelocityModule(settings, n))
 
         
     # Multiple exactly the same constraints cause issues
-    modules.add_module(PolytopicDminConstraintModule(settings, n))
-    modules.add_module(PolytopicSidualConstraintModule(settings, n))
-    modules.add_module(PolytopicSjdualConstraintModule(settings, n))
-    modules.add_module(s2normConstraintModule(settings, n))
+    modules.add_module(PolytopicDminConstraintModule(settings, 1))
+    modules.add_module(PolytopicSidualConstraintModule(settings, 1))
+    modules.add_module(PolytopicSjdualConstraintModule(settings, 1))
+    modules.add_module(s2normConstraintModule(settings, 1))
     
     return model, modules
 

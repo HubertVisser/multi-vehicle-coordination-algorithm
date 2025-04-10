@@ -8,6 +8,7 @@ sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
 from geometry_msgs.msg import PoseStamped, Pose
 from nav_msgs.msg import Odometry, Path
 from util.math import min_distance_polytopes
+from util.logging import print_value
 
 
 
@@ -183,5 +184,5 @@ def plot_distance(poses_1, poses_2, length, width, scheme='centralised'):
     plt.legend()
     plt.grid(True)
     plt.savefig(os.path.join(os.path.dirname(__file__), f'{scheme}-algorithm/plots', f'distance_{scheme}.png'))  # Save the plot to a file
-
+    print_value("Minimum Distance", min_distance, tab=True)
 

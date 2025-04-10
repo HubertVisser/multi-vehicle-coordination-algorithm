@@ -36,7 +36,7 @@ class MPCPlanner:
         self.init_nmpc_solver()
         self.init_ca_solver()
 
-        self._mpc_feasible = False
+        self._mpc_feasible = True
         self.time_tracker = TimeTracker(self._settings["solver_settings"])
 
         print_header(f"Starting MPC {idx}")
@@ -100,19 +100,19 @@ class MPCPlanner:
             self._mpc_u_plan = np.zeros((self._nu_nmpc, self._N))
             self.set_initial_u_plan()
 
-        self._x_traj_init = self._mpc_x_plan
-        self._u_traj_init = self._mpc_u_plan
+        if self._mpc_feasible:
 
-        if not self._mpc_feasible:
-            pass
+            self._x_traj_init = self._mpc_x_plan
+            self._u_traj_init = self._mpc_u_plan
 
-            # Xinit everywhere (could be infeasible)
-            # self._x_traj_init = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
-            # self._u_traj_init = np.zeros((self._nu_nmpc, self._N))
-            # self._solver_nmpc.reset(reset_qp_solver_mem=1)
-            # self._solver_nmpc.options_set('warm_start_first_qp', False)
+        else:
 
-   
+            # Brake (model specific)
+            self._x_traj_init = self.get_braking_trajectory(xinit)
+            self._u_traj_init = np.zeros((self._nu_nmpc, self._N))
+
+            self._solver_nmpc.options_set('warm_start_first_qp', False)
+
         return self.solve_acados_nmpc(xinit, p)
 
     def solve_acados_nmpc(self, xinit, p):
@@ -254,6 +254,26 @@ class MPCPlanner:
         acceleration_x = fx / mass_vehicle
         throttle_initial_guess = throttle_search[np.argmin(np.abs(acceleration_x))]
         self._mpc_u_plan[0, :] = throttle_initial_guess
+
+    def get_braking_trajectory(self, state):    # Not adjusted for multi robot
+        x = state[0]
+        y = state[1]
+        theta = state[2]
+        vx = state[3]
+        vy = state[4]
+        w = state[5]
+        spline = state[6]
+
+        result = np.zeros((self._nx_nmpc, self._N))
+        result[:, 0] = np.array([x, y, theta, vx, vy, w, spline])
+        for k in range(1, self._N):
+            x += vx * self._dt * math.cos(theta)
+            y += vx * self._dt * math.sin(theta)
+            spline += vx * self._dt
+            vx -= self._braking_acceleration * self._dt
+            vx = np.max([vx, 0.])
+            result[:, k] = np.array([x, y, theta, vx, vy, w, spline])
+        return result
 
     def get_cost_nmpc(self):
         return self._solver_nmpc.get_cost()

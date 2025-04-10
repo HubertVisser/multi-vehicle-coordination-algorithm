@@ -81,31 +81,22 @@ class MPCPlanner:
 
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu, self._N))
-            self.set_initial_u_plan()
-
-        self._x_traj_init =  self._mpc_x_plan
-        self._u_traj_init = self._mpc_u_plan
+            self._mpc_u_plan[0, :] = self.get_throttle_init_value()
+            self._mpc_u_plan[2, :] = self.get_throttle_init_value()
 
         if self._mpc_feasible:
-            pass
-            # Shifted
-            # self._x_traj_init = np.concatenate((self._mpc_x_plan[:, 1:], self._mpc_x_plan[:, -1:]), axis=1)
-            # self._u_traj_init = np.concatenate((self._mpc_u_plan[:, 1:], self._mpc_u_plan[:, -1:]), axis=1)            
 
-            # Not shifted
+            self._x_traj_init = self._mpc_x_plan
+            self._u_traj_init = self._mpc_u_plan
+
         else:
-            pass
+
             # Brake (model specific)
-            # self._x_traj_init = self.get_braking_trajectory(xinit)
-            # self._x_traj_init = self._projection_func(self._x_traj_init)
+            self._x_traj_init = self.get_braking_trajectory(xinit)
+            self._u_traj_init = np.zeros((self._nu, self._N))
 
-            # Xinit everywhere (could be infeasible)
-            # self._x_traj_init = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
-            # self._u_traj_init = np.zeros((self._nu + self._nd, self._N))
-            # self._solver.reset(reset_qp_solver_mem=1)
-            # self._solver.options_set('warm_start_first_qp', False)
+            self._solver.options_set('warm_start_first_qp', False)
 
-   
         return self.solve_acados(xinit, p)
 
     def solve_acados(self, xinit, p):
@@ -123,7 +114,6 @@ class MPCPlanner:
             self._solver.set(self._N, 'p', np.array(p[(self._N-1)*npar : (self._N)*npar])) # Repeats the final set of parameters
 
             solve_time = 0.
-            # for it in range(self._settings["solver_settings"]["iterations_centralised"]):
             for it in range(self._solver_iterations):
                 status = self._solver.solve()
                 solve_time += float(self._solver.get_stats('time_tot')) * 1000.
@@ -225,17 +215,14 @@ class MPCPlanner:
         self._mpc_x_plan[3 + self._nx_one_robot,:] = self.reference_velocity
         self._mpc_x_plan[6 + self._nx_one_robot,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), s_0_vec)
     
-    def set_initial_u_plan(self):
+    def get_throttle_init_value(self):
         # Evaluate throttle to keep the constant velocity
         throttle_search = np.linspace(0,1,30)
         mass_vehicle = self._dynamic_model.get_mass()
         fx = self._dynamic_model.fx_wheels(throttle_search, self.reference_velocity)
         acceleration_x = fx / mass_vehicle
         throttle_initial_guess = throttle_search[np.argmin(np.abs(acceleration_x))]
-        self._mpc_u_plan[0, :] = throttle_initial_guess
-        if self._number_of_robots == 2 : 
-            self._mpc_u_plan[2, :] = throttle_initial_guess
-            # self._mpc_u_plan[-self._nlam+4:-self._nlam+12, :] = self._dmin
+        return throttle_initial_guess
 
     def get_cost_acados(self):
         return self._solver.get_cost()
@@ -247,22 +234,25 @@ class MPCPlanner:
             output[f"throttle_{n}"] = 0.
             output[f"steering_{n}"] = 0.
 
-    def get_braking_trajectory(self, state):    # Not adjusted for multi robot
-        x = state[0]
-        y = state[1]
-        theta = state[2]
-        v = state[3]
-        spline = state[4]
+    def get_braking_trajectory(self, state): 
+        for n in range(self._number_of_robots):
+            x = state[0+(n*self._nx_one_robot)]
+            y = state[1+(n*self._nx_one_robot)]
+            theta = state[2+(n*self._nx_one_robot)]
+            vx = state[3+(n*self._nx_one_robot)]
+            vy = state[4+(n*self._nx_one_robot)]
+            w = state[5+(n*self._nx_one_robot)]
+            spline = state[6+(n*self._nx_one_robot)]
 
-        result = np.zeros((5, self._N))
-        result[:, 0] = np.array([x, y, theta, v, spline])
-        for k in range(1, self._N):
-            x += v * self._dt * math.cos(theta)
-            y += v * self._dt * math.sin(theta)
-            spline += v * self._dt
-            v -= self._braking_acceleration * self._dt
-            v = np.max([v, 0.])
-            result[:, k] = np.array([x, y, theta, v, spline])
+            result = np.zeros((self._nx, self._N))
+            result[(n*self._nx_one_robot):((n+1)*self._nx_one_robot), 0] = np.array([x, y, theta, vx, vy, w, spline])
+            for k in range(1, self._N):
+                x += vx * self._dt * math.cos(theta)
+                y += vx * self._dt * math.sin(theta)
+                spline += vx * self._dt
+                vx -= self._braking_acceleration * self._dt
+                vx = np.max([vx, 0.])
+                result[(n*self._nx_one_robot):((n+1)*self._nx_one_robot), k] = np.array([x, y, theta, vx, vy, w, spline])
         return result
 
 

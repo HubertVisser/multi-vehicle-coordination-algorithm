@@ -149,12 +149,12 @@ class ROSMPCPlanner:
         if self._verbose:
             time = timer.stop_and_print()
 
-        setattr(self, f'_trajectory_{self._idx}', trajectory)
         # lambdas = trajectory[-self._nlam:]
 
         if self._mpc_feasible:
                 # self.publish_lambdas(lambdas)
             self.publish_trajectory(trajectory)
+            setattr(self, f'_trajectory_{self._idx}', trajectory)
 
             if it == self._iterations:
                 if self._dart_simulator == False:
@@ -202,7 +202,7 @@ class ROSMPCPlanner:
                 self.publish_throttle(control_output, self._mpc_feasible) 
                 self.publish_steering(control_output, self._mpc_feasible) 
             
-            self.visualize()
+        self.visualize()
             
 
     def set_nmpc_parameters(self):

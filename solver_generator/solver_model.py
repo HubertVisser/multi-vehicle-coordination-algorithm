@@ -481,8 +481,8 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
         self.lower_bound_inputs = np.tile([[0.0],[-1.0]], (1, n)) 
         self.upper_bound_inputs = np.tile([[1.0], [1.0]], (1, n))
 
-        lower_bound_s = np.ones_like(self.s)* -10
-        upper_bound_s = np.ones_like(self.s)* 10
+        lower_bound_s = np.ones_like(self.s)* -1000
+        upper_bound_s = np.ones_like(self.s)* 1000
 
         self.lower_bound_lams = np.zeros_like(self.lams)  # lambda
         self.upper_bound_lams = np.ones_like(self.lams)*1000  # lambda  

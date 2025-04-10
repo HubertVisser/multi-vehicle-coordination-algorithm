@@ -40,7 +40,7 @@ class s2normConstraintConstraints:
     def get_lower_bound(self):
         lower_bound = []
         for index in range(0, self.n_constraints):
-            lower_bound.append(-1)
+            lower_bound.append(0)
         return lower_bound
 
     def get_upper_bound(self):
@@ -64,6 +64,8 @@ class s2normConstraintConstraints:
                 s_ij_1 = model.get(f"s_{j}_{self.idx}_1")
 
             # constraints.append(cd.norm_2(s_ij_0))
+            # constraints.append(cd.norm_2(s_ij_1))
+
             constraints.append(cd.norm_2(cd.vertcat(s_ij_0, s_ij_1)))
 
         return constraints

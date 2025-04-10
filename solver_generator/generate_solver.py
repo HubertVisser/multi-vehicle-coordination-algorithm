@@ -122,7 +122,7 @@ def generate_solver(modules, model, settings=None):
     # Slack for constraints
     add_slack = settings["add_slack"]
     slack_value = settings["slack_value"]
-    if add_slack and ('nmpc' or 'centralised') in settings["solver_name"]:
+    if add_slack: #and ('nmpc' or 'centralised') in settings["solver_name"]:
         add_constraint_slack = True
         value = float(slack_value)
 
@@ -157,7 +157,7 @@ def generate_solver(modules, model, settings=None):
 
     # horizon
     ocp.solver_options.tf = settings["N"] * settings["integrator_step"]
-    ocp.solver_options.tol = 1e-4 # 1e-6  # 1e-2
+    ocp.solver_options.tol = 1e-3 # 1e-6  # 1e-2
 
     # Solver options
     # integrator option
