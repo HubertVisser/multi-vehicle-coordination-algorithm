@@ -20,6 +20,7 @@ from util.files import solver_path, load_settings
 
 from util.logging import print_warning, print_value, print_success, TimeTracker, print_header
 from util.realtime_parameters import AcadosRealTimeModel
+from dual_initialiser import dual_initialiser
 
 
 class MPCPlanner:
@@ -62,6 +63,7 @@ class MPCPlanner:
         self._nvar = self._solver_settings["nvar"]
         self._nx_one_robot = self._nx // self._number_of_robots
 
+        self._init_duals = dual_initialiser(self._settings, 1, 2)
         self._prev_trajectory = np.zeros((self._N, self._nvar)) 
 
         print_success("Acados solver generated")
@@ -83,7 +85,10 @@ class MPCPlanner:
             self._mpc_u_plan = np.zeros((self._nu, self._N))
             self._mpc_u_plan[0, :] = self.get_throttle_init_value()
             self._mpc_u_plan[2, :] = self.get_throttle_init_value()
-
+            self._mpc_u_plan[12:16, :] = self._init_duals[4:8, :]
+            self._mpc_u_plan[16:20, :] = self._init_duals[:4, :]
+            self._mpc_u_plan[5:7, :] = self._init_duals[8:, :]
+            
         if self._mpc_feasible:
 
             self._x_traj_init = self._mpc_x_plan
@@ -94,7 +99,7 @@ class MPCPlanner:
             # Brake (model specific)
             self._x_traj_init = self.get_braking_trajectory(xinit)
             self._u_traj_init = np.zeros((self._nu, self._N))
-
+            
             self._solver.options_set('warm_start_first_qp', False)
 
         return self.solve_acados(xinit, p)

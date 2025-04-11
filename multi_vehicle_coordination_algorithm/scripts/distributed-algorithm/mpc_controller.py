@@ -20,6 +20,7 @@ from util.files import solver_path, load_settings
 
 from util.logging import print_warning, print_value, print_success, TimeTracker, print_header
 from util.realtime_parameters import AcadosRealTimeModel
+from dual_initialiser import dual_initialiser
 
 
 class MPCPlanner:
@@ -36,7 +37,13 @@ class MPCPlanner:
         self.init_nmpc_solver()
         self.init_ca_solver()
 
+        for j in range(1, self._number_of_robots+1):
+            if j == self._idx:
+                continue
+            setattr(self, f'_init_duals_{j}', dual_initialiser(self._settings, self._idx, j))
+
         self._mpc_feasible = True
+        self._ca_feasible = True
         self.time_tracker = TimeTracker(self._settings["solver_settings"])
 
         print_header(f"Starting MPC {idx}")
@@ -95,11 +102,11 @@ class MPCPlanner:
         if not hasattr(self, "_mpc_x_plan"):
             self._mpc_x_plan = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
 
-
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu_nmpc, self._N))
             self.set_initial_u_plan()
-
+            self.set_initial_duals('nmpc', self._mpc_u_plan)
+            
         if self._mpc_feasible:
 
             self._x_traj_init = self._mpc_x_plan
@@ -187,6 +194,9 @@ class MPCPlanner:
             self._x_init_ca = np.zeros((self._nx_ca, self._N))
         if not hasattr(self, "_u_init_ca"):
             self._u_init_ca = np.tile(np.array(uinit).reshape((-1, 1)), (1, self._N))
+            
+        if not self._ca_feasible:
+            self.set_initial_u_plan('ca', self._u_init_ca)
 
         try:
             # Set initial state
@@ -254,6 +264,17 @@ class MPCPlanner:
         acceleration_x = fx / mass_vehicle
         throttle_initial_guess = throttle_search[np.argmin(np.abs(acceleration_x))]
         self._mpc_u_plan[0, :] = throttle_initial_guess
+    
+    def set_initial_duals(self, solver, u_plan):
+
+        for j in range(1, self._number_of_robots+1):
+                if j == self._idx:
+                    continue
+                if solver == "nmpc":
+                    u_plan[2:, :] = getattr(self, f'_init_duals_{j}')[:8, :]
+                elif solver == "ca":
+                    u_plan = getattr(self, f'_init_duals_{j}')
+
 
     def get_braking_trajectory(self, state):    # Not adjusted for multi robot
         x = state[0]

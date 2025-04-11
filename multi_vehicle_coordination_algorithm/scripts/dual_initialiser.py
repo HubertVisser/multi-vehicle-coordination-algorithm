@@ -124,7 +124,7 @@ def dual_initialiser(settings, i, j):
     x_plan_i = set_initial_x_plan(settings, x_i)
     x_plan_j = set_initial_x_plan(settings, x_j)
 
-    results = []
+    duals = np.zeros((10, _N))
 
     initial_guesser = DualProgram(length=length, width=width, d_min=d_min)
 
@@ -132,13 +132,13 @@ def dual_initialiser(settings, i, j):
         x_i = x_plan_i[:, i]
         x_j = x_plan_j[:, i]
         initial_guesser.update_parameters(x_i, x_j)
-        result = initial_guesser.solve()
-        if result["success"]:
-            results.append(result["value"])
+        dual = initial_guesser.solve()
+        if dual["success"]:
+            duals[:, i] = dual["value"]
         else:
-            print(f"No solution found for step {i}: {result['message']}")
+            print(f"No solution found for step {i}: {dual['message']}")
     
-    return results
+    return duals
 
 
 def main():
