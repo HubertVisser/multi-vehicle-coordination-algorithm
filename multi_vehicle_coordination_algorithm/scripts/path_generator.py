@@ -55,15 +55,6 @@ class PathGenerator:
 
         pts_x_1, pts_y_1 = self.generate_strt_line_track_1_robot()
 
-        return pts_x_1, pts_y_1, pts_x_strt2, pts_y_strt2
-    
-
-    def generate_t_junction_track(self):
-        pts_x_2 = np.ones(4) * self.start_x[1]
-        pts_y_2 = np.linspace(self.start_y[1], 5, 8)
-
-        pts_x_1, pts_y_1 = self.generate_strt_line_track_1_robot()
-
         return pts_x_1, pts_y_1, pts_x_2, pts_y_2
 
 
@@ -74,7 +65,7 @@ class PathGenerator:
         return pts_x_1, pts_y_1
     
     def generate_strt_line_track_2_robot(self):
-        pts_x_1 = np.linspace(-4, 5, self.n_pts)
+        pts_x_1 = np.linspace(-5, 5, self.n_pts)
         pts_y_1 = np.zeros(self.n_pts)
 
         return pts_x_1, pts_y_1
@@ -111,6 +102,7 @@ class PathGenerator:
             pts_x_1, pts_y_1 = self.generate_strt_line_track_2_robot()
 
             path_1 = self.create_path(pts_x_1, pts_y_1)
+            path_2 = self.create_path(np.flip(pts_x_1), np.flip(pts_y_1))
             self.paths.extend([path_1, path_1])
 
         elif self.track_choice == 'merging':

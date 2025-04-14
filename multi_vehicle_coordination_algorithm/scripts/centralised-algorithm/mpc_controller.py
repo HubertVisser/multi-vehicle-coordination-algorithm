@@ -85,9 +85,9 @@ class MPCPlanner:
             self._mpc_u_plan = np.zeros((self._nu, self._N))
             self._mpc_u_plan[0, :] = self.get_throttle_init_value()
             self._mpc_u_plan[2, :] = self.get_throttle_init_value()
-            self._mpc_u_plan[12:16, :] = self._init_duals[4:8, :]
-            self._mpc_u_plan[16:20, :] = self._init_duals[:4, :]
-            self._mpc_u_plan[5:7, :] = self._init_duals[8:, :]
+            # self._mpc_u_plan[12:16, :] = self._init_duals[4:8, :]
+            # self._mpc_u_plan[16:20, :] = self._init_duals[:4, :]
+            # self._mpc_u_plan[5:7, :] = self._init_duals[8:, :]
             
         if self._mpc_feasible:
 

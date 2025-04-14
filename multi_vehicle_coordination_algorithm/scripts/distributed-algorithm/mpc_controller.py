@@ -105,7 +105,7 @@ class MPCPlanner:
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu_nmpc, self._N))
             self.set_initial_u_plan()
-            self.set_initial_duals('nmpc', self._mpc_u_plan)
+            # self.set_initial_duals('nmpc', self._mpc_u_plan)
             
         if self._mpc_feasible:
 
@@ -245,8 +245,6 @@ class MPCPlanner:
                     output[f"s_{self._idx}_{j}_1"] = self._model_ca.get(1, f"s_{self._idx}_{j}_1")
                         
             
-            
-
             print_value(f"Current cost (ca {self._idx}):", f"{self.get_cost_ca():.2f}")
             self._prev_solution_ca = self._model_ca.get_solution_ca(self._solver_ca, self._x_init_ca, self._u_init_ca)
         except AttributeError:
