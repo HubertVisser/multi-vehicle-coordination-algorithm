@@ -196,6 +196,7 @@ class MPCPlanner:
             self._u_init_ca = np.tile(np.array(uinit).reshape((-1, 1)), (1, self._N))
             
         if not self._ca_feasible:
+            # pass
             self.set_initial_u_plan('ca', self._u_init_ca)
 
         try:
