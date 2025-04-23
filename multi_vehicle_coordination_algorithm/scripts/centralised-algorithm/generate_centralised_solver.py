@@ -57,7 +57,7 @@ def configuration_basic(settings):
     modules.add_module(PolytopicDminConstraintModule(settings, 1))
     modules.add_module(PolytopicSidualConstraintModule(settings, 1))
     modules.add_module(PolytopicSjdualConstraintModule(settings, 1))
-    modules.add_module(s2normConstraintModule(settings, 1))
+    # modules.add_module(s2normConstraintModule(settings, 1))
     
     return model, modules
 
