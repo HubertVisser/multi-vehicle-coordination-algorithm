@@ -2,11 +2,7 @@ name: "Jetracer"
 scheme: distributed # centralised or distributed
 N: 20
 integrator_step: 0.3
-<<<<<<< HEAD
-track_choice: straight_line # 'straight_line', sinus, "t_junction", "merging"
-=======
 track_choice: straight_line # straight_line, sinus, t_junction, merging
->>>>>>> 4290d0f50a4d1c4554341639019e5076925347be
 skip_solver_generation: false
 
 add_slack: true
@@ -22,15 +18,9 @@ robot_2:
   start_x: -1.0
   start_y: -3.0
   start_theta: 0.0  # radians
-=======
-  start_x: -3.0
-  start_y: -1.0
-  start_theta: 0.0 # radians
->>>>>>> 4290d0f50a4d1c4554341639019e5076925347be
 
 verbose: false
 debug_visuals: false
-dart_simulator: false
 
 solver_settings:
   iterations_centralised: 2
