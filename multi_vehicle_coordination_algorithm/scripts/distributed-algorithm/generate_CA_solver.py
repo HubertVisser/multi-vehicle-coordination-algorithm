@@ -44,9 +44,6 @@ def configuration_basic(settings, idx):
             if i > j:
                 base_module.weigh_variable(var_name=f"s_{j}_{i}_0", weight_names="s_dual",)
                 base_module.weigh_variable(var_name=f"s_{j}_{i}_1", weight_names="s_dual",)
-            else:
-                base_module.weigh_variable(var_name=f"s_{i}_{j}_0", weight_names="s_dual",)
-                base_module.weigh_variable(var_name=f"s_{i}_{j}_1", weight_names="s_dual",)
     
     modules.add_module(MinimizeCollisionAvoidanceModule(settings, idx))
     
