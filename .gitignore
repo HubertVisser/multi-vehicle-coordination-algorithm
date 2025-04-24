@@ -23,3 +23,6 @@ venv/
 # Solver files
 mpc_planner_solver/
 acados/
+
+multi_vehicle_coordination_algorithm/scripts/centralised-algorithm/plots/
+multi_vehicle_coordination_algorithm/scripts/distributed-algorithm/plots/

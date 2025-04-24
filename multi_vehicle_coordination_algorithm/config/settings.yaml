@@ -3,6 +3,7 @@ scheme: distributed # centralised or distributed
 N: 20
 integrator_step: 0.3
 track_choice: straight_line # straight_line, sinus, t_junction, merging
+dart_simulator: false
 skip_solver_generation: false
 
 add_slack: true
@@ -14,9 +15,8 @@ robot_1:
   start_y: 1.0
   start_theta: 0.0  # radians
 robot_2:
-<<<<<<< HEAD
-  start_x: -1.0
-  start_y: -3.0
+  start_x: -3.0
+  start_y: -1.0
   start_theta: 0.0  # radians
 
 verbose: false

@@ -7,3 +7,16 @@ install rospackages
 - mpc_planner_modules (local)
 - rospkg
 
+Additions to readme:
+(in ros_ws/src/) clone hubertvisser/multi-vehicle-coordination-algorithm
+catkin_make in src
+source devel/setup.bash
+
+(in ros_ws/src/) clone dart_simulator_pkg (https://github.com/HubertVisser/DART.git)
+
+DART/DART_dynamic_models/
+pip install dist/DART_dynamic_models-0.1.0-py3-none-any.whl
+
+source ROS workspace
+
+

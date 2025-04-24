@@ -24,9 +24,13 @@ RUN apt-get install -y python3-pip && \
 
     # Set the working directory
 
-
 WORKDIR /home/dock_user/
 
+# Create a ROS workspace
+RUN mkdir -p /home/dock_user/ros_ws/src && \
+    cd /home/dock_user/ros_ws && \
+    /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
+    
 # Clone and install acados
 RUN apt install -y git && \
     git clone https://github.com/acados/acados.git && \
@@ -37,8 +41,21 @@ RUN apt install -y git && \
     cmake -DACADOS_SILENT=ON .. &&\
     make install -j4 &&\
     pip install -e /home/dock_user/acados/interfaces/acados_template
+
+# Install dependencies for downloading and extracting tera_renderer
+RUN apt-get update && apt-get install -y wget
+
+# Download and install tera_renderer
+RUN wget -q https://github.com/acados/tera_renderer/releases/download/v0.0.34/t_renderer-v0.0.34-linux -O /home/dock_user/acados/bin/t_renderer && \
+    chmod +x /home/dock_user/acados/bin/t_renderer && \
     
+RUN pip install pandas
+    pip install colorama
+    pip install cvxpy
+
+
 USER dock_user
+
 # Source the ROS setup script
 RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
 
@@ -47,4 +64,4 @@ RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
 RUN echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$HOME/acados/lib" >> ~/.bashrc && \
     echo "export ACADOS_SOURCE_DIR=$HOME/acados/" >> ~/.bashrc
 
-ENTRYPOINT [ "/bin/bash" ]
+CMD ["tail", "-f", "/dev/null"]
