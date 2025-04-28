@@ -93,8 +93,7 @@ class PolytopicSjdualConstraints:
         constraints = []
 
         # Constraints from all neighbouring robots (j) to the ego robot (i)
-        start_idx = 1 #if self.scheme == 'distributed' else self.idx_i
-        for j in range(start_idx, self.number_of_robots+1): 
+        for j in range(1, self.number_of_robots+1): 
             if j == self.idx_i:
                 continue
 
