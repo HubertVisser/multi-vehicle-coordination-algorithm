@@ -7,7 +7,7 @@ dart_simulator: false
 skip_solver_generation: false
 
 add_slack: true
-slack_value: 1.0e3
+slack_value: 1.0e1
 
 number_of_robots: 2
 robot_1:
@@ -24,7 +24,7 @@ debug_visuals: false
 
 solver_settings:
   iterations_centralised: 2
-  iterations_distributed: 3 #1 #2  # iterations for distributed nmpc-ca combi
+  iterations_distributed: 2 #1 #2  # iterations for distributed nmpc-ca combi
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 5.0

@@ -163,18 +163,18 @@ class MPCPlanner:
             output[f"throttle"] = self._model_nmpc.get(0, f"throttle_{self._idx}")
             output[f"steering"] = self._model_nmpc.get(0, f"steering_{self._idx}")
             
-            for j in range(1, self._number_of_robots+1):
-                if j == self._idx:
-                    continue
-                output[f"lam_{self._idx}_{j}_0"] = self._model_nmpc.get(1, f"lam_{self._idx}_{j}_0")
-                output[f"lam_{self._idx}_{j}_1"] = self._model_nmpc.get(1, f"lam_{self._idx}_{j}_1")
-                output[f"lam_{self._idx}_{j}_2"] = self._model_nmpc.get(1, f"lam_{self._idx}_{j}_2")
-                output[f"lam_{self._idx}_{j}_3"] = self._model_nmpc.get(1, f"lam_{self._idx}_{j}_3")
+            # for j in range(1, self._number_of_robots+1):
+            #     if j == self._idx:
+            #         continue
+            #     output[f"lam_{self._idx}_{j}_0"] = self._model_nmpc.get(1, f"lam_{self._idx}_{j}_0")
+            #     output[f"lam_{self._idx}_{j}_1"] = self._model_nmpc.get(1, f"lam_{self._idx}_{j}_1")
+            #     output[f"lam_{self._idx}_{j}_2"] = self._model_nmpc.get(1, f"lam_{self._idx}_{j}_2")
+            #     output[f"lam_{self._idx}_{j}_3"] = self._model_nmpc.get(1, f"lam_{self._idx}_{j}_3")
                 
-                output[f"lam_{j}_{self._idx}_0"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_0")
-                output[f"lam_{j}_{self._idx}_1"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_1")
-                output[f"lam_{j}_{self._idx}_2"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_2")
-                output[f"lam_{j}_{self._idx}_3"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_3")
+            #     output[f"lam_{j}_{self._idx}_0"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_0")
+            #     output[f"lam_{j}_{self._idx}_1"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_1")
+            #     output[f"lam_{j}_{self._idx}_2"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_2")
+            #     output[f"lam_{j}_{self._idx}_3"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_3")
 
             self.time_tracker.add(solve_time)
 
@@ -195,9 +195,9 @@ class MPCPlanner:
         if not hasattr(self, "_u_init_ca"):
             self._u_init_ca = np.tile(np.array(uinit).reshape((-1, 1)), (1, self._N))
             
-        if not self._ca_feasible:
-            # pass
-            self.set_initial_u_plan('ca', self._u_init_ca)
+        # if not self._ca_feasible:
+        #     # pass
+        #     self.set_initial_u_plan('ca', self._u_init_ca)
 
         try:
             # Set initial state
@@ -212,11 +212,9 @@ class MPCPlanner:
 
             self._solver_ca.set(self._N, 'p', np.array(p[(self._N - 1)*npar : self._N*npar])) # Repeats the final set of parameters
 
-
             # for it in range(self._settings["solver_settings"]["iterations_distributed"]):
             status = self._solver_ca.solve()
            
-
             output = dict()
             if status != 0: # infeasible
                 print_warning(f"Optimization for CA {self._idx} was infeasible (exitflag = {status})")

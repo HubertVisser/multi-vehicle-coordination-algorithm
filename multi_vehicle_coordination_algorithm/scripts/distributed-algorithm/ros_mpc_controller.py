@@ -94,7 +94,6 @@ class ROSMPCPlanner:
 
         for j in range(1, self._number_of_robots+1):
             setattr(self, f'_trajectory_{j}', np.zeros((3, self._N)))
-            setattr(self, f'_lambda_{j}', np.zeros((self._N, 4)))
 
         self._enable_output = False
         self._mpc_feasible = True
@@ -118,8 +117,6 @@ class ROSMPCPlanner:
         
         for j in range(1, self._number_of_robots+1):
             setattr(self, f'_traj_{j}_sub', rospy.Subscriber(f"trajectory_{j}", Path, self.trajectory_callback, callback_args=j))
-            setattr(self, f'_lam_{j}_sub', rospy.Subscriber(f"lambda_{j}_{self._idx}", LambdaArrayList, self.lambda_callback, callback_args=j))
-            setattr(self, f'_lam_{j}_pub', rospy.Publisher(f"lambda_{j}_{self._idx}", LambdaArrayList, queue_size=1))
             
         # Publishers
         self._th_pub = rospy.Publisher(f"throttle_{self._idx}", Float32, queue_size=1) 
@@ -239,7 +236,7 @@ class ROSMPCPlanner:
                 if j == self._idx:
                     continue
                 trajectory_j = getattr(self, f'_trajectory_{j}')
-                lambda_j = getattr(self, f'_lambda_{j}')
+                # lambda_j = getattr(self, f'_lambda_{j}')
                 
                 # Set neighbouring trajectories
                 if np.all(trajectory_j == 0):
@@ -254,27 +251,36 @@ class ROSMPCPlanner:
                     self._params_nmpc.set(k, f"theta_{j}", trajectory_j[2, k])
 
                 # Set duals
-                if self._ca_solution is None: #np.all(lambda_j == 0) or :
-                    pass
+                if self._ca_solution is None:
                     initial_duals = getattr(self, f'initial_duals_{j}')
 
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", initial_duals[k][4])
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", initial_duals[k][5])
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", initial_duals[k][6])
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", initial_duals[k][7])
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", initial_duals[0, k])
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", initial_duals[1, k])
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", initial_duals[2, k])
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", initial_duals[3, k])
 
-                    # if self._idx < j:
-                    #     self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", initial_duals[k][8])
-                    #     self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", initial_duals[k][9])
-                    # else:
-                    #     self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", initial_duals[k][8])
-                    #     self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", initial_duals[k][9])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", initial_duals[4, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", initial_duals[5, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", initial_duals[6, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", initial_duals[7, k])
+
+                    if self._idx < j:
+                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", initial_duals[8, k])
+                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", initial_duals[9, k])
+                    else:
+                        self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", initial_duals[8, k])
+                        self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", initial_duals[9, k])
                 else:
                     # Hardcoded for 2 robots TODO: Generalize
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", self._ca_solution[5, k])
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", self._ca_solution[6, k])
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", self._ca_solution[7, k])
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", self._ca_solution[8, k])
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", self._ca_solution[1, k])
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", self._ca_solution[2, k])
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", self._ca_solution[3, k])
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", self._ca_solution[4, k])
+
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", self._ca_solution[5, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", self._ca_solution[6, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", self._ca_solution[7, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", self._ca_solution[8, k])
 
                     if self._idx < j:
                         self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", self._ca_solution[9, k])
@@ -292,7 +298,6 @@ class ROSMPCPlanner:
 
             # Set ego trajectory
             trajectory_i = getattr(self, f'_trajectory_{self._idx}')
-            # lambda_i = trajectory_i[-self._nlam:]
             
             if np.all(trajectory_i == 0):   # If CA is computed first
                 xinit_i = np.array([self._settings[f"robot_{self._idx}"]["start_x"], self._settings[f"robot_{self._idx}"]["start_y"], self._settings[f"robot_{self._idx}"]["start_theta"] * np.pi])
@@ -316,11 +321,11 @@ class ROSMPCPlanner:
                 if j == self._idx:
                     continue
                 trajectory_j = getattr(self, f'_trajectory_{j}')
-                lambda_j = getattr(self, f'_lambda_{j}')
-                initial_duals = getattr(self, f'initial_duals_{j}')
+                # lambda_j = getattr(self, f'_lambda_{j}')
+                # initial_duals = getattr(self, f'initial_duals_{j}')
 
                 # If the trajectory of neighbour j is not received yet, set with initial trajectory
-                if np.all(trajectory_j == 0): # or np.all(lambda_j == 0):
+                if np.all(trajectory_j == 0):
                     xinit_j = np.array([self._settings[f"robot_{j}"]["start_x"], self._settings[f"robot_{j}"]["start_y"], self._settings[f"robot_{j}"]["start_theta"] * np.pi])
                     x_plan_j = set_initial_x_plan(self._settings, xinit_j)
 
@@ -340,34 +345,6 @@ class ROSMPCPlanner:
                     self._params_nmpc.set(k, f"x_{j}", trajectory_j[0, k])
                     self._params_nmpc.set(k, f"y_{j}", trajectory_j[1, k])
                     self._params_nmpc.set(k, f"theta_{j}", trajectory_j[2, k])
-
-                # if np.all(trajectory_i == 0):
-                #     self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", initial_duals[k][0])
-                #     self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", initial_duals[k][1])
-                #     self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", initial_duals[k][2])
-                #     self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", initial_duals[k][3])
-
-                #     self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", initial_duals[k][4])
-                #     self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", initial_duals[k][5])
-                #     self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", initial_duals[k][6])
-                #     self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", initial_duals[k][7])
-  
-                # else:
-                #     self._params_ca.set(k, f"lam_{j}_{self._idx}_0", lambda_j[k, 0])
-                #     self._params_ca.set(k, f"lam_{j}_{self._idx}_1", lambda_j[k, 1])
-                #     self._params_ca.set(k, f"lam_{j}_{self._idx}_2", lambda_j[k, 2])
-                #     self._params_ca.set(k, f"lam_{j}_{self._idx}_3", lambda_j[k, 3])
-
-                #     if k != self._N-1:
-                #         self._params_ca.set(k, f"lam_{self._idx}_{j}_0", lambda_i[0, k+1])
-                #         self._params_ca.set(k, f"lam_{self._idx}_{j}_1", lambda_i[1, k+1])
-                #         self._params_ca.set(k, f"lam_{self._idx}_{j}_2", lambda_i[2, k+1])
-                #         self._params_ca.set(k, f"lam_{self._idx}_{j}_3", lambda_i[3, k+1])
-                #     else:
-                #         self._params_ca.set(k, f"lam_{self._idx}_{j}_0", lambda_i[0, k])
-                #         self._params_ca.set(k, f"lam_{self._idx}_{j}_1", lambda_i[1, k])
-                #         self._params_ca.set(k, f"lam_{self._idx}_{j}_2", lambda_i[2, k])
-                #         self._params_ca.set(k, f"lam_{self._idx}_{j}_3", lambda_i[3, k])
                         
 
     def initialise_duals(self):
