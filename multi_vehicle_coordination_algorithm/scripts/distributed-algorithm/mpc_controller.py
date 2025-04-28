@@ -195,9 +195,9 @@ class MPCPlanner:
         if not hasattr(self, "_u_init_ca"):
             self._u_init_ca = np.tile(np.array(uinit).reshape((-1, 1)), (1, self._N))
             
-        if not self._ca_feasible:
-            # pass
-            self.set_initial_u_plan('ca', self._u_init_ca)
+        # if not self._ca_feasible:
+        #     # pass
+        #     self.set_initial_u_plan('ca', self._u_init_ca)
 
         try:
             # Set initial state
@@ -267,12 +267,12 @@ class MPCPlanner:
     def set_initial_duals(self, solver, u_plan):
 
         for j in range(1, self._number_of_robots+1):
-                if j == self._idx:
-                    continue
-                if solver == "nmpc":
-                    u_plan[2:, :] = getattr(self, f'_init_duals_{j}')[:8, :]
-                elif solver == "ca":
-                    u_plan = getattr(self, f'_init_duals_{j}')
+            if j == self._idx:
+                continue
+            if solver == "nmpc":
+                u_plan[2:, :] = getattr(self, f'_init_duals_{j}')[:8, :]
+            elif solver == "ca":
+                u_plan = getattr(self, f'_init_duals_{j}')
 
 
     def get_braking_trajectory(self, state):    # Not adjusted for multi robot

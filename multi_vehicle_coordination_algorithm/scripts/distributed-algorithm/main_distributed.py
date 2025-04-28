@@ -54,7 +54,6 @@ class ROSMPCCoordinator:
         nmpc_ca_timer = Timer("NMPC-CA")
         for it in range(1, self._iterations+1):
 
-
             # Run NMPC for each robot
             for robot in self._robots:
                 if robot._spline_fitter._splines:
