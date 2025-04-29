@@ -624,8 +624,8 @@ class CollisionAvoidanceModel(DynamicsModel):
                 if i != j and (i == idx ):
                     self.inputs.extend([f"s_{i}_{j}_0", f"s_{i}_{j}_1"])
 
-        self.lower_bound = np.array([0.0]  + [0.0]* self.nlam + [-10.0]* self.ns) # [x, u]
-        self.upper_bound = np.array([0.0] + [1000.0]* self.nlam + [10.0]* self.ns) # [x, u]
+        self.lower_bound = np.array([0.0]  + [0.0]* self.nlam + [-1.0]* self.ns) # [x, u]
+        self.upper_bound = np.array([0.0] + [1000.0]* self.nlam + [1.0]* self.ns) # [x, u]
 
         self.lower_bound_states = self.lower_bound[:self.nx]
         self.upper_bound_states = self.upper_bound[:self.nx]
