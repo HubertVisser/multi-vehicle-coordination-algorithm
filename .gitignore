@@ -27,3 +27,6 @@ acados/
 # Plot files
 multi_vehicle_coordination_algorithm/scripts/centralised-algorithm/plots/
 multi_vehicle_coordination_algorithm/scripts/distributed-algorithm/plots/
+multi_vehicle_coordination_algorithm/config/settings.yaml
+
+
