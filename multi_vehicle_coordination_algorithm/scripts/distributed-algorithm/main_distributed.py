@@ -64,8 +64,7 @@ class ROSMPCCoordinator:
                     return
 
             for robot in self._robots:
-                if robot._spline_fitter._splines:
-                    robot.run_ca(timer, it)
+                robot.run_ca(timer, it)
             # Run CA for all robots after all trajectories are received
             # self.run_ca_for_all_robots(timer)
         
