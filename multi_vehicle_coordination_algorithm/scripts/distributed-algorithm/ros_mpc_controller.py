@@ -256,22 +256,22 @@ class ROSMPCPlanner:
                     # pass
                     initial_duals = getattr(self, f'initial_duals_{j}')
 
-                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", initial_duals[k][0])
-                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", initial_duals[k][1])
-                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", initial_duals[k][2])
-                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", initial_duals[k][3])
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", initial_duals[0, k])
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", initial_duals[1, k])
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", initial_duals[2, k])
+                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", initial_duals[3, k])
                     
-                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", initial_duals[k][4])
-                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", initial_duals[k][5])
-                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", initial_duals[k][6])
-                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", initial_duals[k][7])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", initial_duals[4, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", initial_duals[5, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", initial_duals[6, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", initial_duals[7, k])
 
                     if self._idx < j:
-                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", initial_duals[k][8])
-                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", initial_duals[k][9])
+                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", initial_duals[8, k])
+                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", initial_duals[9, k])
                     else:
-                        self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", initial_duals[k][8])
-                        self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", initial_duals[k][9])
+                        self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", initial_duals[8, k])
+                        self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", initial_duals[9, k])
                 else:
                     # Hardcoded for 2 robots TODO: Generalize
                     self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", self._ca_solution[1, k])
