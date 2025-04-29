@@ -7,7 +7,7 @@ dart_simulator: false
 skip_solver_generation: true
 
 add_slack: true
-slack_value: 1.0e0
+slack_value: 1.0e2
 
 number_of_robots: 2
 robot_1:
