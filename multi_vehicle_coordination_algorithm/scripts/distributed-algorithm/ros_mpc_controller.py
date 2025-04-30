@@ -201,7 +201,7 @@ class ROSMPCPlanner:
                 self.publish_throttle(control_output, self._mpc_feasible) 
                 self.publish_steering(control_output, self._mpc_feasible) 
             
-        self.visualize()
+            self.visualize()
             
 
     def set_nmpc_parameters(self):

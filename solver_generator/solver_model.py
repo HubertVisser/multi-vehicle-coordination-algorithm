@@ -580,10 +580,9 @@ class BicycleModel2ndOrderMultiRobot(MultiRobotDynamicsModel):
         xdot1 = vx * cd.cos(theta) - vy * cd.sin(theta)
         xdot2 = vx * cd.sin(theta) + vy * cd.cos(theta)
         xdot3 = w
-        xdot4 = acc_x  
+        xdot4 = acc_x
         xdot5 = 0
         xdot6 = 0
-
 
         # v Simple s_dot approx taken from standard MPCC formulation
         s_dot = vx
