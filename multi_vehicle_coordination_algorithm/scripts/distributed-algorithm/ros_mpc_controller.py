@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 from util.files import load_settings, load_model
 from util.realtime_parameters import RealTimeParameters
 from util.convertion import quaternion_to_yaw, yaw_to_quaternion
-from util.logging import print_value 
+from util.logging import print_value
 from util.math import get_A, get_b
 
 from timer import Timer
@@ -252,14 +252,14 @@ class ROSMPCPlanner:
                     self._params_nmpc.set(k, f"theta_{j}", trajectory_j[2, k])
 
                 # Set duals
-                if self._ca_solution is None: #np.all(lambda_j == 0) or :
+                if self._ca_solution is None:
                     # pass
                     initial_duals = getattr(self, f'initial_duals_{j}')
 
-                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", initial_duals[0, k])
-                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", initial_duals[1, k])
-                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", initial_duals[2, k])
-                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", initial_duals[3, k])
+                    # self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", initial_duals[0, k])
+                    # self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", initial_duals[1, k])
+                    # self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", initial_duals[2, k])
+                    # self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", initial_duals[3, k])
                     
                     self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", initial_duals[4, k])
                     self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", initial_duals[5, k])
@@ -274,10 +274,10 @@ class ROSMPCPlanner:
                         self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", initial_duals[9, k])
                 else:
                     # Hardcoded for 2 robots TODO: Generalize
-                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", self._ca_solution[1, k])
-                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", self._ca_solution[2, k])
-                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", self._ca_solution[3, k])
-                    self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", self._ca_solution[4, k])
+                    # self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", self._ca_solution[1, k])
+                    # self._params_nmpc.set(k, f"lam_{self._idx}_{j}_1", self._ca_solution[2, k])
+                    # self._params_nmpc.set(k, f"lam_{self._idx}_{j}_2", self._ca_solution[3, k])
+                    # self._params_nmpc.set(k, f"lam_{self._idx}_{j}_3", self._ca_solution[4, k])
 
                     self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", self._ca_solution[5, k])
                     self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", self._ca_solution[6, k])
