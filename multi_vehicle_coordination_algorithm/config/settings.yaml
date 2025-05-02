@@ -2,12 +2,12 @@ name: "Jetracer"
 scheme: distributed # centralised or distributed
 N: 20
 integrator_step: 0.3
-track_choice: t_junction # straight_line, sinus, t_junction, merging
+track_choice: straight_line # straight_line, sinus, t_junction, merging
 dart_simulator: false
-skip_solver_generation: true
+skip_solver_generation: false
 
 add_slack: true
-slack_value: 1.0e1
+slack_value: 1.0e3
 
 number_of_robots: 2
 robot_1:
@@ -15,19 +15,19 @@ robot_1:
   start_y: 0.0
   start_theta: 0.0  # radians
 robot_2:
-  start_x: 0.0
-  start_y: -3.0
-  start_theta: 0.5  # radians
+  start_x: -2.0
+  start_y: 0.0
+  start_theta: 0.0  # radians
 
 verbose: false
 debug_visuals: false
 
 solver_settings:
   iterations_centralised: 2
-  iterations_distributed: 2 #1 #2  # iterations for distributed nmpc-ca combi
+  iterations_distributed: 3 #1 #2  # iterations for distributed nmpc-ca combi
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
-control_frequency: 5.0
+control_frequency: 1.0
 braking_acceleration: 0.4
 
 polytopic:
@@ -45,10 +45,10 @@ weights:
   lambda: .1  # centralised very sensitive on this weight
   s_dual: .1  # centralised very sensitive on this weight
   dmin_objective: .1
-  velocity: 0.1
+  velocity: 0.2
   reference_velocity: 0.3
-  lag: 0.1
-  contour: 0.1
+  lag: 0.2
+  contour: 0.2
   terminal_angle: 1.0 #0.0
   terminal_contour: 1.0 # 0.0
   terminal_lag: 1.0 # 0.0

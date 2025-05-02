@@ -2,10 +2,20 @@
 
 <launch>
 
-  <node name="multi_vehicle_coordination_algorithm_node" 
+  <!-- <node name="multi_vehicle_coordination_algorithm_node" 
         pkg="multi_vehicle_coordination_algorithm" 
         type="main_distributed.py" 
         output="screen" 
-        />
+        /> -->
+  
+  <!-- Robot 1 Node -->
+  <node name="robot_1_node" pkg="multi_vehicle_coordination_algorithm" type="robot_node.py" output="screen">
+    <param name="robot_id" value="1" />
+  </node>
+
+  <!-- Robot 2 Node -->
+  <node name="robot_2_node" pkg="multi_vehicle_coordination_algorithm" type="robot_node.py" output="screen">
+    <param name="robot_id" value="2" />
+  </node>
 
 </launch>  

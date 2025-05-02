@@ -32,6 +32,7 @@ include_directories(
 catkin_install_python(PROGRAMS 
   scripts/centralised-algorithm/main_centralised.py
   scripts/distributed-algorithm/main_distributed.py
+  scripts/distributed-algorithm/robot_node.py
   scripts/path_generator.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
