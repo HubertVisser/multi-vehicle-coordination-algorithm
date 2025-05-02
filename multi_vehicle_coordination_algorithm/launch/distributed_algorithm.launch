@@ -9,13 +9,19 @@
         /> -->
   
   <!-- Robot 1 Node -->
-  <node name="robot_1_node" pkg="multi_vehicle_coordination_algorithm" type="robot_node.py" output="screen">
-    <param name="robot_id" value="1" />
-  </node>
+  <group ns="robot_1_node">
+    <node name="robot_1_node" pkg="multi_vehicle_coordination_algorithm" type="robot_node.py" output="screen">
+      <param name="robot_id" value="1" />
+      <param name="debug_port" value="5678" />
+    </node>
+  </group>
 
   <!-- Robot 2 Node -->
-  <node name="robot_2_node" pkg="multi_vehicle_coordination_algorithm" type="robot_node.py" output="screen">
-    <param name="robot_id" value="2" />
-  </node>
+  <group ns="robot_2_node">
+    <node name="robot_2_node" pkg="multi_vehicle_coordination_algorithm" type="robot_node.py" output="screen">
+      <param name="robot_id" value="2" />
+      <param name="debug_port" value="5679" />
+    </node>
+  </group>
 
 </launch>  

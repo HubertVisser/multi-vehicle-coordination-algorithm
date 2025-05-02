@@ -1,9 +1,5 @@
 import debugpy
-
-# Start debugpy on a specific port (e.g., 5678)
-debugpy.listen(("0.0.0.0", 5678))
-print("Waiting for debugger to attach...")
-debugpy.wait_for_client()
+import rospy
 
 import os, sys
 import pathlib
@@ -15,7 +11,6 @@ sys.path.append(os.path.join(sys.path[0], "..", "..", "..", "mpc_planner_modules
 
 import threading
 
-import rospy
 from std_msgs.msg import Int32, Float32, Empty
 from nav_msgs.msg import Odometry, Path
 from geometry_msgs.msg import PoseStamped, Pose, Twist
@@ -43,6 +38,15 @@ from plot_utils import plot_warmstart, plot_path, plot_states, plot_duals
 
 class ROSMPCPlanner:
     def __init__(self, robot_id, settings=None):
+        # Start debugpy on a specific port (e.g., 5678)
+        # Print the node's namespace
+        namespace = rospy.get_namespace()
+        rospy.loginfo(f"Node namespace: {namespace}")
+        debug_port = rospy.get_param("~debug_port", 5678)
+        debugpy.listen(("0.0.0.0", debug_port))
+        print(f"Waiting for debugger to attach {debug_port}...")
+        debugpy.wait_for_client()
+
         self._settings = settings
         self._N = self._settings["N"]
         self._integrator_step = self._settings["integrator_step"]

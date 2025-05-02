@@ -14,6 +14,7 @@ from ros_mpc_controller import ROSMPCPlanner
 from util.files import load_settings
 from timer import Timer
 
+
 class RobotNode:
     def __init__(self, robot_id):
         self._settings = load_settings(package="multi_vehicle_coordination_algorithm")
