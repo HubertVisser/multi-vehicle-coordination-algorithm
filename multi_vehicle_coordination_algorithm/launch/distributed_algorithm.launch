@@ -1,18 +1,13 @@
 <?xml version="1.0"?>
 
 <launch>
+  <arg name="debug" default="false" />
 
-  <!-- <node name="multi_vehicle_coordination_algorithm_node" 
-        pkg="multi_vehicle_coordination_algorithm" 
-        type="main_distributed.py" 
-        output="screen" 
-        /> -->
-  
   <!-- Robot 1 Node -->
   <group ns="robot_1_node">
     <node name="robot_1_node" pkg="multi_vehicle_coordination_algorithm" type="robot_node.py" output="screen">
       <param name="robot_id" value="1" />
-      <param name="debug_port" value="5678" />
+      <param name="debug" value="$(arg debug)" />
     </node>
   </group>
 
@@ -20,7 +15,7 @@
   <group ns="robot_2_node">
     <node name="robot_2_node" pkg="multi_vehicle_coordination_algorithm" type="robot_node.py" output="screen">
       <param name="robot_id" value="2" />
-      <param name="debug_port" value="5679" />
+      <param name="debug" value="$(arg debug)" />
     </node>
   </group>
 

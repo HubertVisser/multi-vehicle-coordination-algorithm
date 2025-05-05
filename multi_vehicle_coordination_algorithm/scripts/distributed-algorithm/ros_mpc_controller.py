@@ -39,16 +39,16 @@ from plot_utils import plot_warmstart, plot_path, plot_states, plot_duals
 class ROSMPCPlanner:
     def __init__(self, robot_id, settings=None):
 
-        debug = rospy.get_param("~debug", False)  # Default to False if not set
-        if debug:
-            # Start debugpy on a specific port (e.g., 5678)
-            debug_port = rospy.get_param("~debug_port", 5678)
-            debugpy.listen(("0.0.0.0", debug_port))
-            print(f"Waiting for debugger to attach {debug_port}...")
-            try:
-                debugpy.wait_for_client()
-            except TimeoutError:
-                rospy.logwarn("Debugger did not attach within the timeout period.")
+        # debug = rospy.get_param("~debug", False)  # Default to False if not set
+        # if debug:
+        #     # Start debugpy on a specific port (e.g., 5678)
+        #     debug_port = rospy.get_param("~debug_port", 5678)
+        #     debugpy.listen(("0.0.0.0", debug_port))
+        #     print(f"Waiting for debugger to attach {debug_port}...")
+        #     try:
+        #         debugpy.wait_for_client()
+        #     except TimeoutError:
+        #         rospy.logwarn("Debugger did not attach within the timeout period.")
                 
         self._settings = settings
         self._N = self._settings["N"]

@@ -10,9 +10,10 @@ def main():
     # Get the 'scheme' parameter from the ROS parameter server
     scheme = rospy.get_param("scheme", "default_scheme")  # Use default if missing
     launch_file = f"/home/dock_user/ros_ws/src/multi-vehicle-coordination-algorithm/multi_vehicle_coordination_algorithm/launch/{scheme}_algorithm.launch"
+    debug = rospy.get_param("~debug", False) 
 
     # Run the launch file using roslaunch
-    process = subprocess.Popen(["roslaunch", launch_file])
+    process = subprocess.Popen(["roslaunch", launch_file, f"debug:={debug}"])
 
     def shutdown_hook():
         rospy.loginfo("Shutting down Launch Wrapper...")
