@@ -152,6 +152,11 @@ def plot_pred_traj(planner):
 
 def plot_distance(poses_1, poses_2, length, width, scheme='centralised'):
 
+    # Find the minimum length of the two lists
+    min_length = min(len(poses_1), len(poses_2))
+    poses_1 = poses_1[:min_length]
+    poses_2 = poses_2[:min_length]
+
     assert len(poses_1) == len(poses_2), "The two lists must have the same length."
 
     distances = []

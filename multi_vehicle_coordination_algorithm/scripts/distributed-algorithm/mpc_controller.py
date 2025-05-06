@@ -127,7 +127,7 @@ class MPCPlanner:
             # Set initial state
             self._solver_nmpc.constraints_set(0, 'lbx', np.array(xinit))
             self._solver_nmpc.constraints_set(0, 'ubx', np.array(xinit))
-            
+
             npar = int(len(p) / (self._N))
             for k in range(0, self._N):
                 self._solver_nmpc.set(k, 'x', self._x_traj_init[:, k])

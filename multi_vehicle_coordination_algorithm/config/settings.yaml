@@ -1,10 +1,10 @@
 name: "Jetracer"
 scheme: distributed # centralised or distributed
-N: 20
+N: 8
 integrator_step: 0.3
 track_choice: straight_line # straight_line, sinus, t_junction, merging
 dart_simulator: false
-skip_solver_generation: true
+skip_solver_generation: false
 
 add_slack: true
 slack_value: 1.0e1
@@ -12,11 +12,11 @@ slack_value: 1.0e1
 number_of_robots: 2
 robot_1:
   start_x: -5.0
-  start_y: 1.0
+  start_y: 0.0
   start_theta: 0.0  # radians
 robot_2:
   start_x: -1.0
-  start_y: -1.0
+  start_y: 0.0
   start_theta: 0.0  # radians
 
 verbose: false
@@ -24,7 +24,7 @@ debug_visuals: false
 
 solver_settings:
   iterations_centralised: 2
-  iterations_distributed: 2 #1 #2  # iterations for distributed nmpc-ca combi
+  iterations_distributed: 1 #1 #2  # iterations for distributed nmpc-ca combi
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 5.0

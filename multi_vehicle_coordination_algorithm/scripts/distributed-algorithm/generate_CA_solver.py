@@ -52,7 +52,7 @@ def configuration_basic(settings, idx):
     modules.add_module(PolytopicSjdualConstraintModule(settings, idx))
     
     # if idx == 1:
-    modules.add_module(s2normConstraintModule(settings, idx))
+    # modules.add_module(s2normConstraintModule(settings, idx))
 
     return model, modules
 
