@@ -42,18 +42,7 @@ class RobotNode:
 
 if __name__ == "__main__":
     rospy.init_node("robot_node", anonymous=True)
-
-    robot_id = rospy.get_param("~robot_id", 1)  # Get robot ID from parameter
-     # Shared debug server configuration
-    debug = rospy.get_param("~debug", False)  # Default to False if not set
-    shared_debug_port = 5678  # Use the same port for both nodes
-    if debug and robot_id == 1:
-        debugpy.listen(("0.0.0.0", shared_debug_port))
-        rospy.loginfo(f"Waiting for debugger to attach on port {shared_debug_port}...")
-        try:
-            debugpy.wait_for_client()
-        except TimeoutError:
-            rospy.logwarn("Debugger did not attach within the timeout period.")
+    robot_id = rospy.get_param("~robot_id", 1)  # Get robot ID from paramete
             
     rospy.loginfo(f"Starting Robot Node {robot_id}")
     node = RobotNode(robot_id)

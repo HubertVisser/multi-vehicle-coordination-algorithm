@@ -7,7 +7,7 @@
   <group ns="robot_1_node">
     <node name="robot_1_node" pkg="multi_vehicle_coordination_algorithm" type="robot_node.py" output="screen">
       <param name="robot_id" value="1" />
-      <param name="debug" value="$(arg debug)" />
+      <param name="debug" value="false" />
     </node>
   </group>
 
@@ -15,7 +15,7 @@
   <group ns="robot_2_node">
     <node name="robot_2_node" pkg="multi_vehicle_coordination_algorithm" type="robot_node.py" output="screen">
       <param name="robot_id" value="2" />
-      <param name="debug" value="$(arg debug)" />
+      <param name="debug" value="false" />
     </node>
   </group>
 

@@ -145,6 +145,7 @@ class PathGenerator:
         rospy.loginfo("Published paths")
 
 if __name__ == '__main__':
+    rospy.INFO("Starting Path Generator Node")
     rospy.init_node('path_publisher')
     path_generator = PathGenerator()
 

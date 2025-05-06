@@ -4,7 +4,7 @@ N: 20
 integrator_step: 0.3
 track_choice: straight_line # straight_line, sinus, t_junction, merging
 dart_simulator: false
-skip_solver_generation: false
+skip_solver_generation: true
 
 add_slack: true
 slack_value: 1.0e3
