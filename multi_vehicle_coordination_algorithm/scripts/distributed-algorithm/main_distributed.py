@@ -12,6 +12,7 @@ import threading
 
 import rospy
 from nav_msgs.msg import Odometry, Path
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 from copy import deepcopy
@@ -52,21 +53,30 @@ class ROSMPCCoordinator:
     def run(self, timer):
 
         nmpc_ca_timer = Timer("NMPC-CA")
-        for it in range(1, self._iterations+1):
+         # Create a ThreadPoolExecutor for parallel execution
+        with ThreadPoolExecutor() as executor:
+            for it in range(1, self._iterations + 1):
+                # Run NMPC for each robot in parallel
+                nmpc_futures = [
+                    executor.submit(robot.run_nmpc, timer, it)
+                    for robot in self._robots
+                    if robot._spline_fitter._splines
+                ]
 
+                # Wait for all NMPC tasks to complete
+                for future in nmpc_futures:
+                    future.result()  # This will raise any exceptions if they occur
 
-            # Run NMPC for each robot
-            for robot in self._robots:
-                if robot._spline_fitter._splines:
-                    robot.run_nmpc(timer, it)
-                else:
-                    rospy.logwarn("Splines have not been computed yet. Waiting for splines to be available.")
-                    return
+                # Run CA for each robot in parallel
+                ca_futures = [
+                    executor.submit(robot.run_ca, timer, it)
+                    for robot in self._robots
+                    if robot._spline_fitter._splines
+                ]
 
-            for robot in self._robots:
-                robot.run_ca(timer, it)
-            # Run CA for all robots after all trajectories are received
-            # self.run_ca_for_all_robots(timer)
+                # Wait for all CA tasks to complete
+                for future in ca_futures:
+                    future.result()  # This will raise any exceptions if they occur
         
         self.time_tracker.add(nmpc_ca_timer.stop())
         del nmpc_ca_timer
