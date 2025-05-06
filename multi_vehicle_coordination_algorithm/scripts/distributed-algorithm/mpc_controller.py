@@ -171,10 +171,10 @@ class MPCPlanner:
                 output[f"lam_{self._idx}_{j}_2"] = self._model_nmpc.get(1, f"lam_{self._idx}_{j}_2")
                 output[f"lam_{self._idx}_{j}_3"] = self._model_nmpc.get(1, f"lam_{self._idx}_{j}_3")
                 
-                output[f"lam_{j}_{self._idx}_0"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_0")
-                output[f"lam_{j}_{self._idx}_1"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_1")
-                output[f"lam_{j}_{self._idx}_2"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_2")
-                output[f"lam_{j}_{self._idx}_3"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_3")
+                # output[f"lam_{j}_{self._idx}_0"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_0")
+                # output[f"lam_{j}_{self._idx}_1"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_1")
+                # output[f"lam_{j}_{self._idx}_2"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_2")
+                # output[f"lam_{j}_{self._idx}_3"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_3")
 
             self.time_tracker.add(solve_time)
 

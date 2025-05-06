@@ -4,10 +4,10 @@ N: 20
 integrator_step: 0.3
 track_choice: straight_line # straight_line, sinus, t_junction, merging
 dart_simulator: false
-skip_solver_generation: false
+skip_solver_generation: true
 
 add_slack: true
-slack_value: 1.0e3
+slack_value: 1.0e1
 
 number_of_robots: 2
 robot_1:
@@ -24,7 +24,7 @@ debug_visuals: false
 
 solver_settings:
   iterations_centralised: 2
-  iterations_distributed: 3 #1 #2  # iterations for distributed nmpc-ca combi
+  iterations_distributed: 2 #1 #2  # iterations for distributed nmpc-ca combi
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
 control_frequency: 5.0
@@ -47,8 +47,8 @@ weights:
   dmin_objective: .1
   velocity: 0.4
   reference_velocity: 0.4
-  lag: 0.6
-  contour: 0.6
+  lag: 0.4
+  contour: 0.4
   terminal_angle: 1.0 #0.0
   terminal_contour: 1.0 # 0.0
   terminal_lag: 1.0 # 0.0
