@@ -50,6 +50,7 @@ class s2normConstraintConstraints:
         for index in range(0, self.n_constraints):
             # upper_bound.append(0.5 * np.sqrt(2))
             upper_bound.append(1)
+            upper_bound.append(1)
         return upper_bound
 
     def neighbour_range(self):

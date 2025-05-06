@@ -53,6 +53,31 @@ class ROSMPCCoordinator:
 
     def run(self, timer):
         nmpc_ca_timer = Timer("NMPC-CA")
+         # Create a ThreadPoolExecutor for parallel execution
+        with ThreadPoolExecutor() as executor:
+            for it in range(1, self._iterations + 1):
+                # Run NMPC for each robot in parallel
+                nmpc_futures = [
+                    executor.submit(robot.run_nmpc, timer, it)
+                    for robot in self._robots
+                    if robot._spline_fitter._splines
+                ]
+
+                # Wait for all NMPC tasks to complete
+                for future in nmpc_futures:
+                    future.result()  # This will raise any exceptions if they occur
+
+                # Run CA for each robot in parallel
+                ca_futures = [
+                    executor.submit(robot.run_ca, timer, it)
+                    for robot in self._robots
+                    if robot._spline_fitter._splines
+                ]
+
+                # Wait for all CA tasks to complete
+                for future in ca_futures:
+                    future.result()  # This will raise any exceptions if they occur
+        
 
         # Create a ThreadPoolExecutor for parallel execution
         with ThreadPoolExecutor() as executor:
