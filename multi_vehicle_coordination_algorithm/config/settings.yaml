@@ -45,13 +45,26 @@ weights:
   lambda: 0.2  # centralised very sensitive on this weight
   s_dual: 0.2   # centralised very sensitive on this weight
   dmin_objective: .1
-  velocity: 0.2
+  velocity: 0.6
   reference_velocity: 0.4
   lag: 0.2
   contour: 0.1
   terminal_angle: 1.0 #0.0
   terminal_contour: 1.0 # 0.0
   terminal_lag: 1.0 # 0.0
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
