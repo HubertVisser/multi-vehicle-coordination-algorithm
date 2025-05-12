@@ -45,14 +45,12 @@ def configuration_basic(settings, idx):
                 base_module.weigh_variable(var_name=f"s_{j}_{i}_0", weight_names="s_dual",)
                 base_module.weigh_variable(var_name=f"s_{j}_{i}_1", weight_names="s_dual",)
     
+    modules.add_module(s2normConstraintModule(settings, idx))
     modules.add_module(MinimizeCollisionAvoidanceModule(settings, idx))
     
     modules.add_module(PolytopicDminConstraintModule(settings, idx))
     modules.add_module(PolytopicSidualConstraintModule(settings, idx))
     modules.add_module(PolytopicSjdualConstraintModule(settings, idx))
-    
-    # if idx == 1:
-    # modules.add_module(s2normConstraintModule(settings, idx))
 
     return model, modules
 
