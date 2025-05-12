@@ -11,13 +11,13 @@ slack_value: 1.0e0
 
 number_of_robots: 2
 robot_1:
-  start_x: -5.
+  start_x: -5.0
   start_y: 2.
   start_theta: 0.0  # radians
 robot_2:
-  start_x: -4.
+  start_x: -4.0
   start_y: -2.
-  start_theta: 0.5  # radians
+  start_theta: 0.0  # radians
 
 verbose: false
 debug_visuals: false
@@ -42,16 +42,22 @@ contouring:
 weights:
   throttle: .1
   steering: .1
-  lambda: .2  # centralised very sensitive on this weight
-  s_dual: .2   # centralised very sensitive on this weight
+  lambda: 0.2  # centralised very sensitive on this weight
+  s_dual: 0.2   # centralised very sensitive on this weight
   dmin_objective: .1
-  velocity: 0.3
+  velocity: 0.6
   reference_velocity: 0.4
   lag: 0.2
   contour: 0.1
   terminal_angle: 1.0 #0.0
   terminal_contour: 1.0 # 0.0
   terminal_lag: 1.0 # 0.0
+
+
+
+
+
+
 
 
 
