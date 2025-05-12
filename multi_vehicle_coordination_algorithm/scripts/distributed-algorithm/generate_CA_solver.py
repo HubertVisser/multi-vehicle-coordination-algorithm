@@ -45,7 +45,9 @@ def configuration_basic(settings, idx):
             base_module.weigh_variable(var_name=f"lam_{i}_{j}_1", weight_names="lambda",)
             base_module.weigh_variable(var_name=f"lam_{i}_{j}_2", weight_names="lambda",)
             base_module.weigh_variable(var_name=f"lam_{i}_{j}_3", weight_names="lambda",)
-            
+            if i > j:
+                base_module.weigh_variable(var_name=f"s_{j}_{i}_0", weight_names="s_dual",)
+                base_module.weigh_variable(var_name=f"s_{j}_{i}_1", weight_names="s_dual",)
     
     modules.add_module(s2normConstraintModule(settings, idx))
     modules.add_module(MinimizeCollisionAvoidanceModule(settings, idx))
