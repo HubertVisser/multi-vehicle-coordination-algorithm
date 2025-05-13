@@ -4,19 +4,19 @@ N: 20
 integrator_step: 0.3
 track_choice: straight_line # straight_line, sinus, t_junction, merging
 dart_simulator: false
-skip_solver_generation: true
+skip_solver_generation: false
 
 add_slack: true
-slack_value: 1.0e0
+slack_value: 1.0e1
 
 number_of_robots: 2
 robot_1:
   start_x: -5.0
-  start_y: 2.
+  start_y: 1.
   start_theta: 0.0  # radians
 robot_2:
   start_x: -4.0
-  start_y: -2.
+  start_y: -1.
   start_theta: 0.0  # radians
 
 verbose: false

@@ -394,6 +394,7 @@ class ROSMPCPlanner:
     #         s = self._save_s[0][s_name]
     #         map_value = self._map[s_name + "_0"][1]
     #         self._uinit[map_value - self._nx_ca : (map_value - self._nx_ca) + 2] = s
+                  
                                             
     def publish_throttle(self, control, exit_flag):
         throttle = Float32()
