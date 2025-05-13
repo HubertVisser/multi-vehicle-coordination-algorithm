@@ -7,7 +7,7 @@ dart_simulator: false
 skip_solver_generation: false
 
 add_slack: true
-slack_value: 1.0e0
+slack_value: 1.0e1
 
 number_of_robots: 2
 robot_1:
@@ -45,13 +45,20 @@ weights:
   lambda: 0.2  # centralised very sensitive on this weight
   s_dual: 0.2   # centralised very sensitive on this weight
   dmin_objective: .1
-  velocity: 0.6
+  velocity: 1.5
   reference_velocity: 0.4
-  lag: 0.2
+  lag: 0.5
   contour: 0.1
   terminal_angle: 1.0 #0.0
   terminal_contour: 1.0 # 0.0
   terminal_lag: 1.0 # 0.0
+
+
+
+
+
+
+
 
 
 

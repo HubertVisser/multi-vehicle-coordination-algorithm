@@ -341,10 +341,6 @@ class ROSMPCPlanner:
                     self._params_ca.set(k, f"x_{j}", trajectory_j[0, k])
                     self._params_ca.set(k, f"y_{j}", trajectory_j[1, k])
                     self._params_ca.set(k, f"theta_{j}", trajectory_j[2, k])
-                    
-                    self._params_nmpc.set(k, f"x_{j}", trajectory_j[0, k])
-                    self._params_nmpc.set(k, f"y_{j}", trajectory_j[1, k])
-                    self._params_nmpc.set(k, f"theta_{j}", trajectory_j[2, k])
                         
 
     def initialise_duals(self):
