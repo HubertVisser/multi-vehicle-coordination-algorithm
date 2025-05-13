@@ -254,27 +254,26 @@ class ROSMPCPlanner:
                     self._params_nmpc.set(k, f"theta_{j}", trajectory_j[2, k])
 
                 # Set duals
-                if self._ca_solution is None: #np.all(lambda_j == 0) or :
-                    pass
+                if self._ca_solution is None: 
+
                     initial_duals = getattr(self, f'initial_duals_{j}')
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", initial_duals[4, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", initial_duals[5, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", initial_duals[6, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", initial_duals[7, k])
 
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", initial_duals[k][4])
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", initial_duals[k][5])
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", initial_duals[k][6])
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", initial_duals[k][7])
-
-                    # if self._idx < j:
-                    #     self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", initial_duals[k][8])
-                    #     self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", initial_duals[k][9])
-                    # else:
-                    #     self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", initial_duals[k][8])
-                    #     self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", initial_duals[k][9])
+                    if self._idx < j:
+                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", initial_duals[8, k])
+                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", initial_duals[9, k])
+                    else:
+                        self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", initial_duals[8, k])
+                        self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", initial_duals[9, k])
                 else:
                     # Hardcoded for 2 robots TODO: Generalize
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", self._ca_solution[5, k])
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", self._ca_solution[6, k])
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", self._ca_solution[7, k])
-                    # self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", self._ca_solution[8, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", self._ca_solution[5, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", self._ca_solution[6, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", self._ca_solution[7, k])
+                    self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", self._ca_solution[8, k])
 
                     if self._idx < j:
                         self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", self._ca_solution[9, k])
@@ -292,7 +291,6 @@ class ROSMPCPlanner:
 
             # Set ego trajectory
             trajectory_i = getattr(self, f'_trajectory_{self._idx}')
-            # lambda_i = trajectory_i[-self._nlam:]
             
             if np.all(trajectory_i == 0):   # If CA is computed first
                 xinit_i = np.array([self._settings[f"robot_{self._idx}"]["start_x"], self._settings[f"robot_{self._idx}"]["start_y"], self._settings[f"robot_{self._idx}"]["start_theta"] * np.pi])
@@ -336,10 +334,6 @@ class ROSMPCPlanner:
                     self._params_ca.set(k, f"x_{j}", trajectory_j[0, k])
                     self._params_ca.set(k, f"y_{j}", trajectory_j[1, k])
                     self._params_ca.set(k, f"theta_{j}", trajectory_j[2, k])
-                    
-                    self._params_nmpc.set(k, f"x_{j}", trajectory_j[0, k])
-                    self._params_nmpc.set(k, f"y_{j}", trajectory_j[1, k])
-                    self._params_nmpc.set(k, f"theta_{j}", trajectory_j[2, k])
 
                 # if np.all(trajectory_i == 0):
                 #     self._params_nmpc.set(k, f"lam_{self._idx}_{j}_0", initial_duals[k][0])
@@ -377,29 +371,29 @@ class ROSMPCPlanner:
             setattr(self, f'initial_duals_{j}', dual_initialiser(self._settings, self._idx, j))
     
     # Not used atm
-    def set_uinit(self): 
-        # Set u init for the CA solver
-        self._map = load_model(model_map_name=f"model_map_ca_{self._idx}")
+    # def set_uinit(self): 
+    #     # Set u init for the CA solver
+    #     self._map = load_model(model_map_name=f"model_map_ca_{self._idx}")
         
-        for j in range(1, self._number_of_robots+1):
-            if j == self._idx:
-                continue
-            lam_name = f"lam_{self._idx}_{j}"
-            lam = self._save_lam[0][lam_name]
-            map_value = self._map[lam_name + "_0"][1]
-            self._uinit[map_value - self._nx_ca : (map_value - self._nx_ca) + 4] = lam
-            lam_name = f"lam_{j}_{self._idx}"
-            lam = self._save_lam[0][lam_name]
-            map_value = self._map[lam_name + "_0"][1]
-            self._uinit[map_value - self._nx_ca : (map_value - self._nx_ca) + 4] = lam
+    #     for j in range(1, self._number_of_robots+1):
+    #         if j == self._idx:
+    #             continue
+    #         lam_name = f"lam_{self._idx}_{j}"
+    #         lam = self._save_lam[0][lam_name]
+    #         map_value = self._map[lam_name + "_0"][1]
+    #         self._uinit[map_value - self._nx_ca : (map_value - self._nx_ca) + 4] = lam
+    #         lam_name = f"lam_{j}_{self._idx}"
+    #         lam = self._save_lam[0][lam_name]
+    #         map_value = self._map[lam_name + "_0"][1]
+    #         self._uinit[map_value - self._nx_ca : (map_value - self._nx_ca) + 4] = lam
 
-            if self._idx < j:
-                s_name = f"s_{self._idx}_{j}"
-            else:
-                s_name = f"s_{j}_{self._idx}"
-            s = self._save_s[0][s_name]
-            map_value = self._map[s_name + "_0"][1]
-            self._uinit[map_value - self._nx_ca : (map_value - self._nx_ca) + 2] = s
+    #         if self._idx < j:
+    #             s_name = f"s_{self._idx}_{j}"
+    #         else:
+    #             s_name = f"s_{j}_{self._idx}"
+    #         s = self._save_s[0][s_name]
+    #         map_value = self._map[s_name + "_0"][1]
+    #         self._uinit[map_value - self._nx_ca : (map_value - self._nx_ca) + 2] = s
                                             
     def publish_throttle(self, control, exit_flag):
         throttle = Float32()
@@ -484,7 +478,6 @@ class ROSMPCPlanner:
             assert len(arr_msg.rows) == self._N
             lam_pub.publish(arr_msg)
                 
-    
     def visualize(self): 
         if self._state_msg is not None:
             robot_pos = self._visuals.get_sphere()
