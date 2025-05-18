@@ -183,6 +183,9 @@ class ROSMPCPlanner:
         self.publish_steering(output, self._mpc_feasible) if self._dart_simulator else None
             
         self.visualize()
+        _, _, calls = self._planner.time_tracker.get_stats()
+        print_value("calls", calls)
+        
         # self.publish_robot_state() # Not used in simulator.rviz
 
     def set_parameters(self):

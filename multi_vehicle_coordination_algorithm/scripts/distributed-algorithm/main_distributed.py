@@ -81,6 +81,8 @@ class ROSMPCCoordinator:
 
         self.time_tracker.add(nmpc_ca_timer.stop())
         del nmpc_ca_timer
+        _, _, calls = self.time_tracker.get_stats()
+        print_value("calls", calls)
         
 
     # def run_ca_for_all_robots(self, timer):
