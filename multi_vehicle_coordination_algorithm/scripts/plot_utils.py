@@ -191,3 +191,24 @@ def plot_distance(poses_1, poses_2, length, width, scheme='centralised'):
     plt.savefig(os.path.join(os.path.dirname(__file__), f'{scheme}-algorithm/plots', f'distance_{scheme}.png'))  # Save the plot to a file
     print_value("Minimum Distance", min_distance, tab=True)
 
+def plot_trajectory(poses_1, poses_2, reference_1, reference_2, track_choice, scheme='centralised'):
+    plt.figure()
+    plt.plot(poses_1[:, 0], poses_1[:, 1], label='Robot 1', color='blue')
+    plt.plot(poses_2[:, 0], poses_2[:, 1], label='Robot 2', color='red')
+    if track_choice == 'straight_line':
+        plt.plot(reference_1[:, 0], reference_1[:, 1], label='Reference Path', color='grey', alpha=0.5, linestyle='--')
+    else:
+        plt.plot(reference_1[:, 0], reference_1[:, 1], label='Reference Path 1', color='blue', alpha=0.5, linestyle='--')
+        plt.plot(reference_2[:, 0], reference_2[:, 1], label='Reference Path 2', color='red', alpha=0.5, linestyle='--')
+    plt.xlabel('X Position')
+    plt.ylabel('Y Position')
+    # plt.title(f'Trajectories - {scheme}')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(os.path.join(os.path.dirname(__file__), f'{scheme}-algorithm/plots', f'trajectories_{scheme}.png'))  # Save the plot to a file
+
+def get_reference_from_path_msg(path_msg):
+    reference = []
+    for pose in path_msg.poses:
+        reference.append([pose.pose.position.x, pose.pose.position.y])
+    return np.array(reference)

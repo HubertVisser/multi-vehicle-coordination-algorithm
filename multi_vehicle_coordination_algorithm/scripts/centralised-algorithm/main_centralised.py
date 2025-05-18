@@ -33,7 +33,7 @@ from timer import Timer
 from contouring_spline import SplineFitter
 from mpc_controller import MPCPlanner
 from ros_visuals import ROSMarkerPublisher
-from plot_utils import plot_warmstart, plot_path, plot_states, plot_duals, plot_distance
+from plot_utils import plot_duals, plot_distance, plot_trajectory, get_reference_from_path_msg
 
 
 class ROSMPCPlanner:
@@ -92,6 +92,7 @@ class ROSMPCPlanner:
         self._save_output = []
         self._save_lam = []
         self._save_s = []
+        self._cumulative_tracking_error = 0.0
 
 
         self._neighbour_pos_1 = np.array([])
@@ -255,8 +256,10 @@ class ROSMPCPlanner:
     
     def visualize(self):
         for n in range(1, self._number_of_robots+1):
+            self.update_tracking_error(n)
+
             state_msg = getattr(self, f'_state_msg_{n}')
-            splineFitter = getattr(self, f'_spline_fitter_{n}')
+            splineFitter = self.get_spline_fitter(n)
             if state_msg:
                 robot_pos = self._visuals.get_sphere()
                 robot_pos.set_color(0)
@@ -522,6 +525,39 @@ class ROSMPCPlanner:
         width = self._settings["polytopic"]["width"]
 
         plot_distance(poses1, poses2, width, length, scheme=self._settings["scheme"])
+    
+    def plot_trajectory(self):
+        
+        reference_1 = get_reference_from_path_msg(self._path_msg_1)
+        reference_2 = get_reference_from_path_msg(self._path_msg_2)
+
+        plot_trajectory(np.array(self._states_save_1), np.array(self._states_save_2), reference_1, reference_2, self._settings['track_choice'], self._scheme)
+
+    def update_tracking_error(self, robot_id):
+        # Ensure _spline_fitter and _closest_s are available
+        splineFitter = self.get_spline_fitter(robot_id)
+        if splineFitter is None or splineFitter._closest_s is None:
+            return
+
+        robot_position = self.get_state(robot_id)
+        closest_position = np.array([splineFitter._closest_x, splineFitter._closest_y])
+        distance = np.linalg.norm(robot_position - closest_position)
+        self._cumulative_tracking_error += distance
+    
+    def get_spline_fitter(self, robot_id):
+        attribute_name = f'_spline_fitter_{robot_id}'
+        if not hasattr(self, attribute_name):
+            raise AttributeError(f"robot_id '{robot_id}' does not exist.")
+        return getattr(self, attribute_name)
+
+    def get_state(self, robot_id):
+        return np.array([self._state[0 + (robot_id-1)*self._nx_one_robot], self._state[1 + (robot_id-1)*self._nx_one_robot]])
+        
+    def get_cumulative_tracking_error(self):
+        return self._cumulative_tracking_error
+    
+    def log_tracking_error(self):
+        rospy.loginfo(f"Cumulative Tracking Error: {self._cumulative_tracking_error:.2f}")
 
 def run_centralised_algorithm():
     """
@@ -539,7 +575,8 @@ def run_centralised_algorithm():
     mpc.plot_states()
     mpc.plot_duals()
     mpc.plot_distance()
-    # mpc.plot_pred_traj()
+    mpc.plot_trajectory()
+    mpc.log_tracking_error()
     mpc.print_stats()
     mpc.plot_distance()
 

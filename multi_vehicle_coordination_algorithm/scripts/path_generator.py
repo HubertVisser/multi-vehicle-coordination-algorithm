@@ -47,7 +47,7 @@ class PathGenerator:
         pts_x_turn = -3 + 3 * np.cos(theta)
         pts_y_turn = -2 + 3 * np.sin(theta)
 
-        pts_x_strt2 = np.linspace(-3, -6, 4)
+        pts_x_strt2 = np.linspace(-3, -5, 4)
         pts_y_strt2 = np.ones(4)
 
         pts_x_2 = np.concatenate((pts_x_strt1[:-1], pts_x_turn[:-1], pts_x_strt2))
