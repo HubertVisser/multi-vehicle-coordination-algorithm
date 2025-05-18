@@ -24,7 +24,7 @@ from util.convertion import quaternion_to_yaw
 from util.logging import print_value, TimeTracker
 
 from ros_mpc_controller import ROSMPCPlanner
-from plot_utils import plot_distance
+from plot_utils import plot_distance, plot_trajectory, get_reference_from_path_msg
 from timer import Timer
 
 
@@ -77,9 +77,14 @@ class ROSMPCCoordinator:
                 # Wait for all CA tasks to complete
                 for future in ca_futures:
                     future.result()  # This will raise any exceptions if they occur
-        
         self.time_tracker.add(nmpc_ca_timer.stop())
         del nmpc_ca_timer
+        if hasattr(self.time_tracker, "get_stats"):
+            stats = self.time_tracker.get_stats()
+            if isinstance(stats, tuple) and len(stats) >= 3:
+                _, _, calls = stats
+                if isinstance(calls, (int, float)):
+                    print(f"calls: {calls}")
         
 
     def run_ca_for_all_robots(self, timer):
@@ -102,6 +107,16 @@ class ROSMPCCoordinator:
         width = self._settings["polytopic"]["width"]
 
         plot_distance(poses1, poses2, width, length, scheme=self._settings["scheme"])
+    
+    def plot_trajectory(self):
+
+        poses_1 = self._robots[0]._states_save
+        poses_2 = self._robots[1]._states_save
+        reference_1 = get_reference_from_path_msg(self._robots[0]._path_msg)
+        reference_2 = get_reference_from_path_msg(self._robots[1]._path_msg)
+
+        plot_trajectory(np.array(poses_1), np.array(poses_2), reference_1, reference_2, track_choice=self._settings["track_choice"], scheme=self._settings["scheme"])
+
 
         
 
@@ -118,8 +133,10 @@ if __name__ == "__main__":
     for robot in coordinator._robots:
         robot.plot_states()
         robot.plot_duals()
+        robot.log_tracking_error()
 
     coordinator.plot_distance()
+    coordinator.plot_trajectory()
     coordinator.time_tracker.print_stats()
     
     

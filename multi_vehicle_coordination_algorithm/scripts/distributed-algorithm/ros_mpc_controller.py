@@ -74,6 +74,7 @@ class ROSMPCPlanner:
         self._save_output = []
         self._save_lam = []
         self._save_s = []
+        self._cumulative_tracking_error = 0.0
         
         self._state = np.zeros((self._nx_nmpc,))
         self._state[: 3] = [self._settings[f"robot_{self._idx}"]["start_x"], \
@@ -459,58 +460,80 @@ class ROSMPCPlanner:
                 
     
     def visualize(self): 
-        if self._state_msg is not None:
-            robot_pos = self._visuals.get_sphere()
-            robot_pos.set_color(0)
-            robot_pos.set_scale(0.3, 0.3, 0.3)
+        # Update the tracking error
+        self.update_tracking_error()
 
+        # Visualize the robot's position
+        self.visualize_robot_position()
+
+        # Visualize collision avoidance lines
+        self.visualize_seperating_hyperplane()
+
+        # Visualize debug visuals
+        self.visualize_debug_visuals()
+
+        # Visualize the robot's trajectory
+        self.visualize_trajectory()
+
+    def visualize_robot_position(self):
+        if self._state_msg is None:
+            return
+        robot_pos = self._visuals.get_sphere()
+        robot_pos.set_color(0)
+        robot_pos.set_scale(0.3, 0.3, 0.3)
+
+        pose = Pose()
+        pose.position.x = float(self._state[0])
+        pose.position.y = float(self._state[1])
+        robot_pos.add_marker(pose)
+    
+    def visualize_seperating_hyperplane(self):
+        if not self._save_s:
+            return
+        line = self._visuals.get_line()
+        line.set_scale(0.05)
+        line.set_color(7**self._idx, alpha=1.0)
+        ego_pos = np.array([self._state[0], self._state[1]])
+
+        for j in range(1, self._number_of_robots+1):
+            if j == self._idx:
+                continue
+
+            s = self._save_s[-1][f's_{self._idx}_{j}'] if self._idx < j else self._save_s[-1][f's_{j}_{self._idx}']
+            
+            neighbour_pos = np.array([self._params_ca.get(1, f"x_{j}"), self._params_ca.get(1, f"y_{j}")])
+            midpoint = (ego_pos + neighbour_pos) / 2
+    
+            # Calculate the direction vector of the line (perpendicular to the normal vector)
+            direction_vector = np.array([-s[1], s[0]]) 
+            assert np.dot(direction_vector, np.array(s)) == 0
+            line_length = 100
+            line_start = midpoint - (line_length / 2) * direction_vector
+            line_end = midpoint + (line_length / 2) * direction_vector
+            pose_a = Pose()
+            pose_a.position.x = float(line_start[0])
+            pose_a.position.y = float(line_start[1])
+            pose_b = Pose()
+            pose_b.position.x = float(line_end[0])
+            pose_b.position.y = float(line_end[1])
+            line.add_line_from_poses(pose_a, pose_b)
+
+    def visualize_debug_visuals(self):
+        if not self._debug_visuals:
+            return
+        if self._spline_fitter._closest_s is not None:
+            cube = self._debug_visuals_pub.get_cube()
+            cube.set_color(5)
+            cube.set_scale(0.5, 0.5, 0.5)
             pose = Pose()
-            pose.position.x = float(self._state[0])
-            pose.position.y = float(self._state[1])
-            robot_pos.add_marker(pose)
-        if self._save_s:
-            line = self._visuals.get_line()
-            line.set_scale(0.05)
-            line.set_color(7**self._idx, alpha=1.0)
-            ego_pos = np.array([self._state[0], self._state[1]])
+            pose.position.x = float(self._spline_fitter._closest_x)
+            pose.position.y = float(self._spline_fitter._closest_y)
+            cube.add_marker(pose)
 
-            for j in range(1, self._number_of_robots+1):
-                if j == self._idx:
-                    continue
+        plot_warmstart(self)
+        self._debug_visuals_pub.publish()
 
-                s = self._save_s[-1][f's_{self._idx}_{j}'] if self._idx < j else self._save_s[-1][f's_{j}_{self._idx}']
-                
-                neighbour_pos = np.array([self._params_ca.get(1, f"x_{j}"), self._params_ca.get(1, f"y_{j}")])
-                midpoint = (ego_pos + neighbour_pos) / 2
-        
-                # Calculate the direction vector of the line (perpendicular to the normal vector)
-                direction_vector = np.array([-s[1], s[0]]) 
-                assert np.dot(direction_vector, np.array(s)) == 0
-                line_length = 100
-                line_start = midpoint - (line_length / 2) * direction_vector
-                line_end = midpoint + (line_length / 2) * direction_vector
-                pose_a = Pose()
-                pose_a.position.x = float(line_start[0])
-                pose_a.position.y = float(line_start[1])
-                pose_b = Pose()
-                pose_b.position.x = float(line_end[0])
-                pose_b.position.y = float(line_end[1])
-                line.add_line_from_poses(pose_a, pose_b)
-
-        if self._debug_visuals:
-            if self._spline_fitter._closest_s is not None:
-                cube = self._debug_visuals_pub.get_cube()
-                cube.set_color(5)
-                cube.set_scale(0.5, 0.5, 0.5)
-                pose = Pose()
-                pose.position.x = float(self._spline_fitter._closest_x)
-                pose.position.y = float(self._spline_fitter._closest_y)
-                cube.add_marker(pose)
-
-
-            plot_warmstart(self)
-            self._debug_visuals_pub.publish()
-
+    def visualize_trajectory(self):
         trajectory_i = getattr(self, f'_trajectory_{self._idx}')
         if np.all(trajectory_i == 0) or not self._mpc_feasible :
             return
@@ -609,6 +632,21 @@ class ROSMPCPlanner:
     def plot_duals(self):
         plot_duals(self)
 
+    def update_tracking_error(self):
+        # Ensure _spline_fitter and _closest_s are available
+        if self._spline_fitter is None or self._spline_fitter._closest_s is None:
+            return
+
+        robot_position = np.array([self._state[0], self._state[1]])
+        closest_position = np.array([self._spline_fitter._closest_x, self._spline_fitter._closest_y])
+        distance = np.linalg.norm(robot_position - closest_position)
+        self._cumulative_tracking_error += distance
+    
+    def get_cumulative_tracking_error(self):
+        return self._cumulative_tracking_error
+    
+    def log_tracking_error(self):
+        rospy.loginfo(f"Cumulative Tracking Error: {self._cumulative_tracking_error:.2f}")
 
 
 if __name__ == "__main__":
