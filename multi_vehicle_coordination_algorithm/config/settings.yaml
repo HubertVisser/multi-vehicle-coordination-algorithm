@@ -9,7 +9,7 @@ skip_solver_generation: false
 add_slack: true
 slack_value: 1.0e0
 
-number_of_robots: 2
+number_of_robots: 4
 robot_1:
   start_x: -5.0
   start_y: 2.0

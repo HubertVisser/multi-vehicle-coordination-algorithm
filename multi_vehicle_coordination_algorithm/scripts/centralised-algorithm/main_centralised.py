@@ -6,7 +6,7 @@ path = pathlib.Path(__file__).parent.resolve()
 
 
 # Add the project root directory to sys.path
-sys.path.append("/home/dock_user/ros_ws/src/multi-vehicle-coordination-algorithm")
+# sys.path.append("/home/dock_user/ros_ws/src/multi-vehicle-coordination-algorithm")
 sys.path.append(os.path.join(path))
 sys.path.append(os.path.join(sys.path[-1], "..", "..", "..", "solver_generator"))
 sys.path.append(os.path.join(sys.path[-2], "..", "..", "..", "mpc_planner_modules"))

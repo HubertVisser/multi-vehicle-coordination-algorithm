@@ -35,10 +35,10 @@ class PolytopicSidualConstraints:
         self.number_of_robots = settings["number_of_robots"]
         self.scheme = settings["scheme"]
         self.idx_i = idx_i
-        self.n_constraints = (self.number_of_robots - 1) * 2
-        self.nh = self.n_constraints
         self.use_slack = use_slack
         self.solver_name = settings.get("solver_name", None)
+        self.n_constraints = (len(self.neighbour_range()) - 1) * 2
+        self.nh = self.n_constraints
 
     def define_parameters(self, params):
         # pass
@@ -102,7 +102,13 @@ class PolytopicSidualConstraints:
             else:
                 return cd.vertcat(  model.get(f"s_{self.idx_i}_{idx_j}_0"), 
                                     model.get(f"s_{self.idx_i}_{idx_j}_1"))
-            
+    
+    def neighbour_range(self):
+        if self.scheme == 'distributed':
+            return range(1, self.number_of_robots+1)
+        elif self.scheme == 'centralised':
+            return range(self.idx_i, self.number_of_robots+1)
+        
     def get_constraints(self, model, params, settings, stage_idx):
         constraints = []
 
@@ -110,8 +116,7 @@ class PolytopicSidualConstraints:
         theta_i = self.get_theta_i(model, params)
         A_i = get_A(theta_i)
 
-        start_idx = 1
-        for j in range(start_idx, self.number_of_robots+1):  
+        for j in self.neighbour_range():  
             if j == self.idx_i:
                 continue
             lam_ij = self.get_lam_ij(model, params, j)

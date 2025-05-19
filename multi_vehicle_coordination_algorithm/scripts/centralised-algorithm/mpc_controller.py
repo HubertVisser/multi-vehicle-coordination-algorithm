@@ -65,7 +65,11 @@ class MPCPlanner:
         self._nvar = self._solver_settings["nvar"]
         self._nx_one_robot = self._nx // self._number_of_robots
 
-        self._init_duals = dual_initialiser(self._settings, 1, 2)
+        for i in range(1, self._number_of_robots+1):
+            for j in range(1, self._number_of_robots+1):
+                if i == j:
+                    continue
+                self._init_duals = dual_initialiser(self._settings, i, j)
         self._prev_trajectory = np.zeros((self._N, self._nvar)) 
 
         print_success("Acados solver generated")
