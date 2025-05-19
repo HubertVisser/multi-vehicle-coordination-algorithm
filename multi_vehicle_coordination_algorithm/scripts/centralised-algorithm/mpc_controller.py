@@ -17,6 +17,7 @@ from acados_template import AcadosOcp, AcadosOcpSolver, AcadosSimSolver
 
 from timer import Timer
 from util.files import solver_path, load_settings
+from util.slack import SlackTracker
 
 from util.logging import print_warning, print_value, print_success, TimeTracker, print_header
 from util.realtime_parameters import AcadosRealTimeModel
@@ -53,6 +54,7 @@ class MPCPlanner:
         self._solver_settings = load_settings("solver_settings_centralised", package="mpc_planner_solver")
 
         self._model = AcadosRealTimeModel(self._settings, self._solver_settings, package="mpc_planner_solver")
+        self._slack_tracker = SlackTracker(self._settings)
         self._dynamic_model = BicycleModel2ndOrderMultiRobot(self._number_of_robots)
         self.reference_velocity = self._settings["weights"]["reference_velocity"]
 
@@ -132,6 +134,7 @@ class MPCPlanner:
 
             self._mpc_feasible = True
             self._model.load(self._solver)
+            self._slack_tracker.update(self._solver)
 
             output = dict()
             for n in range(1, self._number_of_robots+1):
@@ -278,5 +281,8 @@ class MPCPlanner:
 
     def print_stats(self):
         self.time_tracker.print_stats()
+    
+    def get_slack_tracker(self):
+        return self._slack_tracker
 
     

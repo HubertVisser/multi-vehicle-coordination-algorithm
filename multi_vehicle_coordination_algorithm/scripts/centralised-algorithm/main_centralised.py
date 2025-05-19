@@ -33,7 +33,7 @@ from timer import Timer
 from contouring_spline import SplineFitter
 from mpc_controller import MPCPlanner
 from ros_visuals import ROSMarkerPublisher
-from plot_utils import plot_duals, plot_distance, plot_trajectory, get_reference_from_path_msg
+from plot_utils import plot_duals, plot_distance, plot_trajectory, get_reference_from_path_msg, plot_slack_centralised
 
 
 class ROSMPCPlanner:
@@ -561,6 +561,10 @@ class ROSMPCPlanner:
     
     def log_tracking_error(self):
         rospy.loginfo(f"Cumulative Tracking Error: {self._cumulative_tracking_error:.2f}")
+    
+    def plot_slack(self):
+
+        plot_slack_centralised(self._planner.get_slack_tracker())
 
 def run_centralised_algorithm():
     """
@@ -582,6 +586,7 @@ def run_centralised_algorithm():
     mpc.log_tracking_error()
     mpc.print_stats()
     mpc.plot_distance()
+    mpc.plot_slack()
 
 if __name__ == "__main__":
     run_centralised_algorithm()

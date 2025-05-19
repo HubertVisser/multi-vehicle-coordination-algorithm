@@ -130,6 +130,7 @@ if __name__ == "__main__":
         robot.plot_states()
         robot.plot_duals()
         robot.log_tracking_error()
+        robot.plot_slack()
 
     coordinator.plot_distance()
     coordinator.plot_trajectory()

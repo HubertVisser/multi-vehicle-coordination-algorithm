@@ -20,6 +20,7 @@ from util.files import solver_path, load_settings
 
 from util.logging import print_warning, print_value, print_success, TimeTracker, print_header
 from util.realtime_parameters import AcadosRealTimeModel
+from util.slack import SlackTracker
 from dual_initialiser import dual_initialiser
 
 
@@ -61,6 +62,8 @@ class MPCPlanner:
         self._solver_settings_nmpc = load_settings(f"solver_settings_nmpc_{self._idx}", package="mpc_planner_solver")
         self._model_nmpc = AcadosRealTimeModel(self._settings, self._solver_settings_nmpc, model_map_name=f"model_map_nmpc_{self._idx}", package="mpc_planner_solver")
         self._dynamic_model = BicycleModel2ndOrder(self._idx, self._number_of_robots)
+        self._slack_tracker_nmpc = SlackTracker(self._settings)
+
         self.reference_velocity = self._settings["weights"]["reference_velocity"]
 
         self._nx_nmpc = self._solver_settings_nmpc["nx"]
@@ -81,6 +84,7 @@ class MPCPlanner:
 
         self._solver_settings_ca = load_settings(f"solver_settings_ca_{self._idx}", package="mpc_planner_solver")
         self._model_ca = AcadosRealTimeModel(self._settings, self._solver_settings_ca, model_map_name=f"model_map_ca_{self._idx}", package="mpc_planner_solver")
+        self._slack_tracker_ca = SlackTracker(self._settings)
 
         self._nx_ca = self._solver_settings_ca["nx"]
         self._nu_ca = self._solver_settings_ca["nu"]
@@ -151,6 +155,7 @@ class MPCPlanner:
 
             self._mpc_feasible = True
             self._model_nmpc.load(self._solver_nmpc)
+            self._slack_tracker_nmpc.update(self._solver_nmpc)
 
             output[f"x_{self._idx}"] = self._model_nmpc.get(1, f"x_{self._idx}")
             output[f"y_{self._idx}"] = self._model_nmpc.get(1, f"y_{self._idx}")
@@ -224,6 +229,7 @@ class MPCPlanner:
                 return output, False, None
 
             self._model_ca.load(self._solver_ca)
+            self._slack_tracker_ca.update(self._solver_ca)
 
             for j in range(1, self._number_of_robots+1):
                 if j == self._idx:
@@ -327,4 +333,10 @@ class MPCPlanner:
 
     def print_stats(self):
         self.time_tracker.print_stats()
+    
+    def get_slack_tracker_nmpc(self):
+        return self._slack_tracker_nmpc
+
+    def get_slack_tracker_ca(self):
+        return self._slack_tracker_ca
     

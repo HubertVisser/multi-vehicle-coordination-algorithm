@@ -32,7 +32,8 @@ from dual_initialiser import dual_initialiser, set_initial_x_plan
 from contouring_spline import SplineFitter
 from mpc_controller import MPCPlanner
 from ros_visuals import ROSMarkerPublisher
-from plot_utils import plot_warmstart, plot_path, plot_states, plot_duals
+from plot_utils import plot_warmstart, plot_path, plot_states, plot_duals, plot_slack_distributed
+
 
 
 class ROSMPCPlanner:
@@ -669,6 +670,14 @@ class ROSMPCPlanner:
     
     def log_tracking_error(self):
         rospy.loginfo(f"Cumulative Tracking Error: {self._cumulative_tracking_error:.2f}")
+    
+    def plot_slack(self):
+
+        slack_ca = self._planner.get_slack_tracker_ca()
+        slack_nmpc = self._planner.get_slack_tracker_nmpc()
+
+        plot_slack_distributed(slack_nmpc, slack_ca)
+
 
 
 if __name__ == "__main__":

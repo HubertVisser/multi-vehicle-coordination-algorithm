@@ -212,3 +212,56 @@ def get_reference_from_path_msg(path_msg):
     for pose in path_msg.poses:
         reference.append([pose.pose.position.x, pose.pose.position.y])
     return np.array(reference)
+
+def plot_slack_centralised(slack_tracker, scheme='centralised'):
+    """
+    Plot the slack values for the NMPC and CA solvers.
+    Args:
+        slack_tracker: The SlackTracker object for the NMPC solver.
+    """
+    plt.figure(figsize=(12, 6))
+    
+    # Plot NMPC slack values
+    plt.subplot(1, 2, 1)
+    plt.plot(slack_tracker.get_max_sl(), label='NMPC Lower Slack', color='blue')
+    plt.plot(slack_tracker.get_max_su(), label='NMPC Upper Slack', color='red')
+    plt.xlabel('Time Step')
+    plt.ylabel('Slack Values')
+    plt.title('Max NMPC Slack Values')
+    plt.legend()
+    plt.grid(True)
+
+    plt.savefig(os.path.join(os.path.dirname(__file__), 'centralised-algorithm/plots', 'max_slack_values.png'))  # Save the plot to a file
+
+def plot_slack_distributed(slack_tracker_nmpc, slack_tracker_ca, scheme='centralised'):
+    """
+    Plot the slack values for the NMPC and CA solvers.
+    Args:
+        slack_tracker_nmpc: The SlackTracker object for the NMPC solver.
+        slack_tracker_ca: The SlackTracker object for the CA solver.
+    """
+    plt.figure(figsize=(12, 6))
+    
+    # Plot NMPC slack values
+    plt.subplot(1, 2, 1)
+    plt.plot(slack_tracker_nmpc.get_max_sl(), label='NMPC Lower Slack', color='blue')
+    plt.plot(slack_tracker_nmpc.get_max_su(), label='NMPC Upper Slack', color='red')
+    plt.xlabel('Time Step')
+    plt.ylabel('Slack Values')
+    plt.title('Max NMPC Slack Values')
+    plt.legend()
+    plt.grid(True)
+
+    # Plot CA slack values
+    plt.subplot(1, 2, 2)
+    plt.plot(slack_tracker_ca.get_max_sl(), label='CA Lower Slack', color='blue')
+    plt.plot(slack_tracker_ca.get_max_su(), label='CA Upper Slack', color='red')
+    plt.xlabel('Time Step')
+    plt.ylabel('Slack Values')
+    plt.title('Max CA Slack Values')
+    plt.legend()
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(os.path.dirname(__file__), 'distributed-algorithm/plots', 'max_slack_values.png'))  # Save the plot to a file
+
