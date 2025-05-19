@@ -640,14 +640,10 @@ class CollisionAvoidanceModel(DynamicsModel):
         return x
     
 
-
-
-
-
 if __name__ == "__main__":
 
-    model = BicycleModel2ndOrderMultiRobot(2)
-    model_b = BicycleModel2ndOrder(1)
+    model = BicycleModel2ndOrderMultiRobot(4)
+    # model_b = BicycleModel2ndOrder(1)
     # print("upper","lower", "range", model.get_bounds("steering_1"))
     # print("upper","lower", "range",model.get_bounds("x_1"))
     # model.acados_symbolics_z()
@@ -666,18 +662,18 @@ if __name__ == "__main__":
     print("upper_bound_inputs", model.upper_bound_inputs)
     print("upper_bound_u flatten", model.upper_bound_u.flatten())
     print("lower_bound_u flatten", model.lower_bound_u.flatten())
-    # print("acados_x",model.get_acados_x())
+    print("acados_x",model.get_acados_x())
     print("lower_bound_states", model.lower_bound_states)
     print("lower_bound_states flatten", model.lower_bound_states.T.flatten())
     print("upper_bound_states flatten", model.upper_bound_states.T.flatten())
     print()
     # print("lower_bound_u_acados flatten", model_b.lower_bound_inputs)
-    print("upper_bound_u flatten", model_b.upper_bound_u.flatten())
-    print("lower_bound_u flatten", model_b.lower_bound_u.flatten())
-    # print("acados_x",model_b.get_acados_x())
-    print("lower_bound_states", model_b.lower_bound_states)
-    print("lower_bound_states flatten", model_b.lower_bound_states.T.flatten())
-    print("upper_bound_states flatten", model_b.upper_bound_states.T.flatten())
+    # print("upper_bound_u flatten", model_b.upper_bound_u.flatten())
+    # print("lower_bound_u flatten", model_b.lower_bound_u.flatten())
+    # # print("acados_x",model_b.get_acados_x())
+    # print("lower_bound_states", model_b.lower_bound_states)
+    # print("lower_bound_states flatten", model_b.lower_bound_states.T.flatten())
+    # print("upper_bound_states flatten", model_b.upper_bound_states.T.flatten())
     # print("acados_d",model.get_acados_d())
     # print("lower_bound_duals", model.lower_bound_duals)
     # print("lower_bound_duals flatten", model.lower_bound_duals.T.flatten())
