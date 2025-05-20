@@ -149,9 +149,9 @@ def get_all_initial_duals(settings):
     """
     num_robots = settings["number_of_robots"]
     duals = get_robot_pairs_one(num_robots)
-    for i in range(1, num_robots + 1):
-        for j in range(i + 1, num_robots + 1):
-            duals.get(f"{i}_{j}") = dual_initialiser(settings, i, j)
+    for pair in duals:
+        i, j = map(int, pair.split('_'))
+        duals[pair] = dual_initialiser(settings, i, j)
     return duals
 
 

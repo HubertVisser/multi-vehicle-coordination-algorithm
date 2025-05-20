@@ -6,7 +6,7 @@ path = pathlib.Path(__file__).parent.resolve()
 
 
 # Add the project root directory to sys.path
-# sys.path.append("/home/dock_user/ros_ws/src/multi-vehicle-coordination-algorithm")
+sys.path.append("/home/dock_user/ros_ws/src/multi-vehicle-coordination-algorithm")
 sys.path.append(os.path.join(path))
 sys.path.append(os.path.join(sys.path[-1], "..", "..", "..", "solver_generator"))
 sys.path.append(os.path.join(sys.path[-2], "..", "..", "..", "mpc_planner_modules"))
@@ -145,8 +145,8 @@ class ROSMPCPlanner:
 
         if self._mpc_feasible:
 
-            lam = get_robot_pairs_one(self._number_of_robots)
-            s = get_robot_pairs_both(self._number_of_robots)
+            lam = get_robot_pairs_both(self._number_of_robots)
+            s = get_robot_pairs_one(self._number_of_robots)
 
             for i in range(1, self._number_of_robots+1): 
                 output_keys = [f"x_{i}", f"y_{i}", f"theta_{i}", f"vx_{i}", f"vy_{i}", f"w_{i}", f"s_{i}"]
@@ -170,13 +170,12 @@ class ROSMPCPlanner:
             self._s_dual_history.append(s)
             self._all_outputs.append(output)
 
-            self.publish_throttle(output, self._mpc_feasible)
-            self.publish_steering(output, self._mpc_feasible)
+            if self._dart_simulator:
+                self.publish_throttle(output)
+                self.publish_steering(output)
             
         self.visualize()
 
-        _, _, calls = self._planner.time_tracker.get_stats()
-        print_value("calls", calls)
 
     def set_parameters(self):
         for n in range(1, self._number_of_robots + 1):
@@ -211,7 +210,7 @@ class ROSMPCPlanner:
 
                     self._params.set(k, f"spline{i}_start_{n}", splines[i]["s"])
 
-    def publish_throttle(self, output, exit_flag):
+    def publish_throttle(self, output):
         for n in range(1, self._number_of_robots + 1):
             throttle = Float32()
             if not self._mpc_feasible or not self._enable_output:
@@ -226,8 +225,8 @@ class ROSMPCPlanner:
                 rospy.loginfo_throttle(1000, "MPC is driving")
                 self._throttle_pubs[n].publish(throttle)
     
-    def publish_steering(self, output, exit_flag):
-         for n in range(1, self._number_of_robots + 1):
+    def publish_steering(self, output):
+        for n in range(1, self._number_of_robots + 1):
             steering = Float32()
             if not self._mpc_feasible or not self._enable_output:
                 steering.data = 0.0
@@ -262,14 +261,13 @@ class ROSMPCPlanner:
         line = self._visuals.get_line()
         line.set_scale(0.05)
         line.set_color(n * 7, alpha=1.0)
-        ego_pos = self.get_state_per_robot(n)[0:2]
-        for j in range(n, self._number_of_robots + 1):
-            if j == n:
-                continue
-            s = self._save_s[-1][f's_{n}_{j}'] if n < j else self._save_s[-1][f's_{j}_{n}']
-            neighbour_state = self.get_state_per_robot(j)
-            neighbour_pos = np.array([neighbour_state[0], neighbour_state[1]])
-            midpoint = (ego_pos + neighbour_pos) / 2
+        pairs = self._s_dual_history[0]
+        for pair in pairs:
+            i, j = map(int, pair.split('_'))
+            s = self._s_dual_history[-1][pair]
+            pos1 = np.array(self.get_state_per_robot(i)[0:2])
+            pos2 = np.array(self.get_state_per_robot(j)[0:2])
+            midpoint = (pos1 + pos2) / 2
             direction_vector = np.array([-s[1], s[0]])
             assert np.dot(direction_vector, np.array(s)) == 0
             line_length = 100
@@ -319,7 +317,6 @@ class ROSMPCPlanner:
             box.add_marker(deepcopy(pose))
     
     # Callback functions
-
     def state_pose_callback(self, msg, robot_id):
         self._state_msgs[robot_id] = msg
         state = self.get_state_per_robot(robot_id)
@@ -361,8 +358,8 @@ class ROSMPCPlanner:
     def plot_path(self):
         dist = 0.2
         for n in range(1, self._number_of_robots+1):
-            path_msg = getattr(self, f'_path_msg_{n}')
-            spline_fitter = getattr(self, f'_spline_fitter_{n}')
+            path_msg = self._path_msgs[n]
+            spline_fitter = self._spline_fitters[n]
             if path_msg is None:
                 continue
             line = self._path_visual.get_line()
@@ -397,12 +394,6 @@ class ROSMPCPlanner:
     def print_stats(self):
         self._planner.print_stats()
         # self._decomp_constraints.print_stats()
-
-    def print_contouring_ref(self):     # Not adjusted for multi robot
-        s = self._state[6]
-        x, y = self._spline_fitter.evaluate(s)
-        print(f"Path at s = {s}: ({x}, {y})")
-        print(f"State: ({self._spline_fitter._closest_x}, {self._spline_fitter._closest_y})")
     
     def plot_states(self):
         state_labels = ["x", "y", "theta", "vx", "vy", "omega", "s"]
@@ -414,7 +405,7 @@ class ROSMPCPlanner:
             plt.subplot(1, 2, 1)
             num_states = len(state_labels)
             for i in range(num_states):
-                state_values = [state[i] for state in getattr(self, f'_states_save_{n}')]
+                state_values = [state[i] for state in self._states_history[n]]
                 plt.plot(state_values, label=state_labels[i])
             plt.xlabel('Time Step')
             plt.ylabel('State Values')
@@ -425,7 +416,7 @@ class ROSMPCPlanner:
             # Plot outputs
             plt.subplot(1, 2, 2)
             for i in range(len(output_labels)):
-                output_values = [output[i] for output in getattr(self, f'_outputs_save_{n}')]
+                output_values = [output[i] for output in self._outputs_history[n]]
                 plt.plot(output_values, label=output_labels[i])
             plt.xlabel('Time Step')
             plt.ylabel('Output Values')
@@ -436,46 +427,25 @@ class ROSMPCPlanner:
             plt.tight_layout()
             plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', f'states_{n}_{self._scheme}.png'))  # Save the plot to a file
             plt.close()
-
-    def plot_pred_traj(self):
-        state_labels = ["x", "y", "theta", "vx", "vy", "omega", "s"]
-        time = np.linspace(0, (self._N-1) * self._integrator_step, self._N)
-
-        plt.figure(figsize=(6, 12))
-        for n in range(1, self._number_of_robots + 1):
-            
-            # Plot states
-            plt.subplot(self._number_of_robots, 1, n)
-            num_states = len(state_labels)
-            plt.plot(time, self._trajectory[n * self._nx_one_robot : n +1 * self._nx_one_robot, :].T)
-            plt.legend(state_labels)
-
-            plt.xlabel('Time Steps')
-            plt.ylabel('State Values')
-            plt.legend()
-            plt.grid(True)
-            plt.title(f'Robot {n} Predictions')
-
-        plt.tight_layout()
-        plt.savefig(os.path.join(os.path.dirname(__file__), 'plots', 'prediction_plot.png'))  # Save the plot to a file
-        plt.close() 
     
     def plot_duals(self):
-        plot_duals(self, "1-2")
+        plot_duals(self._lam_history, self._s_dual_history, self._scheme)
     
     def plot_distance(self):    
         
-        assert len(self._states_save_1) == len(self._states_save_2), "The two lists must have the same length."
-        poses1 = self._states_save_1
-        poses2 = self._states_save_2
+        for pair in get_robot_pairs_one(self._number_of_robots):
+            i, j = map(int, pair.split('_'))
+            assert len(self._states_history[i]) == len(self._states_history[j]), "The two lists must have the same length."
+            poses1 = self._states_history[i]
+            poses2 = self._states_history[j]
 
-        length = self._settings["polytopic"]["length"]
-        width = self._settings["polytopic"]["width"]
+            length = self._settings["polytopic"]["length"]
+            width = self._settings["polytopic"]["width"]
 
-        plot_distance(poses1, poses2, width, length, scheme=self._settings["scheme"])
+            plot_distance(poses1, poses2, width, length, scheme=self._settings["scheme"])
     
     def plot_trajectory(self):
-        
+        # TODO: Implement this function
         reference_1 = get_reference_from_path_msg(self._path_msg_1)
         reference_2 = get_reference_from_path_msg(self._path_msg_2)
 
@@ -518,11 +488,11 @@ def run_centralised_algorithm():
     mpc.plot_states()
     mpc.plot_duals()
     mpc.plot_distance()
-    mpc.plot_trajectory()
+    # mpc.plot_trajectory()
     mpc.log_tracking_error()
     mpc.print_stats()
     mpc.plot_distance()
-    mpc.plot_slack()
+    # mpc.plot_slack()
 
 if __name__ == "__main__":
     run_centralised_algorithm()

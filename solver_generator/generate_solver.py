@@ -99,7 +99,7 @@ def generate_solver(modules, model, settings=None):
     nu = model.nu 
 
     if scheme == 'centralised':
-        nu = nu + ns + nlam
+        nu = nu + ns_dual + nlam
 
     # Set initial constraint
     ocp.constraints.x0 = np.zeros(nx)

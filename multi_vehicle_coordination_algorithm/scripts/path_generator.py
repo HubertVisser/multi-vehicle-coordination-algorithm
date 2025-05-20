@@ -21,23 +21,21 @@ class PathGenerator:
         self.num_robot = self.settings["number_of_robots"]
 
         self.n_pts = 10
-        self.start_x = []
-        self.start_y = []
-        self.paths = []
+        self.robots = {}
 
-        self.load_start_positions()
-
-        self.path_pub_1 = rospy.Publisher("roadmap/reference_1", Path, queue_size=1)
-        self.path_pub_2 = rospy.Publisher("roadmap/reference_2", Path, queue_size=1)
+        self.load_robot_info()
+            
         rospy.Timer(rospy.Duration(0.5), self.publish_path)
         rospy.spin()
 
-
-    def load_start_positions(self):
-        for i in range(self.num_robot):
-            self.start_x.append(self.settings[f"robot_{i+1}"]["start_x"])
-            self.start_y.append(self.settings[f"robot_{i+1}"]["start_y"])
-
+    def load_robot_info(self):
+        for i in range(1, self.num_robot + 1):
+            robot_info = {
+                "start_x": self.settings[f"robot_{i}"]["start_x"],
+                "start_y": self.settings[f"robot_{i}"]["start_y"],
+                "publisher": rospy.Publisher(f"roadmap/reference_{i}", Path, queue_size=1)
+            }
+            self.robots[i] = robot_info
 
     def generate_t_junction_track(self):
         pts_x_strt1 = np.ones(4) * self.start_x[1]
@@ -65,10 +63,10 @@ class PathGenerator:
         return pts_x_1, pts_y_1
     
     def generate_strt_line_track_2_robot(self):
-        pts_x_1 = np.linspace(-5, 5, self.n_pts)
-        pts_y_1 = np.zeros(self.n_pts)
+        pts_x = np.linspace(-5, 5, self.n_pts)
+        pts_y = np.zeros(self.n_pts)
 
-        return pts_x_1, pts_y_1
+        return pts_x, pts_y
 
     def generate_merging_track(self):
         pts_x_strt1 = np.linspace(self.start_x[1], -3, 4)
@@ -92,33 +90,22 @@ class PathGenerator:
         if self.track_choice == 't_junction':
             assert self.num_robot == 2, "T-junction track only supports 2 robots"
             pts_x_1, pts_y_1, pts_x_2, pts_y_2 = self.generate_t_junction_track()
-            path_1 = self.create_path(pts_x_1, pts_y_1)
-            self.paths.append(path_1)
-
-            path_2 = self.create_path(pts_x_2, pts_y_2)
-            self.paths.append(path_2)
+            self.robots[1]["path"] = self.create_path(pts_x_1, pts_y_1)
+            self.robots[2]["path"] = self.create_path(pts_x_2, pts_y_2)
 
         elif self.track_choice == 'straight_line':
-            pts_x_1, pts_y_1 = self.generate_strt_line_track_2_robot()
-
-            path_1 = self.create_path(pts_x_1, pts_y_1)
-            path_2 = self.create_path(np.flip(pts_x_1), np.flip(pts_y_1))
-            self.paths.extend([path_1, path_1])
+            pts_x, pts_y = self.generate_strt_line_track_2_robot()
+            for i in range(1, self.num_robot + 1):
+                self.robots[i]["path"] = self.create_path(pts_x, pts_y)
 
         elif self.track_choice == 'merging':
             assert self.num_robot == 2, "Merging track only supports 2 robots"
-
             pts_x_1, pts_y_1, pts_x_2, pts_y_2 = self.generate_merging_track()
-            
-            path_1 = self.create_path(pts_x_1, pts_y_1)
-            self.paths.append(path_1)
+            self.robots[1]["path"] = self.create_path(pts_x_1, pts_y_1)
+            self.robots[2]["path"] = self.create_path(pts_x_2, pts_y_2)
 
-            path_2 = self.create_path(pts_x_2, pts_y_2)
-            self.paths.append(path_2)
-        else: 
+        else:
             raise ValueError(f"Invalid track choice: {self.track_choice}")
-
-        return self.paths
 
     def create_path(self, pts_x, pts_y):
         path = Path()
@@ -138,11 +125,12 @@ class PathGenerator:
         return path
 
     def publish_path(self, event):
-        paths = self.generate_path_msg()
-        self.path_pub_1.publish(paths[0])
-        if len(paths) > 1:
-            self.path_pub_2.publish(paths[1])
-        rospy.loginfo("Published paths")
+        self.generate_path_msg()
+        for i in range(1, self.num_robot + 1):
+            pub = self.robots[i]['publisher']
+            path = self.robots[i]['path']
+            pub.publish(path)
+        rospy.loginfo("Paths published")
 
 if __name__ == '__main__':
     rospy.init_node('path_publisher')
