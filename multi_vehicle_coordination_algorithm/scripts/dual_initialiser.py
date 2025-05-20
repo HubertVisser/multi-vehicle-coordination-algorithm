@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import os
 from scipy.optimize import minimize
 
+from helpers import get_robot_pairs_one
+
 class DualProgram:
     def __init__(self, length, width, d_min):
         self._l = length
@@ -138,6 +140,18 @@ def dual_initialiser(settings, i, j):
         else:
             print(f"No solution found for step {i}: {dual['message']}")
     
+    return duals
+
+def get_all_initial_duals(settings):
+    """
+    Returns a dictionary of duals for each unique robot pair (i, j) with i < j.
+    The key is a string 'i_j'.
+    """
+    num_robots = settings["number_of_robots"]
+    duals = get_robot_pairs_one(num_robots)
+    for i in range(1, num_robots + 1):
+        for j in range(i + 1, num_robots + 1):
+            duals.get(f"{i}_{j}") = dual_initialiser(settings, i, j)
     return duals
 
 

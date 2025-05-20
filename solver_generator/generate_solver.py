@@ -95,7 +95,7 @@ def generate_solver(modules, model, settings=None):
     solver_name = model_acados.name
     nx = model.nx
     nlam = model.nlam
-    ns = model.ns
+    ns_dual = model.ns
     nu = model.nu 
 
     if scheme == 'centralised':
@@ -231,7 +231,7 @@ def generate_solver(modules, model, settings=None):
     solver_settings["nx"] = nx
     solver_settings["nu"] = nu
     solver_settings["nlam"] = nlam
-    solver_settings["ns"] = ns
+    solver_settings["ns_dual"] = ns_dual
     solver_settings["nd"] = nlam + ns
     solver_settings["nx_nu"] = model.get_nx_nu()
     solver_settings["nvar"] = model.get_nvar()

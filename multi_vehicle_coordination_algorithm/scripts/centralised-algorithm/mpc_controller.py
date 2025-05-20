@@ -4,6 +4,7 @@ import pathlib
 path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(os.path.join(path))
 sys.path.append(os.path.join(sys.path[0], "..", "..", "..", "solver_generator"))
+sys.path.append(os.path.join(sys.path[0], "..", "..",))
 
 acados_path = os.path.join(path, "..", "..", "..", "mpc_planner_solver", "acados", "solver")
 
@@ -21,7 +22,7 @@ from util.slack import SlackTracker
 
 from util.logging import print_warning, print_value, print_success, TimeTracker, print_header
 from util.realtime_parameters import AcadosRealTimeModel
-from dual_initialiser import dual_initialiser
+from dual_initialiser import get_all_initial_duals
 
 
 class MPCPlanner:
@@ -65,11 +66,7 @@ class MPCPlanner:
         self._nvar = self._solver_settings["nvar"]
         self._nx_one_robot = self._nx // self._number_of_robots
 
-        for i in range(1, self._number_of_robots+1):
-            for j in range(1, self._number_of_robots+1):
-                if i == j:
-                    continue
-                self._init_duals = dual_initialiser(self._settings, i, j)
+        self._init_duals_dict = get_all_initial_duals(self._settings)
         self._prev_trajectory = np.zeros((self._N, self._nvar)) 
 
         print_success("Acados solver generated")
@@ -89,11 +86,7 @@ class MPCPlanner:
 
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu, self._N))
-            self._mpc_u_plan[0, :] = self.get_throttle_init_value()
-            self._mpc_u_plan[2, :] = self.get_throttle_init_value()
-            # self._mpc_u_plan[12:16, :] = self._init_duals[4:8, :]
-            # self._mpc_u_plan[16:20, :] = self._init_duals[:4, :]
-            # self._mpc_u_plan[5:7, :] = self._init_duals[8:, :]
+            self.set_initial_throttle()
             
         if self._mpc_feasible:
 
@@ -153,6 +146,7 @@ class MPCPlanner:
                 
                 output[f"throttle_{n}"] = self._model.get(0, f"throttle_{n}")
                 output[f"steering_{n}"] = self._model.get(0, f"steering_{n}")
+
                 for j in range(1, self._number_of_robots+1):
                     if j == n:
                         continue
@@ -163,9 +157,6 @@ class MPCPlanner:
                     if n > j:
                         output[f"s_{j}_{n}_0"] = self._model.get(1, f"s_{j}_{n}_0")
                         output[f"s_{j}_{n}_1"] = self._model.get(1, f"s_{j}_{n}_1")
-                    else:
-                        output[f"s_{n}_{j}_0"] = self._model.get(1, f"s_{n}_{j}_0")
-                        output[f"s_{n}_{j}_1"] = self._model.get(1, f"s_{n}_{j}_1")
             
             self.time_tracker.add(solve_time)
 
@@ -227,7 +218,7 @@ class MPCPlanner:
         self._mpc_x_plan[3 + self._nx_one_robot,:] = self.reference_velocity
         self._mpc_x_plan[6 + self._nx_one_robot,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), s_0_vec)
     
-    def get_throttle_init_value(self):
+    def get_initial_throttle_value(self):
         # Evaluate throttle to keep the constant velocity
         throttle_search = np.linspace(0,1,30)
         mass_vehicle = self._dynamic_model.get_mass()
@@ -236,8 +227,10 @@ class MPCPlanner:
         throttle_initial_guess = throttle_search[np.argmin(np.abs(acceleration_x))]
         return throttle_initial_guess
 
-    def get_cost_acados(self):
-        return self._solver.get_cost()
+    def set_initial_throttle(self):
+        throttle_value = self.get_initial_throttle_value()
+        self._mpc_u_plan[::2, :] = throttle_value
+
 
     def set_infeasible(self, output):
         self._mpc_feasible = False
@@ -267,6 +260,8 @@ class MPCPlanner:
                 result[(n*self._nx_one_robot):((n+1)*self._nx_one_robot), k] = np.array([x, y, theta, vx, vy, w, spline])
         return result
 
+    def get_cost_acados(self):
+        return self._solver.get_cost()
 
     def set_projection(self, projection_func):  # # Not adjusted for multi robot
         self._projection_func = projection_func
@@ -288,5 +283,3 @@ class MPCPlanner:
     
     def get_slack_tracker(self):
         return self._slack_tracker
-
-    
