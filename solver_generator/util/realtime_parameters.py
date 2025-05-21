@@ -21,7 +21,6 @@ class RealTimeParameters:
     def set(self, k, parameter, value):
         if parameter in self._map.keys():
             self._params[k, self._map[parameter]] = value
-            # print(f"{parameter} set to {value} | map value: {self._map[parameter]} check: {self._params[self._map[parameter]]}")
 
     def get(self, k, parameter):
         return self._params[k, self._map[parameter]]

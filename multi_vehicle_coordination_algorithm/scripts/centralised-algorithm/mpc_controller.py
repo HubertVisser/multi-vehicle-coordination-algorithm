@@ -36,6 +36,8 @@ class MPCPlanner:
         self._dart_simulator = self._settings["dart_simulator"]
         self._dmin = self._settings["polytopic"]["d_min"]
         self._solver_iterations = self._settings["solver_settings"]["iterations_centralised"]
+        
+        self._map = load_settings("model_map", package="mpc_planner_solver")
 
         self.init_acados_solver()
 
@@ -87,6 +89,7 @@ class MPCPlanner:
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu, self._N))
             self.set_initial_throttle()
+            self.set_initial_duals()
             
         if self._mpc_feasible:
 
@@ -229,7 +232,17 @@ class MPCPlanner:
 
     def set_initial_throttle(self):
         throttle_value = self.get_initial_throttle_value()
-        self._mpc_u_plan[::2, :] = throttle_value
+        throttle_indices = [v[1] - self._nx for k, v in self._map.items() if k.startswith('throttle_')]
+        self._mpc_u_plan[throttle_indices, :] = throttle_value
+
+    def set_initial_duals(self):
+        for pair, dual_dict in self._init_duals_dict.items():
+            for key in dual_dict:
+                if key in self._map:
+                    idx = self._map[key][1] - self._nx
+                    self._mpc_u_plan[idx, :] = dual_dict[key]
+                else:
+                    print_warning(f"Key {key} not found in model map. Skipping.")
 
 
     def set_infeasible(self, output):

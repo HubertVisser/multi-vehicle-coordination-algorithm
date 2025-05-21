@@ -8,11 +8,17 @@ from helpers import get_robot_pairs_one
 
 class DualProgram:
     def __init__(self, length, width, d_min):
+        self._i = None
+        self._j = None
+
         self._l = length
         self._w = width
         self._d_min = d_min
 
-    def update_parameters(self, x_i, x_j):
+    def update_parameters(self, i, j, x_i, x_j):
+        self._i = i
+        self._j = j
+
         self._xy_i = x_i[0:2]
         self._theta_i = x_i[2]
 
@@ -69,9 +75,18 @@ class DualProgram:
             lambda_ij = result.x[:4]
             lambda_ji = result.x[4:8]
             s_ij = result.x[8:]
+            dual_dict = {
+                f"lam_{self._i}_{self._j}_{k}": lambda_ij[k] for k in range(4)
+            }
+            dual_dict.update({
+                f"lam_{self._j}_{self._i}_{k}": lambda_ji[k] for k in range(4)
+            })
+            dual_dict.update({
+                f"s_{self._i}_{self._j}_{k}": s_ij[k] for k in range(2)
+            })
             return {
                 "success": True,
-                "value": result.x
+                "value": dual_dict
             }
         else:
             return {
@@ -108,6 +123,19 @@ def set_initial_x_plan(settings, xinit):
 
 
 def dual_initialiser(settings, i, j):
+    """
+    Returns the dict with duals for the robot pair i, j.
+
+    Parameters:
+    settings (dict): A dictionary containing simulation settings, including robot parameters and polytopic constraints.
+    i (int): The index of the first robot in the pair.
+    j (int): The index of the second robot in the pair.
+
+    Returns:
+    dict: A dictionary containing dual variables for the robot pair i, j.
+    {'lam_i_j_0', 'lam_i_j_1', 'lam_i_j_2', 'lam_i_j_3', 'lam_j_i_0', 'lam_j_i_1', 'lam_j_i_2', 'lam_j_i_3', 's_i_j_0', 's_i_j_1'}
+    """
+
     _N = settings["N"]
     reference_velocity = settings["weights"]["reference_velocity"]
     int_step = settings["integrator_step"]
@@ -126,33 +154,36 @@ def dual_initialiser(settings, i, j):
     x_plan_i = set_initial_x_plan(settings, x_i)
     x_plan_j = set_initial_x_plan(settings, x_j)
 
-    duals = np.zeros((10, _N))
+    duals = {}
 
     initial_guesser = DualProgram(length=length, width=width, d_min=d_min)
 
-    for i in range(_N):
-        x_i = x_plan_i[:, i]
-        x_j = x_plan_j[:, i]
-        initial_guesser.update_parameters(x_i, x_j)
-        dual = initial_guesser.solve()
-        if dual["success"]:
-            duals[:, i] = dual["value"]
+    for k in range(_N):
+        x_i = x_plan_i[:, k]
+        x_j = x_plan_j[:, k]
+        initial_guesser.update_parameters(i, j, x_i, x_j)
+        result = initial_guesser.solve()
+        if result["success"]:
+            for key, value in result["value"].items():
+                if key not in duals:
+                    duals[key] = []
+                duals[key].append(value)
         else:
-            print(f"No solution found for step {i}: {dual['message']}")
+            print(f"No solution found for step {k}: {result['message']}")
     
     return duals
 
 def get_all_initial_duals(settings):
     """
-    Returns a dictionary of duals for each unique robot pair (i, j) with i < j.
-    The key is a string 'i_j'.
+    returns a dictionary of duals for all robot pairs
+    duals: dict with keys 'lam_i_j_0', 'lam_i_j_1', 'lam_i_j_2', 'lam_i_j_3', 'lam_j_i_0', 'lam_j_i_1', 'lam_j_i_2', 'lam_j_i_3', 's_i_j_0', 's_i_j_1'
     """
     num_robots = settings["number_of_robots"]
-    duals = get_robot_pairs_one(num_robots)
-    for pair in duals:
+    pairs = get_robot_pairs_one(num_robots)
+    for pair in pairs:
         i, j = map(int, pair.split('_'))
-        duals[pair] = dual_initialiser(settings, i, j)
-    return duals
+        pairs[pair] = dual_initialiser(settings, i, j)
+    return pairs
 
 
 def main():
