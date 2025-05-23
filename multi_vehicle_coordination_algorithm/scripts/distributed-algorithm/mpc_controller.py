@@ -17,11 +17,11 @@ from acados_template import AcadosOcp, AcadosOcpSolver, AcadosSimSolver
 
 from timer import Timer
 from util.files import solver_path, load_settings
+from util.slack import SlackTracker
 
 from util.logging import print_warning, print_value, print_success, TimeTracker, print_header
 from util.realtime_parameters import AcadosRealTimeModel
-from util.slack import SlackTracker
-from dual_initialiser import dual_initialiser
+from dual_initialiser import get_all_initial_duals
 
 
 class MPCPlanner:
@@ -38,10 +38,7 @@ class MPCPlanner:
         self.init_nmpc_solver()
         self.init_ca_solver()
 
-        for j in range(1, self._number_of_robots+1):
-            if j == self._idx:
-                continue
-            setattr(self, f'_init_duals_{j}', dual_initialiser(self._settings, self._idx, j))
+        self._init_duals_dict = get_all_initial_duals(self._settings)
 
         self._mpc_feasible = True
         self._ca_feasible = True
@@ -70,6 +67,8 @@ class MPCPlanner:
         self._nu_nmpc = self._solver_settings_nmpc["nu"]
         self._nvar_nmpc = self._solver_settings_nmpc["nvar"]
 
+        self._map_nmpc = load_settings(f"model_map_nmpc_{self._idx}", package="mpc_planner_solver")
+
         self._prev_trajectory = np.zeros((self._N, self._nvar_nmpc)) 
 
         print_success(f"NMPC {self._idx} solver generated")
@@ -91,6 +90,8 @@ class MPCPlanner:
         self._nlam_ca = self._solver_settings_ca["nlam"]
         self._nvar_ca = self._solver_settings_ca["nvar"]
 
+        self._map_ca = load_settings(f"model_map_ca_{self._idx}", package="mpc_planner_solver")
+
         self._prev_solution_ca = np.zeros((self._N, self._nvar_ca)) 
 
         print_success(f"CA {self._idx} solver generated")
@@ -109,7 +110,7 @@ class MPCPlanner:
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu_nmpc, self._N))
             self.set_initial_u_plan()
-            # self.set_initial_duals('nmpc', self._mpc_u_plan)
+            self.set_initial_duals(self._mpc_u_plan, self._map_nmpc)
             
         if self._mpc_feasible:
 
@@ -175,11 +176,6 @@ class MPCPlanner:
                 output[f"lam_{self._idx}_{j}_1"] = self._model_nmpc.get(1, f"lam_{self._idx}_{j}_1")
                 output[f"lam_{self._idx}_{j}_2"] = self._model_nmpc.get(1, f"lam_{self._idx}_{j}_2")
                 output[f"lam_{self._idx}_{j}_3"] = self._model_nmpc.get(1, f"lam_{self._idx}_{j}_3")
-                
-                # output[f"lam_{j}_{self._idx}_0"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_0")
-                # output[f"lam_{j}_{self._idx}_1"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_1")
-                # output[f"lam_{j}_{self._idx}_2"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_2")
-                # output[f"lam_{j}_{self._idx}_3"] = self._model_nmpc.get(1, f"lam_{j}_{self._idx}_3")
 
             self.time_tracker.add(solve_time)
 
@@ -193,17 +189,14 @@ class MPCPlanner:
 
         return output, True, self._prev_trajectory
    
-    def solve_ca(self, uinit, p): 
+    def solve_ca(self, p): 
 
         if not hasattr(self, "_x_init_ca"):
             self._x_init_ca = np.zeros((self._nx_ca, self._N))
         if not hasattr(self, "_u_init_ca"):
-            self._u_init_ca = np.tile(np.array(uinit).reshape((-1, 1)), (1, self._N))
+            self._u_init_ca = np.zeros((self._nu_ca, self._N))
+            self.set_initial_duals(self._u_init_ca, self._map_ca)
             
-        # if not self._ca_feasible:
-        #     # pass
-        #     self.set_initial_u_plan('ca', self._u_init_ca)
-
         try:
             # Set initial state
             self._solver_ca.constraints_set(0, 'lbx', 0)
@@ -270,16 +263,17 @@ class MPCPlanner:
         throttle_initial_guess = throttle_search[np.argmin(np.abs(acceleration_x))]
         self._mpc_u_plan[0, :] = throttle_initial_guess
     
-    def set_initial_duals(self, solver, u_plan):
-
-        for j in range(1, self._number_of_robots+1):
-            if j == self._idx:
+    def set_initial_duals(self, u_plan, map):
+        for pair, dual_dict in self._init_duals_dict.items():
+            i, j = map(int, pair.split('_'))
+            if i != self._idx and j != self._idx:
                 continue
-            if solver == "nmpc":
-                u_plan[2:, :] = getattr(self, f'_init_duals_{j}')[:8, :]
-            elif solver == "ca":
-                u_plan = getattr(self, f'_init_duals_{j}')
-
+            for key in dual_dict:
+                if key in map:
+                    idx = map[key][1] - self._nx
+                    u_plan[idx, :] = dual_dict[key]
+                else:
+                    print_warning(f"Key {key} not found in model map. Skipping.")
 
     def get_braking_trajectory(self, state):    # Not adjusted for multi robot
         x = state[0]

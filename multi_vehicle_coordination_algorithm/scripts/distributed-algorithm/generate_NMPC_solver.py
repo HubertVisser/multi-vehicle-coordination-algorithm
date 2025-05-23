@@ -18,8 +18,6 @@ from path_reference_velocity import PathReferenceVelocityModule
 from polytopic_dmin_constraints import PolytopicDminConstraintModule
 from polytopic_si_constraints import PolytopicSidualConstraintModule
 from polytopic_sj_constraints import PolytopicSjdualConstraintModule
-from s_2_norm_constraints import s2normConstraintModule
-
 # Import solver models that you want to use
 from solver_model import BicycleModel2ndOrder
 
@@ -42,21 +40,13 @@ def configuration_basic(settings, idx):
             base_module.weigh_variable(var_name=f"lam_{i}_{j}_1", weight_names="lambda",)
             base_module.weigh_variable(var_name=f"lam_{i}_{j}_2", weight_names="lambda",)
             base_module.weigh_variable(var_name=f"lam_{i}_{j}_3", weight_names="lambda",)
-            # if i > j:
-            #     base_module.weigh_variable(var_name=f"s_{j}_{i}_0", weight_names="s_dual",)
-            #     base_module.weigh_variable(var_name=f"s_{j}_{i}_1", weight_names="s_dual",)
-            # else:
-            #     base_module.weigh_variable(var_name=f"s_{i}_{j}_0", weight_names="s_dual",)
-            #     base_module.weigh_variable(var_name=f"s_{i}_{j}_1", weight_names="s_dual",)
-    
+
     modules.add_module(ContouringModule(settings, idx))
     modules.add_module(PathReferenceVelocityModule(settings, idx))
     
     modules.add_module(PolytopicDminConstraintModule(settings, idx))
     modules.add_module(PolytopicSidualConstraintModule(settings, idx))
 
-    # modules.add_module(s2normConstraintModule(settings, idx))
-            
     return model, modules
 
 
@@ -64,7 +54,6 @@ def generate(idx):
     settings = load_settings(package="multi_vehicle_coordination_algorithm")
     settings["solver_name"] = f"solver_nmpc_{idx}"
     settings["idx"] = idx
-    # print(settings)
 
     model, modules = configuration_basic(settings, idx)
 

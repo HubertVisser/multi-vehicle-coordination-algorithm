@@ -32,7 +32,7 @@ class s2normConstraintConstraints:
         self.number_of_robots = settings["number_of_robots"]
         self.idx_i = idx_i
         self.scheme = settings["scheme"]
-        self.n_constraints = (len(self.neighbour_range()) - 1)*2
+        self.n_constraints = (len(self.neighbour_range()) - 1) * 2
         self.nh = self.n_constraints
 
     def define_parameters(self, params):

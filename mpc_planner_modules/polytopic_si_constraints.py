@@ -49,20 +49,7 @@ class PolytopicSidualConstraints:
                             continue
                         params.add(f"s_{i}_{j}_0")
                         params.add(f"s_{i}_{j}_1")
-        # elif self.scheme == 'distributed' and self.solver_name.startswith("solver_ca"):
-        #     for i in range(1, self.number_of_robots+1):
-        #         params.add(f"x_{i}")
-        #         params.add(f"y_{i}")
-        #         params.add(f"theta_{i}")
-                # for j in range(1, self.number_of_robots+1):
-                #         if i == j or (i != self.idx_i):
-                #             continue
-                #         params.add(f"lam_{i}_{j}_0")
-                #         params.add(f"lam_{i}_{j}_1")
-                #         params.add(f"lam_{i}_{j}_2")
-                #         params.add(f"lam_{i}_{j}_3")
                             
-
     def get_lower_bound(self):
         lower_bound = []
         for index in range(0, self.n_constraints):

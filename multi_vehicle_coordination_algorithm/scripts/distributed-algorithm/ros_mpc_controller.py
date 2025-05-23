@@ -27,7 +27,7 @@ from util.math import get_A, get_b
 
 from timer import Timer
 from spline import Spline, Spline2D
-from dual_initialiser import dual_initialiser, set_initial_x_plan
+from dual_initialiser import set_initial_x_plan, get_all_initial_duals
 
 from contouring_spline import SplineFitter
 from mpc_controller import MPCPlanner
@@ -70,11 +70,10 @@ class ROSMPCPlanner:
         self._nu_ca = self._solver_settings_ca["nu"]
         self._nvar_ca = self._solver_settings_ca["nvar"]
 
-        self._states_save = []
-        self._outputs_save = []
-        self._save_output = []
-        self._save_lam = []
-        self._save_s = []
+        self._states_history = {}
+        self._outputs_history = {}
+        self._lam_history = {}
+        self._s_history = {}
         self._cumulative_tracking_error = 0.0
         
         self._state = np.zeros((self._nx_nmpc,))
@@ -82,9 +81,7 @@ class ROSMPCPlanner:
                             self._settings[f"robot_{self._idx}"]["start_y"], \
                             self._settings[f"robot_{self._idx}"]["start_theta"] * np.pi]
         
-        self._uinit = np.zeros(self._nu_ca)
-        self.initialise_duals()
- 
+        self.init_duals_dict = get_all_initial_duals(settings=self._settings)
 
         self._visuals = ROSMarkerPublisher(f"mpc_visuals_{self._idx}", 100)
         self._path_visual = ROSMarkerPublisher(f"reference_path_{self._idx}", 10)
@@ -106,7 +103,6 @@ class ROSMPCPlanner:
         self.initialize_publishers_and_subscribers()
         self._callbacks_enabled = True
         self._enable_output = True
-        # self.start_environment()
 
     def initialize_publishers_and_subscribers(self):
 
@@ -120,8 +116,8 @@ class ROSMPCPlanner:
         
         for j in range(1, self._number_of_robots+1):
             setattr(self, f'_traj_{j}_sub', rospy.Subscriber(f"trajectory_{j}", Path, self.trajectory_callback, callback_args=j))
-            setattr(self, f'_lam_{j}_sub', rospy.Subscriber(f"lambda_{j}_{self._idx}", LambdaArrayList, self.lambda_callback, callback_args=j))
-            setattr(self, f'_lam_{j}_pub', rospy.Publisher(f"lambda_{j}_{self._idx}", LambdaArrayList, queue_size=1))
+            # setattr(self, f'_lam_{j}_sub', rospy.Subscriber(f"lambda_{j}_{self._idx}", LambdaArrayList, self.lambda_callback, callback_args=j))
+            # setattr(self, f'_lam_{j}_pub', rospy.Publisher(f"lambda_{j}_{self._idx}", LambdaArrayList, queue_size=1))
             
         # Publishers
         self._th_pub = rospy.Publisher(f"throttle_{self._idx}", Float32, queue_size=1) 
@@ -177,7 +173,7 @@ class ROSMPCPlanner:
         # self._params.check_for_nan()
 
         ca_timer = Timer("CA")
-        output, self._ca_feasible, self._ca_solution = self._planner.solve_ca(self._uinit, self._params_ca.get_solver_params())
+        output, self._ca_feasible, self._ca_solution = self._planner.solve_ca( self._params_ca.get_solver_params())
         del ca_timer
 
         if self._verbose:
@@ -364,13 +360,7 @@ class ROSMPCPlanner:
                 #         self._params_ca.set(k, f"lam_{self._idx}_{j}_1", lambda_i[1, k])
                 #         self._params_ca.set(k, f"lam_{self._idx}_{j}_2", lambda_i[2, k])
                 #         self._params_ca.set(k, f"lam_{self._idx}_{j}_3", lambda_i[3, k])
-                        
-
-    def initialise_duals(self):
-        for j in range(1, self._number_of_robots+1):
-            if j == self._idx:
-                continue
-            setattr(self, f'initial_duals_{j}', dual_initialiser(self._settings, self._idx, j))
+                    
     
     # Not used atm
     # def set_uinit(self): 
