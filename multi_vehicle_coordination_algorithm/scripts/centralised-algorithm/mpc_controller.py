@@ -89,18 +89,23 @@ class MPCPlanner:
             self.set_initial_throttle()
             self.set_initial_duals()
             
+        
         if self._mpc_feasible:
 
             self._x_traj_init = self._mpc_x_plan
             self._u_traj_init = self._mpc_u_plan
 
         else:
-
-            # Brake (model specific)
-            self._x_traj_init = self.get_braking_trajectory(xinit)
+            self._x_traj_init = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
             self._u_traj_init = np.zeros((self._nu, self._N))
+            self.set_initial_throttle()
+            self.set_initial_duals()
+
+            # # Brake (model specific)
+            # self._x_traj_init = self.get_braking_trajectory(xinit)
+            # self._u_traj_init = np.zeros((self._nu, self._N))
             
-            self._solver.options_set('warm_start_first_qp', False)
+            # self._solver.options_set('warm_start_first_qp', False)
 
         return self.solve_acados(xinit, p)
 

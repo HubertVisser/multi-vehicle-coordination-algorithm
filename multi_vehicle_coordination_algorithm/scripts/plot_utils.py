@@ -63,7 +63,7 @@ def plot_states(planner):
     plt.subplot(1, 2, 1)
     num_states = len(state_labels)
     for i in range(num_states):
-        state_values = [state[i] for state in planner._states_save]
+        state_values = [state[i] for state in planner._states_history]
         plt.plot(state_values, label=state_labels[i])
     plt.xlabel('Time Step')
     plt.ylabel('State Values')
@@ -74,7 +74,7 @@ def plot_states(planner):
     # Plot outputs
     plt.subplot(1, 2, 2)
     for i in range(len(output_labels)):
-        output_values = [output[i] for output in planner._outputs_save]
+        output_values = [output[i] for output in planner._outputs_history]
         plt.plot(output_values, label=output_labels[i])
     plt.xlabel('Time Step')
     plt.ylabel('Output Values')

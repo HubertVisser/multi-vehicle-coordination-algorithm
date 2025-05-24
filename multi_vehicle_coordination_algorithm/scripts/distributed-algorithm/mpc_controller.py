@@ -8,6 +8,7 @@ sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
 
 import numpy as np
 import math
+from datetime import datetime
 
 import generate_NMPC_solver
 import generate_CA_solver
@@ -110,7 +111,7 @@ class MPCPlanner:
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu_nmpc, self._N))
             self.set_initial_u_plan()
-            self.set_initial_duals(self._mpc_u_plan, self._map_nmpc)
+            self.set_initial_duals(self._mpc_u_plan, solver_type='nmpc')
             
         if self._mpc_feasible:
 
@@ -179,7 +180,8 @@ class MPCPlanner:
 
             self.time_tracker.add(solve_time)
 
-            print_value(f"Current cost (nmpc {self._idx}):", f"{self.get_cost_nmpc():.2f}")
+            current_time = datetime.now().strftime("%H:%M:%S")
+            print_value(f"Current cost (nmpc {self._idx}):", f"{self.get_cost_nmpc():.2f}", "at", current_time)
             self._prev_trajectory = self._model_nmpc.get_trajectory(self._solver_nmpc, self._mpc_x_plan, self._mpc_u_plan)
         except AttributeError:
             output = dict()
@@ -195,7 +197,7 @@ class MPCPlanner:
             self._x_init_ca = np.zeros((self._nx_ca, self._N))
         if not hasattr(self, "_u_init_ca"):
             self._u_init_ca = np.zeros((self._nu_ca, self._N))
-            self.set_initial_duals(self._u_init_ca, self._map_ca)
+            self.set_initial_duals(self._u_init_ca, solver_type='ca')
             
         try:
             # Set initial state
@@ -237,14 +239,15 @@ class MPCPlanner:
                 output[f"lam_{j}_{self._idx}_2"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_2")
                 output[f"lam_{j}_{self._idx}_3"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_3")
 
-                if self._idx > j:
-                    output[f"s_{j}_{self._idx}_0"] = self._model_ca.get(1, f"s_{j}_{self._idx}_0")
-                    output[f"s_{j}_{self._idx}_1"] = self._model_ca.get(1, f"s_{j}_{self._idx}_1")
-                else:    
+                if self._idx < j:
                     output[f"s_{self._idx}_{j}_0"] = self._model_ca.get(1, f"s_{self._idx}_{j}_0")
                     output[f"s_{self._idx}_{j}_1"] = self._model_ca.get(1, f"s_{self._idx}_{j}_1")
+                else:    
+                    output[f"s_{j}_{self._idx}_0"] = self._model_ca.get(1, f"s_{j}_{self._idx}_0")
+                    output[f"s_{j}_{self._idx}_1"] = self._model_ca.get(1, f"s_{j}_{self._idx}_1")
                         
-            
+            current_time = datetime.now().strftime("%H:%M:%S")
+            print_value(f"Solve time (ca {self._idx}): at {current_time}")
             print_value(f"Current cost (ca {self._idx}):", f"{self.get_cost_ca():.2f}")
             self._prev_solution_ca = self._model_ca.get_solution_ca(self._solver_ca, self._x_init_ca, self._u_init_ca)
         except AttributeError:
@@ -263,17 +266,26 @@ class MPCPlanner:
         throttle_initial_guess = throttle_search[np.argmin(np.abs(acceleration_x))]
         self._mpc_u_plan[0, :] = throttle_initial_guess
     
-    def set_initial_duals(self, u_plan, map):
+    def set_initial_duals(self, u_plan, solver_type='' ):
+        """
+        Set initial duals for the specified solver type.
+        solver_type: "nmpc" or "ca"
+        """
+        if solver_type == 'nmpc':
+            model_map = self._map_nmpc
+            nx = self._nx_nmpc
+        elif solver_type == 'ca':
+            model_map = self._map_ca
+            nx = self._nx_ca
+
         for pair, dual_dict in self._init_duals_dict.items():
             i, j = map(int, pair.split('_'))
             if i != self._idx and j != self._idx:
                 continue
             for key in dual_dict:
-                if key in map:
-                    idx = map[key][1] - self._nx
+                if key in model_map:
+                    idx = model_map[key][1] - nx
                     u_plan[idx, :] = dual_dict[key]
-                else:
-                    print_warning(f"Key {key} not found in model map. Skipping.")
 
     def get_braking_trajectory(self, state):    # Not adjusted for multi robot
         x = state[0]

@@ -150,12 +150,11 @@ class ROSMPCPlanner:
 
             for i in range(1, self._number_of_robots+1): 
                 output_keys = [f"x_{i}", f"y_{i}", f"theta_{i}", f"vx_{i}", f"vy_{i}", f"w_{i}", f"s_{i}"]
-                state = self.get_state_per_robot(i)
 
                 if not self._dart_simulator:
-                    state = [output[key] for key in output_keys]
+                    self.get_state_per_robot(i)[:] = [output[key] for key in output_keys]
                 
-                self._states_history[i].append(deepcopy(state))
+                self._states_history[i].append(deepcopy(self.get_state_per_robot(i)[:]))
                 self._outputs_history[i].append([output[f"throttle_{i}"], output[f"steering_{i}"]])
                 
                 for j in range(1, self._number_of_robots+1):
@@ -244,16 +243,17 @@ class ROSMPCPlanner:
         self._visuals.publish()
 
     def visualize_robot_position(self, n):
-        state_msg = self._state_msgs.get(n)
-        if state_msg:
-            robot_pos = self._visuals.get_sphere()
-            robot_pos.set_color(0)
-            robot_pos.set_scale(0.3, 0.3, 0.3)
-            pose = Pose()
-            state = self.get_state_per_robot(n)
-            pose.position.x = float(state[0])
-            pose.position.y = float(state[1])
-            robot_pos.add_marker(pose)
+        state_msg = self._state_msgs[n]
+        if state_msg is None:
+            return
+        robot_pos = self._visuals.get_sphere()
+        robot_pos.set_color(0)
+        robot_pos.set_scale(0.3, 0.3, 0.3)
+        pose = Pose()
+        state = self.get_state_per_robot(n)
+        pose.position.x = float(state[0])
+        pose.position.y = float(state[1])
+        robot_pos.add_marker(pose)
 
     def visualize_seperating_hyperplanes(self, n):
         if not self._s_dual_history:
