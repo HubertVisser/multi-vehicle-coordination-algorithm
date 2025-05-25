@@ -93,7 +93,7 @@ class ROSMPCPlanner:
         self._ca_solution = None
 
         self._trajectories = {n: np.zeros((3, self._N)) for n in range(1, self._number_of_robots + 1)}
-        self._trajectory_received = {n: False for n in range(1, self._number_of_robots + 1)}
+        self._trajectory_received = {n: False for n in range(1, self._number_of_robots + 1) if n != self._idx}
 
         self._lambdas = {n: np.zeros((self._N, 4)) for n in range(1, self._number_of_robots + 1)}
 
@@ -205,7 +205,9 @@ class ROSMPCPlanner:
                 control_output = self._outputs_history[-1] 
                 self.publish_throttle(control_output, self._mpc_feasible) 
                 self.publish_steering(control_output, self._mpc_feasible) 
-            
+        
+        for j in self._trajectory_received:
+            self._trajectory_received[j] = False
         self.visualize()
 
 
@@ -551,6 +553,7 @@ class ROSMPCPlanner:
         if j == self._idx:
             return
         
+        
         for k, pose in enumerate(traj_msg.poses):
             self._trajectories[j][0, k] = pose.pose.position.x
             self._trajectories[j][1, k] = pose.pose.position.y
@@ -600,6 +603,9 @@ class ROSMPCPlanner:
 
         plot_slack_distributed(slack_nmpc, slack_ca)
 
+    def all_neighbor_trajectories_received(self):
+        # Exclude self._idx
+        return all(self._trajectory_received[j] for j in range(1, self._number_of_robots + 1) if j != self._idx)
 
 
 if __name__ == "__main__":

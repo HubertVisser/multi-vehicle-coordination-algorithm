@@ -12,7 +12,11 @@ import numpy as np
 from itertools import combinations
 from scipy.optimize import linprog
 
-for i in range(1,5):
-    print("i", i)
+trajectory_received = {n: False for n in range(1, 2 + 1) if n != 1}
 
-print("range", range)
+trajectory_received[2] = True
+
+for j in trajectory_received:
+    trajectory_received[j] = False
+    
+print(trajectory_received)
