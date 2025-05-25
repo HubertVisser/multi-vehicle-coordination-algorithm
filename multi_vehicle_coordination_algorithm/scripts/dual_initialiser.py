@@ -4,6 +4,13 @@ import matplotlib.pyplot as plt
 import os
 from scipy.optimize import minimize
 
+import sys
+import pathlib
+path = pathlib.Path(__file__).parent.resolve()
+sys.path.append(os.path.join(path))
+sys.path.append(os.path.join(sys.path[-1], "..", "..", "solver_generator"))
+
+from util.files import load_settings
 from helpers import get_robot_pairs_one
 
 class DualProgram:
@@ -215,4 +222,5 @@ def main():
 
     
 if __name__ == "__main__":
-    main()
+    settings = load_settings(package="multi_vehicle_coordination_algorithm")
+    _ = get_all_initial_duals(settings)

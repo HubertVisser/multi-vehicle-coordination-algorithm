@@ -207,7 +207,7 @@ class ROSMPCPlanner:
                 self.publish_steering(control_output, self._mpc_feasible) 
             
         self.visualize()
-            
+
 
     def set_nmpc_parameters(self):
 
@@ -215,7 +215,6 @@ class ROSMPCPlanner:
         if self._path_msg is not None and self._spline_fitter.ready():
             splines = self._spline_fitter.get_active_splines(np.array([self._state[0], self._state[1]]))
             self._state[-1] = self._spline_fitter.find_closest_s(np.array([self._state[0], self._state[1]]))
-
 
         # Set parameters for all k
         for k in range(self._N):
@@ -238,7 +237,6 @@ class ROSMPCPlanner:
 
                     self._params_nmpc.set(k, f"spline{i}_start_{self._idx}", splines[i]["s"])
 
-        
         # Set neighbouring trajectories
         for j in range(1, self._number_of_robots+1):
             if j == self._idx:
@@ -269,7 +267,6 @@ class ROSMPCPlanner:
                 for key, value in dual_dict.items():
                     for k in range(self._N):
                         self._params_nmpc.set(k, key, value[k])
-                
             else:
                 # Use CA solution for duals
                 model_map = self._model_maps_ca[j]
