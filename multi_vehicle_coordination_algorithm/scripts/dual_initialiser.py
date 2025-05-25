@@ -11,7 +11,7 @@ sys.path.append(os.path.join(path))
 sys.path.append(os.path.join(sys.path[-1], "..", "..", "solver_generator"))
 
 from util.files import load_settings
-from helpers import get_robot_pairs_one
+from helpers import get_robot_pairs_both
 
 class DualProgram:
     def __init__(self, length, width, d_min):
@@ -186,7 +186,7 @@ def get_all_initial_duals(settings):
     duals: dict with keys 'lam_i_j_0', 'lam_i_j_1', 'lam_i_j_2', 'lam_i_j_3', 'lam_j_i_0', 'lam_j_i_1', 'lam_j_i_2', 'lam_j_i_3', 's_i_j_0', 's_i_j_1'
     """
     num_robots = settings["number_of_robots"]
-    pairs = get_robot_pairs_one(num_robots)
+    pairs = get_robot_pairs_both(num_robots)
     for pair in pairs:
         i, j = map(int, pair.split('_'))
         pairs[pair] = dual_initialiser(settings, i, j)

@@ -264,7 +264,7 @@ class ROSMPCPlanner:
             # Set duals
             if self._ca_solution is None: 
                 # Use initial duals
-                dual_key = f"{min(self._idx, j)}_{max(self._idx, j)}"
+                dual_key = f"{self._idx}_{j}"
                 dual_dict = self.init_duals_dict[dual_key]
                 for key, value in dual_dict.items():
                     for k in range(self._N):
