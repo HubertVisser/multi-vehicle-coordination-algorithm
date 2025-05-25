@@ -313,12 +313,12 @@ class BicycleModel2ndOrder(DynamicsModel):
         super().__init__()
         self.nx = 7     
         self.nlam = (n-1) * 4 #*2 # ego lambda variables
-        self.ns = (n-1) * 2 # s variables
+        self.ns = 0 # (n-1) * 2 # s variables
         self.nu = 2 + self.nlam #+ self.ns 
         self.idx = idx # robot index
 
         self.states = [f"x_{idx}", f"y_{idx}", f"theta_{idx}", f"vx_{idx}", f"vy_{idx}", f"w_{idx}", f"s_{idx}"]
-        self.inputs = [f"throttle_{idx}", f"steering_{idx}"] #, "slack"]
+        self.inputs = [f"throttle_{idx}", f"steering_{idx}"]
 
         for j in range(1, n+1): 
             if j == idx:

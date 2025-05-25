@@ -181,7 +181,8 @@ class MPCPlanner:
             self.time_tracker.add(solve_time)
 
             current_time = datetime.now().strftime("%H:%M:%S")
-            print_value(f"Current cost (nmpc {self._idx}):", f"{self.get_cost_nmpc():.2f}", "at", current_time)
+            print_value(f"Current cost (nmpc {self._idx}):", f"{self.get_cost_nmpc():.2f}")
+            print("at", current_time)
             self._prev_trajectory = self._model_nmpc.get_trajectory(self._solver_nmpc, self._mpc_x_plan, self._mpc_u_plan)
         except AttributeError:
             output = dict()
@@ -197,7 +198,7 @@ class MPCPlanner:
             self._x_init_ca = np.zeros((self._nx_ca, self._N))
         if not hasattr(self, "_u_init_ca"):
             self._u_init_ca = np.zeros((self._nu_ca, self._N))
-            self.set_initial_duals(self._u_init_ca, solver_type='ca')
+            # self.set_initial_duals(self._u_init_ca, solver_type='ca')
             
         try:
             # Set initial state
@@ -247,7 +248,7 @@ class MPCPlanner:
                     output[f"s_{j}_{self._idx}_1"] = self._model_ca.get(1, f"s_{j}_{self._idx}_1")
                         
             current_time = datetime.now().strftime("%H:%M:%S")
-            print_value(f"Solve time (ca {self._idx}): at {current_time}")
+            print_value(f"Solve time (ca {self._idx}): at", current_time)
             print_value(f"Current cost (ca {self._idx}):", f"{self.get_cost_ca():.2f}")
             self._prev_solution_ca = self._model_ca.get_solution_ca(self._solver_ca, self._x_init_ca, self._u_init_ca)
         except AttributeError:
