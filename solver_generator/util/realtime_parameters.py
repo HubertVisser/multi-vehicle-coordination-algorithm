@@ -45,7 +45,7 @@ class RealTimeParameters:
         for k in range(self._params.shape[0]):
             print(f"--- {k} ---")
             for key, value in self._map.items():
-                if key != "num parameters":
+                if key != "num parameters" and key.startswith(("lam_", "s_", "x_", "y_")):
                     print(f"{key}: {self._params[k, value]}")
     
     def write_to_file(self, filename):

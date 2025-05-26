@@ -100,6 +100,29 @@ class DualProgram:
                 "success": False,
                 "message": result.message
             }
+    
+    def solve_previous(self):
+        bounds = [(0, None)] * 8 + [(None, None)] * 2
+        x0 = np.zeros(10)
+        constraints = [
+            {'type': 'ineq', 'fun': self.constraint_dmin},
+            {'type': 'eq', 'fun': self.constraint_s_ij},
+            {'type': 'ineq', 'fun': self.constraint_s_norm}
+        ]
+        result = minimize(self.objective, x0, method='SLSQP', bounds=bounds, constraints=constraints)
+        if result.success:
+            lambda_ij = result.x[:4]
+            lambda_ji = result.x[4:8]
+            s_ij = result.x[8:]
+            return {
+                "success": True,
+                "value": result.x
+            }
+        else:
+            return {
+                "success": False,
+                "message": result.message
+            }
         
         
 def set_initial_x_plan(settings, xinit):
@@ -178,6 +201,54 @@ def dual_initialiser(settings, i, j):
         else:
             print(f"No solution found for step {k}: {result['message']}")
     
+    return duals
+
+def dual_initialiser_previous(settings, i, j):
+    """
+    Returns the dict with duals for the robot pair i, j.
+
+    Parameters:
+    settings (dict): A dictionary containing simulation settings, including robot parameters and polytopic constraints.
+    i (int): The index of the first robot in the pair.
+    j (int): The index of the second robot in the pair.
+
+    Returns:
+    dict: A dictionary containing dual variables for the robot pair i, j.
+    {'lam_i_j_0', 'lam_i_j_1', 'lam_i_j_2', 'lam_i_j_3', 'lam_j_i_0', 'lam_j_i_1', 'lam_j_i_2', 'lam_j_i_3', 's_i_j_0', 's_i_j_1'}
+    """
+
+    _N = settings["N"]
+    reference_velocity = settings["weights"]["reference_velocity"]
+    int_step = settings["integrator_step"]
+    length = settings["polytopic"]["length"]
+    width = settings["polytopic"]["width"]
+    d_min = settings["polytopic"]["d_min"]
+    x_i = np.array([settings[f"robot_{i}"]["start_x"], 
+                    settings[f"robot_{i}"]["start_y"],
+                    settings[f"robot_{i}"]["start_theta"] * np.pi,
+                    ])
+    x_j = np.array([settings[f"robot_{j}"]["start_x"], 
+                    settings[f"robot_{j}"]["start_y"],
+                    settings[f"robot_{j}"]["start_theta"] * np.pi,
+                    ])
+
+    x_plan_i = set_initial_x_plan(settings, x_i)
+    x_plan_j = set_initial_x_plan(settings, x_j)
+
+    duals = np.zeros((10, _N))
+
+    initial_guesser = DualProgram(length=length, width=width, d_min=d_min)
+
+    for k in range(_N):
+        x_i = x_plan_i[:, k]
+        x_j = x_plan_j[:, k]
+        initial_guesser.update_parameters(i, j, x_i, x_j)
+        dual = initial_guesser.solve_previous()
+        if dual["success"]:
+            duals[:, i] = dual["value"]
+        else:
+            print(f"No solution found for step {i}: {dual['message']}")
+
     return duals
 
 def get_all_initial_duals(settings):

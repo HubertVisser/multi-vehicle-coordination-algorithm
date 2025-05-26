@@ -32,7 +32,8 @@ class s2normConstraintConstraints:
         self.number_of_robots = settings["number_of_robots"]
         self.idx_i = idx_i
         self.scheme = settings["scheme"]
-        self.n_constraints = (len(self.neighbour_range()) - 1) * 2
+        self.n_sides = 8
+        self.n_constraints = (len(self.neighbour_range()) - 1) * self.n_sides #2
         self.nh = self.n_constraints
 
     def define_parameters(self, params):
@@ -47,8 +48,8 @@ class s2normConstraintConstraints:
     def get_upper_bound(self):
         upper_bound = []
         for index in range(0, self.n_constraints):
-            upper_bound.append(0.5 * np.sqrt(2))
-            # upper_bound.append(1)
+            # upper_bound.append(0.5 * np.sqrt(2))
+            upper_bound.append(1)
         return upper_bound
 
     def neighbour_range(self):
@@ -68,8 +69,13 @@ class s2normConstraintConstraints:
             s_ij_1 = model.get(f"s_{self.idx_i}_{j}_1")
         
 
-            constraints.append(cd.norm_2(s_ij_0))
-            constraints.append(cd.norm_2(s_ij_1))
+            angles = np.linspace(0, 2*np.pi, self.n_sides, endpoint=False)
+            A = np.column_stack((np.cos(angles), np.sin(angles)))
+            for k in range(self.n_sides):
+                constraints.append(A[k, 0] * s_ij_0 + A[k, 1] * s_ij_1)
+            
+            # constraints.append(cd.norm_2(s_ij_0))
+            # constraints.append(cd.norm_2(s_ij_1))
 
             # constraints.append(cd.norm_2(cd.vertcat(s_ij_0, s_ij_1)))
 

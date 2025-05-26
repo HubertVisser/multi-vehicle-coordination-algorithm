@@ -27,7 +27,7 @@ from util.math import get_A, get_b
 
 from timer import Timer
 from spline import Spline, Spline2D
-from dual_initialiser import set_initial_x_plan, get_all_initial_duals
+from dual_initialiser import set_initial_x_plan, get_all_initial_duals, dual_initialiser_previous
 
 from contouring_spline import SplineFitter
 from mpc_controller import MPCPlanner
@@ -82,6 +82,7 @@ class ROSMPCPlanner:
                             self._settings[f"robot_{self._idx}"]["start_y"], \
                             self._settings[f"robot_{self._idx}"]["start_theta"] * np.pi]
         
+        self.initialise_duals()
         self.init_duals_dict = get_all_initial_duals(settings=self._settings)
 
         self._visuals = ROSMarkerPublisher(f"mpc_visuals_{self._idx}", 100)
@@ -139,10 +140,11 @@ class ROSMPCPlanner:
         self.set_nmpc_parameters()
         # self._params.check_for_nan()
         
-        if it == self._iterations:
-            self._params_nmpc.write_to_file(f"params_output_multi_vehicle_nmpc_{self._idx}_call_{self._r}.txt")
-            self._r += 1
+        # if it == self._iterations:
+        #     self._params_nmpc.write_to_file(f"params_output_multi_vehicle_nmpc_{self._idx}_call_{self._r}.txt")
+        #     self._r += 1
 
+        self._params_nmpc.print() if self._idx == 2 else None
         mpc_timer = Timer("NMPC")
 
         output, self._mpc_feasible, trajectory = self._planner.solve_nmpc(self._state, self._params_nmpc.get_solver_params())
@@ -152,10 +154,7 @@ class ROSMPCPlanner:
         if self._verbose:
             time = timer.stop_and_print()
 
-        # lambdas = trajectory[-self._nlam:]
-
         if self._mpc_feasible:
-                # self.publish_lambdas(lambdas)
             self.publish_trajectory(trajectory)
             self._trajectories[self._idx] = trajectory[:3, :]
 
@@ -265,22 +264,46 @@ class ROSMPCPlanner:
                     self._params_nmpc.set(k, f"y_{j}", trajectory_j[1, k])
                     self._params_nmpc.set(k, f"theta_{j}", trajectory_j[2, k])
 
-            # Set duals
-            if self._ca_solution is None: 
-                # Use initial duals
-                dual_key = f"{self._idx}_{j}"
-                dual_dict = self.init_duals_dict[dual_key]
-                for key, value in dual_dict.items():
-                    for k in range(self._N):
-                        self._params_nmpc.set(k, key, value[k])
+            main = False
+            if main == False:
+                # Set duals
+                if self._ca_solution is None: 
+                    
+                    # Use initial duals
+                    dual_key = f"{self._idx}_{j}"
+                    dual_dict = self.init_duals_dict[dual_key]
+                    for key, value in dual_dict.items():
+                        for k in range(self._N):
+                            self._params_nmpc.set(k, key, value[k])
+                else:
+                    # Use CA solution for duals
+                    model_map = self._model_maps_ca[self._idx]
+                    for key, value in model_map.items():
+                            if value[0] == 'u':
+                                idx = value[1]
+                                for k in range(self._N):
+                                    self._params_nmpc.set(k, key, self._ca_solution[idx, k])
             else:
-                # Use CA solution for duals
-                model_map = self._model_maps_ca[self._idx]
-                for key, value in model_map.items():
-                        if value[0] == 'u':
-                            idx = value[1]
-                            for k in range(self._N):
-                                self._params_nmpc.set(k, key, self._ca_solution[idx, k])
+                if self._ca_solution is None:
+                    initial_duals = getattr(self, f'initial_duals_{j}')
+                    for k in range(self._N):
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", initial_duals[4, k])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", initial_duals[5, k])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", initial_duals[6, k])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", initial_duals[7, k])
+
+                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", initial_duals[8, k])
+                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", initial_duals[9, k])
+                else:
+                    for k in range(self._N):
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", self._ca_solution[5, k])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", self._ca_solution[6, k])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", self._ca_solution[7, k])
+                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", self._ca_solution[8, k])
+
+                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", self._ca_solution[9, k])
+                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", self._ca_solution[10, k])
+                        
 
     def set_ca_parameters(self):
         # Set parameters for all k
@@ -334,7 +357,11 @@ class ROSMPCPlanner:
                     self._params_ca.set(k, f"y_{j}", trajectory_j[1, k])
                     self._params_ca.set(k, f"theta_{j}", trajectory_j[2, k])
 
-                  
+    def initialise_duals(self):
+        for j in range(1, self._number_of_robots+1):
+            if j == self._idx:
+                continue
+            setattr(self, f'initial_duals_{j}', dual_initialiser_previous(self._settings, self._idx, j))              
                                             
     def publish_throttle(self, control, exit_flag):
         throttle = Float32()
