@@ -64,8 +64,8 @@ class s2normConstraintConstraints:
             if j== self.idx_i:
                 continue
 
-            s_ij_0 = model.get(f"s_{self.idx}_{j}_0")
-            s_ij_1 = model.get(f"s_{self.idx}_{j}_1")
+            s_ij_0 = model.get(f"s_{self.idx_i}_{j}_0")
+            s_ij_1 = model.get(f"s_{self.idx_i}_{j}_1")
         
 
             constraints.append(cd.norm_2(s_ij_0))

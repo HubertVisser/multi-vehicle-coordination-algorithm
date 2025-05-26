@@ -197,7 +197,7 @@ class ROSMPCPlanner:
                                                output[f"lam_{j}_{self._idx}_2"], 
                                                output[f"lam_{j}_{self._idx}_3"]
                                                ]
-                s[f"s_{self._idx}_{i2}"] = [output[f"s_{self._idx}_{j}_0"], output[f"s_{self._idx}_{j}_1"]]
+                s[f"s_{self._idx}_{j}"] = [output[f"s_{self._idx}_{j}_0"], output[f"s_{self._idx}_{j}_1"]]
         
             self._lam_history.append(lam)
             self._s_dual_history.append(s)
