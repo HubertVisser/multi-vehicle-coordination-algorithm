@@ -72,7 +72,7 @@ class ROSMPCCoordinator:
                 ca_futures = [
                     executor.submit(robot.run_ca, timer, it)
                     for robot in self._robots
-                    if robot._spline_fitter._splines
+                    if robot._spline_fitter._splines and robot.all_neighbor_trajectories_received()
                 ]
 
                 # Wait for all CA tasks to complete
@@ -98,8 +98,8 @@ class ROSMPCCoordinator:
 
     def plot_distance(self):
         
-        poses_1 = self._robots[0]._states_save
-        poses_2 = self._robots[1]._states_save
+        poses_1 = self._robots[0]._states_history
+        poses_2 = self._robots[1]._states_history
 
         length = self._settings["polytopic"]["length"]
         width = self._settings["polytopic"]["width"]
@@ -108,8 +108,8 @@ class ROSMPCCoordinator:
     
     def plot_trajectory(self):
 
-        poses_1 = self._robots[0]._states_save
-        poses_2 = self._robots[1]._states_save
+        poses_1 = self._robots[0]._states_history
+        poses_2 = self._robots[1]._states_history
         reference_1 = get_reference_from_path_msg(self._robots[0]._path_msg)
         reference_2 = get_reference_from_path_msg(self._robots[1]._path_msg)
 

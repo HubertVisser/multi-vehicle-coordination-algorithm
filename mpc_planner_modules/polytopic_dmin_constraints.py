@@ -35,11 +35,11 @@ class PolytopicDminConstraints:
         self.width = settings["polytopic"]["width"]
         self.number_of_robots = settings["number_of_robots"]
         self.idx_i = idx_i
-        self.n_constraints = self.number_of_robots - 1
-        self.nh = self.n_constraints
         self.use_slack = use_slack
         self.solver_name = settings.get("solver_name", None)
         self.scheme = settings["scheme"]
+        self.n_constraints = len(self.neighbour_range()) - 1
+        self.nh = self.n_constraints
 
     def define_parameters(self, params):
         if self.scheme == 'distributed' and self.solver_name.startswith("solver_nmpc"):
@@ -118,6 +118,12 @@ class PolytopicDminConstraints:
                                 model.get(f"lam_{idx_j}_{self.idx_i}_2"), 
                                 model.get(f"lam_{idx_j}_{self.idx_i}_3"))
     
+    def neighbour_range(self):
+        if self.scheme == 'distributed':
+            return range(1, self.number_of_robots+1)
+        elif self.scheme == 'centralised':
+            return range(self.idx_i, self.number_of_robots+1)
+
     def get_constraints(self, model, params, settings, stage_idx):
         constraints = []
 
@@ -126,7 +132,7 @@ class PolytopicDminConstraints:
         b_i = get_b(pos_i, theta_i, self.length, self.width)
         
         # Constraints for all neighbouring robots (j)
-        for j in range(1, self.number_of_robots+1): 
+        for j in self.neighbour_range(): 
             if j == self.idx_i:
                 continue
     

@@ -63,7 +63,7 @@ def plot_states(planner):
     plt.subplot(1, 2, 1)
     num_states = len(state_labels)
     for i in range(num_states):
-        state_values = [state[i] for state in planner._states_save]
+        state_values = [state[i] for state in planner._states_history]
         plt.plot(state_values, label=state_labels[i])
     plt.xlabel('Time Step')
     plt.ylabel('State Values')
@@ -74,7 +74,7 @@ def plot_states(planner):
     # Plot outputs
     plt.subplot(1, 2, 2)
     for i in range(len(output_labels)):
-        output_values = [output[i] for output in planner._outputs_save]
+        output_values = [output[i] for output in planner._outputs_history]
         plt.plot(output_values, label=output_labels[i])
     plt.xlabel('Time Step')
     plt.ylabel('Output Values')
@@ -86,47 +86,49 @@ def plot_states(planner):
     plt.savefig(os.path.join(os.path.dirname(__file__), f'{planner._scheme}-algorithm/plots', f'states_{planner._idx}_{planner._scheme}.png'))  # Save the plot to a file
     plt.close()
 
-def plot_duals(planner, idx=None):
-    if idx: planner._idx = idx
-    keys = planner._save_lam[0].keys()  # Get the keys from the first dictionary
-    time_steps = range(len(planner._save_lam))  # Time steps based on the number of dictionaries
-    num_elements = len(next(iter(planner._save_lam[0].values())))  # Number of elements in each list
+def plot_dual_dicts_over_time(data_list, ylabel, title, filename, scheme, idx):
+    """
+    Plots each element of each key in a list of dicts over time.
+    """
+    if not data_list:
+        return
+    keys = data_list[0].keys()
+    time_steps = range(len(data_list))
+    num_elements = len(next(iter(data_list[0].values())))
 
     plt.figure(figsize=(12, 6))
     for element_index in range(num_elements):
-
         for key in keys:
-            values = [d[key][element_index] for d in planner._save_lam]  # Extract the desired element for each key
+            values = [d[key][element_index] for d in data_list]
             plt.plot(time_steps, values, label=f'{key}[{element_index}]')
-
     plt.xlabel('Time Step')
-    plt.ylabel('Lam Values')
+    plt.ylabel(ylabel)
     plt.legend()
     plt.grid(True)
-    plt.title(f'Lam Values - {planner._scheme}')
+    plt.title(f'{title} - {scheme}')
     plt.tight_layout()
-    plt.savefig(os.path.join(os.path.dirname(__file__), f'{planner._scheme}-algorithm/plots', f'lambda_{planner._idx}_{planner._scheme}.png'))  # Save the plot to a file
+    plot_dir = os.path.join(os.path.dirname(__file__), f'{scheme}-algorithm/plots')
+    os.makedirs(plot_dir, exist_ok=True)
+    plt.savefig(os.path.join(plot_dir, f'{filename}_{idx}_{scheme}.png'))
     plt.close()
-    
-    keys = planner._save_s[0].keys()  # Get the keys from the first dictionary
-    time_steps = range(len(planner._save_s))  # Time steps based on the number of dictionaries
-    num_elements = len(next(iter(planner._save_s[0].values())))  # Number of elements in each list
 
-    plt.figure(figsize=(12, 6))
-    for element_index in range(num_elements):
-
-        for key in keys:
-            values = [d[key][element_index] for d in planner._save_s]  # Extract the desired element for each key
-            plt.plot(time_steps, values, label=f'{key}[{element_index}]')
-
-    plt.xlabel('Time Step')
-    plt.ylabel('s Values')
-    plt.legend()
-    plt.grid(True)
-    plt.title(f's Values - {planner._scheme}')
-    plt.tight_layout()
-    plt.savefig(os.path.join(os.path.dirname(__file__), f'{planner._scheme}-algorithm/plots', f's_{planner._idx}_{planner._scheme}.png'))  # Save the plot to a file
-    plt.close()
+def plot_duals(lams, s_duals, scheme, idx=1):
+    plot_dual_dicts_over_time(
+        lams,
+        ylabel='Lam Values',
+        title='Lam Values',
+        filename='lambda',
+        scheme=scheme,
+        idx=idx
+    )
+    plot_dual_dicts_over_time(
+        s_duals,
+        ylabel='s Values',
+        title='s Values',
+        filename='s',
+        scheme=scheme,
+        idx=idx
+    )
 
 def plot_pred_traj(planner):
     state_labels = ["x", "y", "theta", "vx", "vy", "omega", "s"]

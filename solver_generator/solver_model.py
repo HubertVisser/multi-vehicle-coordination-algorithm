@@ -313,12 +313,12 @@ class BicycleModel2ndOrder(DynamicsModel):
         super().__init__()
         self.nx = 7     
         self.nlam = (n-1) * 4 #*2 # ego lambda variables
-        self.ns = (n-1) * 2 # s variables
+        self.ns = 0 # (n-1) * 2 # s variables
         self.nu = 2 + self.nlam #+ self.ns 
         self.idx = idx # robot index
 
         self.states = [f"x_{idx}", f"y_{idx}", f"theta_{idx}", f"vx_{idx}", f"vy_{idx}", f"w_{idx}", f"s_{idx}"]
-        self.inputs = [f"throttle_{idx}", f"steering_{idx}"] #, "slack"]
+        self.inputs = [f"throttle_{idx}", f"steering_{idx}"]
 
         for j in range(1, n+1): 
             if j == idx:
@@ -640,14 +640,10 @@ class CollisionAvoidanceModel(DynamicsModel):
         return x
     
 
-
-
-
-
 if __name__ == "__main__":
 
-    model = BicycleModel2ndOrderMultiRobot(2)
-    model_b = BicycleModel2ndOrder(1)
+    model = BicycleModel2ndOrderMultiRobot(4)
+    # model_b = BicycleModel2ndOrder(1)
     # print("upper","lower", "range", model.get_bounds("steering_1"))
     # print("upper","lower", "range",model.get_bounds("x_1"))
     # model.acados_symbolics_z()
@@ -659,25 +655,36 @@ if __name__ == "__main__":
     
     
 
-    # print(model.lower_bound)
+    print(model.states)
     # print(model.lower_bound_u)
     # print("lam_1_2", slice_1_2[0], slice_1_2[1], slice_1_2[2], slice_1_2[3])
     # print("lower_bound_u_acados flatten", model.lower_bound_inputs)
-    print("upper_bound_inputs", model.upper_bound_inputs)
-    print("upper_bound_u flatten", model.upper_bound_u.flatten())
-    print("lower_bound_u flatten", model.lower_bound_u.flatten())
+    model.load_z(model.acados_symbolics_z())
+    model.load_d(model.acados_symbolics_d())
+    print("acados_u",model.get_acados_u(), model.get_acados_u().size())
+    # print(('states', model.states))
+    # print(('idx_states', model.idx_states))
+    # print(('inputs', model.idx_inputs))
+    # print(('idx_inputs', model.inputs))
+    # print(('s', model.s))
+    # print(('idx_s', model.idx_s))
+    # print(('lams', model.lams))
+    # print(('idx_lam', model.idx_lam))
+    # print("upper_bound_inputs", model.upper_bound_inputs)
+    # print("upper_bound_u flatten", model.upper_bound_u.flatten())
+    # print("lower_bound_u flatten", model.lower_bound_u.flatten())
     # print("acados_x",model.get_acados_x())
     print("lower_bound_states", model.lower_bound_states)
     print("lower_bound_states flatten", model.lower_bound_states.T.flatten())
     print("upper_bound_states flatten", model.upper_bound_states.T.flatten())
     print()
     # print("lower_bound_u_acados flatten", model_b.lower_bound_inputs)
-    print("upper_bound_u flatten", model_b.upper_bound_u.flatten())
-    print("lower_bound_u flatten", model_b.lower_bound_u.flatten())
-    # print("acados_x",model_b.get_acados_x())
-    print("lower_bound_states", model_b.lower_bound_states)
-    print("lower_bound_states flatten", model_b.lower_bound_states.T.flatten())
-    print("upper_bound_states flatten", model_b.upper_bound_states.T.flatten())
+    # print("upper_bound_u flatten", model_b.upper_bound_u.flatten())
+    # print("lower_bound_u flatten", model_b.lower_bound_u.flatten())
+    # # print("acados_x",model_b.get_acados_x())
+    # print("lower_bound_states", model_b.lower_bound_states)
+    # print("lower_bound_states flatten", model_b.lower_bound_states.T.flatten())
+    # print("upper_bound_states flatten", model_b.upper_bound_states.T.flatten())
     # print("acados_d",model.get_acados_d())
     # print("lower_bound_duals", model.lower_bound_duals)
     # print("lower_bound_duals flatten", model.lower_bound_duals.T.flatten())

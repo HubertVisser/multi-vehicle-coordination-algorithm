@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from scipy.optimize import minimize
-import pprint
 
 import sys
 import pathlib
@@ -70,29 +69,6 @@ class DualProgram:
         s_ij = x[8:]
         return 1 - np.linalg.norm(s_ij, ord=2)
 
-    def solve_previous(self):
-        bounds = [(0, None)] * 8 + [(None, None)] * 2
-        x0 = np.zeros(10)
-        constraints = [
-            {'type': 'ineq', 'fun': self.constraint_dmin},
-            {'type': 'eq', 'fun': self.constraint_s_ij},
-            {'type': 'ineq', 'fun': self.constraint_s_norm}
-        ]
-        result = minimize(self.objective, x0, method='SLSQP', bounds=bounds, constraints=constraints)
-        if result.success:
-            lambda_ij = result.x[:4]
-            lambda_ji = result.x[4:8]
-            s_ij = result.x[8:]
-            return {
-                "success": True,
-                "value": result.x
-            }
-        else:
-            return {
-                "success": False,
-                "message": result.message
-            }
-        
     def solve(self):
         bounds = [(0, None)] * 8 + [(None, None)] * 2
         x0 = np.zeros(10)
@@ -153,55 +129,6 @@ def set_initial_x_plan(settings, xinit):
     return np.array([x, y, theta_ref_0])
 
 
-def dual_initialiser_previous(settings, i, j):
-    """
-    Returns the dict with duals for the robot pair i, j.
-
-    Parameters:
-    settings (dict): A dictionary containing simulation settings, including robot parameters and polytopic constraints.
-    i (int): The index of the first robot in the pair.
-    j (int): The index of the second robot in the pair.
-
-    Returns:
-    dict: A dictionary containing dual variables for the robot pair i, j.
-    {'lam_i_j_0', 'lam_i_j_1', 'lam_i_j_2', 'lam_i_j_3', 'lam_j_i_0', 'lam_j_i_1', 'lam_j_i_2', 'lam_j_i_3', 's_i_j_0', 's_i_j_1'}
-    """
-
-    _N = settings["N"]
-    reference_velocity = settings["weights"]["reference_velocity"]
-    int_step = settings["integrator_step"]
-    length = settings["polytopic"]["length"]
-    width = settings["polytopic"]["width"]
-    d_min = settings["polytopic"]["d_min"]
-    x_i = np.array([settings[f"robot_{i}"]["start_x"], 
-                    settings[f"robot_{i}"]["start_y"],
-                    settings[f"robot_{i}"]["start_theta"] * np.pi,
-                    ])
-    x_j = np.array([settings[f"robot_{j}"]["start_x"], 
-                    settings[f"robot_{j}"]["start_y"],
-                    settings[f"robot_{j}"]["start_theta"] * np.pi,
-                    ])
-
-    x_plan_i = set_initial_x_plan(settings, x_i)
-    x_plan_j = set_initial_x_plan(settings, x_j)
-
-    duals = np.zeros((10, _N))
-
-    initial_guesser = DualProgram(length=length, width=width, d_min=d_min)
-
-    for i in range(_N):
-        x_i = x_plan_i[:, i]
-        x_j = x_plan_j[:, i]
-        initial_guesser.update_parameters(i, j, x_i, x_j)
-        dual = initial_guesser.solve_previous()
-        if dual["success"]:
-            duals[:, i] = dual["value"]
-        else:
-            print(f"No solution found for step {i}: {dual['message']}")
-    
-    return duals
-
-    
 def dual_initialiser(settings, i, j):
     """
     Returns the dict with duals for the robot pair i, j.
@@ -296,22 +223,4 @@ def main():
     
 if __name__ == "__main__":
     settings = load_settings(package="multi_vehicle_coordination_algorithm")
-    duals_dict = get_all_initial_duals(settings)
-    duals_2_1 = dual_initialiser_previous(settings, 2, 1)
-    
-    # pprint.pprint(duals_dict['1_2'])
-    # pprint.pprint(duals_1_2)
-
-    keys = [
-    'lam_2_1_0', 'lam_2_1_1', 'lam_2_1_2', 'lam_2_1_3',
-    'lam_1_2_0', 'lam_1_2_1', 'lam_1_2_2', 'lam_1_2_3',
-    's_2_1_0', 's_2_1_1'
-    ]
-    
-    for idx, key in enumerate(keys):
-        arr1 = duals_2_1[idx,:]
-        arr2 = np.array(duals_dict['2_1'][key])
-        if not np.allclose(arr1, arr2):
-            print(f"Difference for key {key}:")
-            print("  duals_2_1:", arr1)
-            print("  duals_dict1['2_1']:", arr2)
+    _ = get_all_initial_duals(settings)

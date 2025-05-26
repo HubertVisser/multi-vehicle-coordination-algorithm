@@ -4,7 +4,7 @@ N: 20
 integrator_step: 0.3
 track_choice: straight_line # straight_line, sinus, t_junction, merging
 dart_simulator: false
-skip_solver_generation: false
+skip_solver_generation: true
 
 add_slack: true
 slack_value: 1.0e0
@@ -16,6 +16,14 @@ robot_1:
   start_theta: 0.0  # radians
 robot_2:
   start_x: -4.0
+  start_y: -2.0
+  start_theta: 0.0  # radians
+robot_3:
+  start_x: -1.0
+  start_y: 1.0
+  start_theta: 0.0  # radians
+robot_4:
+  start_x: -2.0
   start_y: -2.0
   start_theta: 0.0  # radians
 
@@ -52,3 +60,7 @@ weights:
   terminal_angle: 1.0 #0.0
   terminal_contour: 1.0 # 0.0
   terminal_lag: 1.0 # 0.0
+
+
+
+

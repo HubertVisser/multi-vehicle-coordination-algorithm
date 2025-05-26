@@ -4,8 +4,7 @@ import pathlib
 path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(os.path.join(path))
 sys.path.append(os.path.join(sys.path[0], "..", "..", "..", "solver_generator"))
-
-acados_path = os.path.join(path, "..", "..", "..", "mpc_planner_solver", "acados", "solver")
+sys.path.append(os.path.join(sys.path[0], "..", "..",))
 
 import numpy as np
 import math
@@ -21,7 +20,7 @@ from util.slack import SlackTracker
 
 from util.logging import print_warning, print_value, print_success, TimeTracker, print_header
 from util.realtime_parameters import AcadosRealTimeModel
-from dual_initialiser import dual_initialiser
+from dual_initialiser import get_all_initial_duals
 
 
 class MPCPlanner:
@@ -35,6 +34,8 @@ class MPCPlanner:
         self._dart_simulator = self._settings["dart_simulator"]
         self._dmin = self._settings["polytopic"]["d_min"]
         self._solver_iterations = self._settings["solver_settings"]["iterations_centralised"]
+        
+        self._map = load_settings("model_map", package="mpc_planner_solver")
 
         self.init_acados_solver()
 
@@ -65,7 +66,7 @@ class MPCPlanner:
         self._nvar = self._solver_settings["nvar"]
         self._nx_one_robot = self._nx // self._number_of_robots
 
-        self._init_duals = dual_initialiser(self._settings, 1, 2)
+        self._init_duals_dict = get_all_initial_duals(self._settings)
         self._prev_trajectory = np.zeros((self._N, self._nvar)) 
 
         print_success("Acados solver generated")
@@ -85,24 +86,26 @@ class MPCPlanner:
 
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu, self._N))
-            self._mpc_u_plan[0, :] = self.get_throttle_init_value()
-            self._mpc_u_plan[2, :] = self.get_throttle_init_value()
-            # self._mpc_u_plan[12:16, :] = self._init_duals[4:8, :]
-            # self._mpc_u_plan[16:20, :] = self._init_duals[:4, :]
-            # self._mpc_u_plan[5:7, :] = self._init_duals[8:, :]
+            self.set_initial_throttle()
+            self.set_initial_duals()
             
+        
         if self._mpc_feasible:
 
             self._x_traj_init = self._mpc_x_plan
             self._u_traj_init = self._mpc_u_plan
 
         else:
-
-            # Brake (model specific)
-            self._x_traj_init = self.get_braking_trajectory(xinit)
+            self._x_traj_init = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
             self._u_traj_init = np.zeros((self._nu, self._N))
+            self.set_initial_throttle()
+            self.set_initial_duals()
+
+            # # Brake (model specific)
+            # self._x_traj_init = self.get_braking_trajectory(xinit)
+            # self._u_traj_init = np.zeros((self._nu, self._N))
             
-            self._solver.options_set('warm_start_first_qp', False)
+            # self._solver.options_set('warm_start_first_qp', False)
 
         return self.solve_acados(xinit, p)
 
@@ -149,6 +152,7 @@ class MPCPlanner:
                 
                 output[f"throttle_{n}"] = self._model.get(0, f"throttle_{n}")
                 output[f"steering_{n}"] = self._model.get(0, f"steering_{n}")
+
                 for j in range(1, self._number_of_robots+1):
                     if j == n:
                         continue
@@ -159,9 +163,6 @@ class MPCPlanner:
                     if n > j:
                         output[f"s_{j}_{n}_0"] = self._model.get(1, f"s_{j}_{n}_0")
                         output[f"s_{j}_{n}_1"] = self._model.get(1, f"s_{j}_{n}_1")
-                    else:
-                        output[f"s_{n}_{j}_0"] = self._model.get(1, f"s_{n}_{j}_0")
-                        output[f"s_{n}_{j}_1"] = self._model.get(1, f"s_{n}_{j}_1")
             
             self.time_tracker.add(solve_time)
 
@@ -223,7 +224,7 @@ class MPCPlanner:
         self._mpc_x_plan[3 + self._nx_one_robot,:] = self.reference_velocity
         self._mpc_x_plan[6 + self._nx_one_robot,:] = np.interp(np.linspace(0,1,self._N), np.linspace(0,1,N_0+1), s_0_vec)
     
-    def get_throttle_init_value(self):
+    def get_initial_throttle_value(self):
         # Evaluate throttle to keep the constant velocity
         throttle_search = np.linspace(0,1,30)
         mass_vehicle = self._dynamic_model.get_mass()
@@ -232,8 +233,20 @@ class MPCPlanner:
         throttle_initial_guess = throttle_search[np.argmin(np.abs(acceleration_x))]
         return throttle_initial_guess
 
-    def get_cost_acados(self):
-        return self._solver.get_cost()
+    def set_initial_throttle(self):
+        throttle_value = self.get_initial_throttle_value()
+        throttle_indices = [v[1] - self._nx for k, v in self._map.items() if k.startswith('throttle_')]
+        self._mpc_u_plan[throttle_indices, :] = throttle_value
+
+    def set_initial_duals(self):
+        for pair, dual_dict in self._init_duals_dict.items():
+            for key in dual_dict:
+                if key in self._map:
+                    idx = self._map[key][1] - self._nx
+                    self._mpc_u_plan[idx, :] = dual_dict[key]
+                else:
+                    print_warning(f"Key {key} not found in model map. Skipping.")
+
 
     def set_infeasible(self, output):
         self._mpc_feasible = False
@@ -263,6 +276,8 @@ class MPCPlanner:
                 result[(n*self._nx_one_robot):((n+1)*self._nx_one_robot), k] = np.array([x, y, theta, vx, vy, w, spline])
         return result
 
+    def get_cost_acados(self):
+        return self._solver.get_cost()
 
     def set_projection(self, projection_func):  # # Not adjusted for multi robot
         self._projection_func = projection_func
@@ -284,5 +299,3 @@ class MPCPlanner:
     
     def get_slack_tracker(self):
         return self._slack_tracker
-
-    
