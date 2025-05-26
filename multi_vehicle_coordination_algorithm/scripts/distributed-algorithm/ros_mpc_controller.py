@@ -139,6 +139,9 @@ class ROSMPCPlanner:
         self.set_nmpc_parameters()
         # self._params.check_for_nan()
         
+        if it == self._iterations:
+            self._params_nmpc.write_to_file(f"params_output_multi_vehicle_nmpc_{self._idx}_call_{self._r}.txt")
+            self._r += 1
 
         mpc_timer = Timer("NMPC")
 
@@ -272,7 +275,7 @@ class ROSMPCPlanner:
                         self._params_nmpc.set(k, key, value[k])
             else:
                 # Use CA solution for duals
-                model_map = self._model_maps_ca[j]
+                model_map = self._model_maps_ca[self._idx]
                 for key, value in model_map.items():
                         if value[0] == 'u':
                             idx = value[1]
