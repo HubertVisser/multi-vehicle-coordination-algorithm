@@ -3,14 +3,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from scipy.optimize import minimize
+import pprint
+
+import sys
+import pathlib
+path = pathlib.Path(__file__).parent.resolve()
+sys.path.append(os.path.join(path))
+sys.path.append(os.path.join(sys.path[-1], "..", "..", "solver_generator"))
+
+from util.files import load_settings
+from helpers import get_robot_pairs_both
 
 class DualProgram:
     def __init__(self, length, width, d_min):
+        self._i = None
+        self._j = None
+
         self._l = length
         self._w = width
         self._d_min = d_min
 
-    def update_parameters(self, x_i, x_j):
+    def update_parameters(self, i, j, x_i, x_j):
+        self._i = i
+        self._j = j
+
         self._xy_i = x_i[0:2]
         self._theta_i = x_i[2]
 
@@ -54,7 +70,7 @@ class DualProgram:
         s_ij = x[8:]
         return 1 - np.linalg.norm(s_ij, ord=2)
 
-    def solve(self):
+    def solve_previous(self):
         bounds = [(0, None)] * 8 + [(None, None)] * 2
         x0 = np.zeros(10)
         constraints = [
@@ -70,6 +86,38 @@ class DualProgram:
             return {
                 "success": True,
                 "value": result.x
+            }
+        else:
+            return {
+                "success": False,
+                "message": result.message
+            }
+        
+    def solve(self):
+        bounds = [(0, None)] * 8 + [(None, None)] * 2
+        x0 = np.zeros(10)
+        constraints = [
+            {'type': 'ineq', 'fun': self.constraint_dmin},
+            {'type': 'eq', 'fun': self.constraint_s_ij},
+            {'type': 'ineq', 'fun': self.constraint_s_norm}
+        ]
+        result = minimize(self.objective, x0, method='SLSQP', bounds=bounds, constraints=constraints)
+        if result.success:
+            lambda_ij = result.x[:4]
+            lambda_ji = result.x[4:8]
+            s_ij = result.x[8:]
+            dual_dict = {
+                f"lam_{self._i}_{self._j}_{k}": lambda_ij[k] for k in range(4)
+            }
+            dual_dict.update({
+                f"lam_{self._j}_{self._i}_{k}": lambda_ji[k] for k in range(4)
+            })
+            dual_dict.update({
+                f"s_{self._i}_{self._j}_{k}": s_ij[k] for k in range(2)
+            })
+            return {
+                "success": True,
+                "value": dual_dict
             }
         else:
             return {
@@ -105,7 +153,20 @@ def set_initial_x_plan(settings, xinit):
     return np.array([x, y, theta_ref_0])
 
 
-def dual_initialiser(settings, i, j):
+def dual_initialiser_previous(settings, i, j):
+    """
+    Returns the dict with duals for the robot pair i, j.
+
+    Parameters:
+    settings (dict): A dictionary containing simulation settings, including robot parameters and polytopic constraints.
+    i (int): The index of the first robot in the pair.
+    j (int): The index of the second robot in the pair.
+
+    Returns:
+    dict: A dictionary containing dual variables for the robot pair i, j.
+    {'lam_i_j_0', 'lam_i_j_1', 'lam_i_j_2', 'lam_i_j_3', 'lam_j_i_0', 'lam_j_i_1', 'lam_j_i_2', 'lam_j_i_3', 's_i_j_0', 's_i_j_1'}
+    """
+
     _N = settings["N"]
     reference_velocity = settings["weights"]["reference_velocity"]
     int_step = settings["integrator_step"]
@@ -131,14 +192,78 @@ def dual_initialiser(settings, i, j):
     for i in range(_N):
         x_i = x_plan_i[:, i]
         x_j = x_plan_j[:, i]
-        initial_guesser.update_parameters(x_i, x_j)
-        dual = initial_guesser.solve()
+        initial_guesser.update_parameters(i, j, x_i, x_j)
+        dual = initial_guesser.solve_previous()
         if dual["success"]:
             duals[:, i] = dual["value"]
         else:
             print(f"No solution found for step {i}: {dual['message']}")
     
     return duals
+
+    
+def dual_initialiser(settings, i, j):
+    """
+    Returns the dict with duals for the robot pair i, j.
+
+    Parameters:
+    settings (dict): A dictionary containing simulation settings, including robot parameters and polytopic constraints.
+    i (int): The index of the first robot in the pair.
+    j (int): The index of the second robot in the pair.
+
+    Returns:
+    dict: A dictionary containing dual variables for the robot pair i, j.
+    {'lam_i_j_0', 'lam_i_j_1', 'lam_i_j_2', 'lam_i_j_3', 'lam_j_i_0', 'lam_j_i_1', 'lam_j_i_2', 'lam_j_i_3', 's_i_j_0', 's_i_j_1'}
+    """
+
+    _N = settings["N"]
+    reference_velocity = settings["weights"]["reference_velocity"]
+    int_step = settings["integrator_step"]
+    length = settings["polytopic"]["length"]
+    width = settings["polytopic"]["width"]
+    d_min = settings["polytopic"]["d_min"]
+    x_i = np.array([settings[f"robot_{i}"]["start_x"], 
+                    settings[f"robot_{i}"]["start_y"],
+                    settings[f"robot_{i}"]["start_theta"] * np.pi,
+                    ])
+    x_j = np.array([settings[f"robot_{j}"]["start_x"], 
+                    settings[f"robot_{j}"]["start_y"],
+                    settings[f"robot_{j}"]["start_theta"] * np.pi,
+                    ])
+
+    x_plan_i = set_initial_x_plan(settings, x_i)
+    x_plan_j = set_initial_x_plan(settings, x_j)
+
+    duals = {}
+
+    initial_guesser = DualProgram(length=length, width=width, d_min=d_min)
+
+    for k in range(_N):
+        x_i = x_plan_i[:, k]
+        x_j = x_plan_j[:, k]
+        initial_guesser.update_parameters(i, j, x_i, x_j)
+        result = initial_guesser.solve()
+        if result["success"]:
+            for key, value in result["value"].items():
+                if key not in duals:
+                    duals[key] = []
+                duals[key].append(value)
+        else:
+            print(f"No solution found for step {k}: {result['message']}")
+    
+    return duals
+
+def get_all_initial_duals(settings):
+    """
+    returns a dictionary of duals for all robot pairs
+    duals: dict with keys 'lam_i_j_0', 'lam_i_j_1', 'lam_i_j_2', 'lam_i_j_3', 'lam_j_i_0', 'lam_j_i_1', 'lam_j_i_2', 'lam_j_i_3', 's_i_j_0', 's_i_j_1'
+    """
+    num_robots = settings["number_of_robots"]
+    pairs = get_robot_pairs_both(num_robots)
+    for pair in pairs:
+        i, j = map(int, pair.split('_'))
+        pairs[pair] = dual_initialiser(settings, i, j)
+    return pairs
 
 
 def main():
@@ -170,4 +295,23 @@ def main():
 
     
 if __name__ == "__main__":
-    main()
+    settings = load_settings(package="multi_vehicle_coordination_algorithm")
+    duals_dict = get_all_initial_duals(settings)
+    duals_2_1 = dual_initialiser_previous(settings, 2, 1)
+    
+    # pprint.pprint(duals_dict['1_2'])
+    # pprint.pprint(duals_1_2)
+
+    keys = [
+    'lam_2_1_0', 'lam_2_1_1', 'lam_2_1_2', 'lam_2_1_3',
+    'lam_1_2_0', 'lam_1_2_1', 'lam_1_2_2', 'lam_1_2_3',
+    's_2_1_0', 's_2_1_1'
+    ]
+    
+    for idx, key in enumerate(keys):
+        arr1 = duals_2_1[idx,:]
+        arr2 = np.array(duals_dict['2_1'][key])
+        if not np.allclose(arr1, arr2):
+            print(f"Difference for key {key}:")
+            print("  duals_2_1:", arr1)
+            print("  duals_dict1['2_1']:", arr2)

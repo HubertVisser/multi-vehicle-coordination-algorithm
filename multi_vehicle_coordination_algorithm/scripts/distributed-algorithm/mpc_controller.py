@@ -244,12 +244,12 @@ class MPCPlanner:
                 output[f"lam_{j}_{self._idx}_2"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_2")
                 output[f"lam_{j}_{self._idx}_3"] = self._model_ca.get(1, f"lam_{j}_{self._idx}_3")
 
-                if self._idx > j:
-                    output[f"s_{j}_{self._idx}_0"] = self._model_ca.get(1, f"s_{j}_{self._idx}_0")
-                    output[f"s_{j}_{self._idx}_1"] = self._model_ca.get(1, f"s_{j}_{self._idx}_1")
-                else:    
-                    output[f"s_{self._idx}_{j}_0"] = self._model_ca.get(1, f"s_{self._idx}_{j}_0")
-                    output[f"s_{self._idx}_{j}_1"] = self._model_ca.get(1, f"s_{self._idx}_{j}_1")
+                # if self._idx > j:
+                #     output[f"s_{j}_{self._idx}_0"] = self._model_ca.get(1, f"s_{j}_{self._idx}_0")
+                #     output[f"s_{j}_{self._idx}_1"] = self._model_ca.get(1, f"s_{j}_{self._idx}_1")
+                # else:    
+                output[f"s_{self._idx}_{j}_0"] = self._model_ca.get(1, f"s_{self._idx}_{j}_0")
+                output[f"s_{self._idx}_{j}_1"] = self._model_ca.get(1, f"s_{self._idx}_{j}_1")
                         
             
             print_value(f"Current cost (ca {self._idx}):", f"{self.get_cost_ca():.2f}")

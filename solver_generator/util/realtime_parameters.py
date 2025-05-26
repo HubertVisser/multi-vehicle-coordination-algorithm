@@ -49,6 +49,14 @@ class RealTimeParameters:
                 if key != "num parameters":
                     print(f"{key}: {self._params[k, value]}")
     
+    def write_to_file(self, filename):
+        with open(filename, 'w') as f:
+            for k in range(self._params.shape[0]):
+                f.write(f"--- {k} ---\n")
+                for key, value in self._map.items():
+                    if key != "num parameters" and key.startswith(("lam_", "s_")):
+                        f.write(f"{key}: {self._params[k, value]}\n")
+
     def check_for_nan(self):
         for k in range(self._params.shape[0]):
             for key, value in self._map.items():

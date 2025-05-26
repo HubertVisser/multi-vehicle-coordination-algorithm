@@ -82,10 +82,10 @@ class PolytopicSjdualConstraints:
                                 model.get(f"lam_{idx_j}_{self.idx_i}_3"))
         
     def get_s_ij(self, model, params, idx_j):
-        if self.idx_i > idx_j:
-            return cd.vertcat(  model.get(f"s_{idx_j}_{self.idx_i}_0"), 
-                                model.get(f"s_{idx_j}_{self.idx_i}_1"))
-        else:
+        # if self.idx_i > idx_j:
+        #     return cd.vertcat(  model.get(f"s_{idx_j}_{self.idx_i}_0"), 
+        #                         model.get(f"s_{idx_j}_{self.idx_i}_1"))
+        # else:
             return cd.vertcat(  model.get(f"s_{self.idx_i}_{idx_j}_0"), 
                                 model.get(f"s_{self.idx_i}_{idx_j}_1"))
         

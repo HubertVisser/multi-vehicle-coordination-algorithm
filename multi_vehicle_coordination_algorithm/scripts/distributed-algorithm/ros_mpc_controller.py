@@ -27,7 +27,7 @@ from util.math import get_A, get_b
 
 from timer import Timer
 from spline import Spline, Spline2D
-from dual_initialiser import dual_initialiser, set_initial_x_plan
+from dual_initialiser import dual_initialiser, set_initial_x_plan, get_all_initial_duals, dual_initialiser_previous
 
 from contouring_spline import SplineFitter
 from mpc_controller import MPCPlanner
@@ -56,6 +56,7 @@ class ROSMPCPlanner:
 
         self._solver_settings_nmpc = load_settings(f"solver_settings_nmpc_{self._idx}", package="mpc_planner_solver")
         self._solver_settings_ca = load_settings(f"solver_settings_ca_{self._idx}", package="mpc_planner_solver")
+        self._model_maps_ca = {n: load_model(f"model_map_ca_{n}", package="mpc_planner_solver") for n in range(1, self._number_of_robots + 1)}
 
         # Tied to the solver
         self._params_nmpc = RealTimeParameters(self._settings, parameter_map_name=f"parameter_map_nmpc_{idx}")  
@@ -84,6 +85,8 @@ class ROSMPCPlanner:
         
         self._uinit = np.zeros(self._nu_ca)
         self.initialise_duals()
+        self.init_duals_dict = get_all_initial_duals(self._settings)
+
  
 
         self._visuals = ROSMarkerPublisher(f"mpc_visuals_{self._idx}", 100)
@@ -101,12 +104,12 @@ class ROSMPCPlanner:
         self._enable_output = False
         self._mpc_feasible = True
         self._ca_feasible = True
+        self._r= 0
 
         self._callbacks_enabled = False
         self.initialize_publishers_and_subscribers()
         self._callbacks_enabled = True
         self._enable_output = True
-        # self.start_environment()
 
     def initialize_publishers_and_subscribers(self):
 
@@ -142,6 +145,10 @@ class ROSMPCPlanner:
         # self._params.check_for_nan()
         # self._params_nmpc.plot_parameters(["s_1_2_0", "s_1_2_1", "lam_1_2_0", "lam_1_2_1", "lam_1_2_2", "lam_1_2_3"])
         
+        if it == self._iterations:
+            self._params_nmpc.write_to_file(f"params_output_main_nmpc_{self._idx}_call_{self._r}.txt")
+            self._r += 1
+
         mpc_timer = Timer("NMPC")
 
         output, self._mpc_feasible, trajectory = self._planner.solve_nmpc(self._state, self._params_nmpc.get_solver_params())
@@ -191,10 +198,10 @@ class ROSMPCPlanner:
                     continue
                 lam[f"lam_{self._idx}_{j}"] = [output[f"lam_{self._idx}_{j}_0"], output[f"lam_{self._idx}_{j}_1"], output[f"lam_{self._idx}_{j}_2"], output[f"lam_{self._idx}_{j}_3"]]
                 lam[f"lam_{j}_{self._idx}"] = [output[f"lam_{j}_{self._idx}_0"], output[f"lam_{j}_{self._idx}_1"], output[f"lam_{j}_{self._idx}_2"], output[f"lam_{j}_{self._idx}_3"]]
-                if j > self._idx:
-                    s[f"s_{self._idx}_{j}"] = [output[f"s_{self._idx}_{j}_0"], output[f"s_{self._idx}_{j}_1"]]
-                else:
-                    s[f"s_{j}_{self._idx}"] = [output[f"s_{j}_{self._idx}_0"], output[f"s_{j}_{self._idx}_1"]]
+                s[f"s_{self._idx}_{j}"] = [output[f"s_{self._idx}_{j}_0"], output[f"s_{self._idx}_{j}_1"]]
+                # if j > self._idx:
+                # else:
+                #     s[f"s_{j}_{self._idx}"] = [output[f"s_{j}_{self._idx}_0"], output[f"s_{j}_{self._idx}_1"]]
         
             self._save_lam.append(lam)
             self._save_s.append(s)
@@ -241,7 +248,7 @@ class ROSMPCPlanner:
                 if j == self._idx:
                     continue
                 trajectory_j = getattr(self, f'_trajectory_{j}')
-                lambda_j = getattr(self, f'_lambda_{j}')
+                # lambda_j = getattr(self, f'_lambda_{j}')
                 
                 # Set neighbouring trajectories
                 if np.all(trajectory_j == 0):
@@ -257,7 +264,13 @@ class ROSMPCPlanner:
 
                 # Set duals
                 if self._ca_solution is None: 
-
+                    # Use initial duals
+                    # dual_key = f"{self._idx}_{j}"
+                    # dual_dict = self.init_duals_dict[dual_key]
+                    # for key, value in dual_dict.items():
+                    #     # for k in range(self._N):
+                    #     self._params_nmpc.set(k, key, value[k])
+                    
                     initial_duals = getattr(self, f'initial_duals_{j}')
                     self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", initial_duals[4, k])
                     self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", initial_duals[5, k])
@@ -271,6 +284,14 @@ class ROSMPCPlanner:
                         self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", initial_duals[8, k])
                         self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", initial_duals[9, k])
                 else:
+                    # Use CA solution for duals
+                    # model_map = self._model_maps_ca[j]
+                    # for key, value in model_map.items():
+                    #         if value[0] == 'u':
+                    #             idx = value[1]
+                    #             # for k in range(self._N):
+                    #             self._params_nmpc.set(k, key, self._ca_solution[idx, k])
+                    
                     # Hardcoded for 2 robots TODO: Generalize
                     self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", self._ca_solution[5, k])
                     self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", self._ca_solution[6, k])
@@ -283,6 +304,7 @@ class ROSMPCPlanner:
                     else:
                         self._params_nmpc.set(k, f"s_{j}_{self._idx}_0", self._ca_solution[9, k])
                         self._params_nmpc.set(k, f"s_{j}_{self._idx}_1", self._ca_solution[10, k])
+        
                 
 
     def set_ca_parameters(self):
@@ -316,8 +338,8 @@ class ROSMPCPlanner:
                 if j == self._idx:
                     continue
                 trajectory_j = getattr(self, f'_trajectory_{j}')
-                lambda_j = getattr(self, f'_lambda_{j}')
-                initial_duals = getattr(self, f'initial_duals_{j}')
+                # lambda_j = getattr(self, f'_lambda_{j}')
+                # initial_duals = getattr(self, f'initial_duals_{j}')
 
                 # If the trajectory of neighbour j is not received yet, set with initial trajectory
                 if np.all(trajectory_j == 0): # or np.all(lambda_j == 0):
@@ -370,7 +392,7 @@ class ROSMPCPlanner:
         for j in range(1, self._number_of_robots+1):
             if j == self._idx:
                 continue
-            setattr(self, f'initial_duals_{j}', dual_initialiser(self._settings, self._idx, j))
+            setattr(self, f'initial_duals_{j}', dual_initialiser_previous(self._settings, self._idx, j))
     
     # Not used atm
     # def set_uinit(self): 
@@ -521,7 +543,7 @@ class ROSMPCPlanner:
             if j == self._idx:
                 continue
 
-            s = self._save_s[-1][f's_{self._idx}_{j}'] if self._idx < j else self._save_s[-1][f's_{j}_{self._idx}']
+            s = self._save_s[-1][f's_{self._idx}_{j}'] 
             
             neighbour_pos = np.array([self._params_ca.get(1, f"x_{j}"), self._params_ca.get(1, f"y_{j}")])
             midpoint = (ego_pos + neighbour_pos) / 2
