@@ -70,24 +70,14 @@ class PolytopicSjdualConstraints:
         return model.get(f"theta_{idx_j}")
     
     def get_lam_ji(self, model, params, idx_j):
-        # if self.scheme == 'distributed' and self.solver_name.startswith("solver_ca"):
-        #     return cd.vertcat(  params.get(f"lam_{self.idx_i}_{idx_j}_0"), 
-        #                         params.get(f"lam_{self.idx_i}_{idx_j}_1"), 
-        #                         params.get(f"lam_{self.idx_i}_{idx_j}_2"), 
-        #                         params.get(f"lam_{self.idx_i}_{idx_j}_3"))
-        # else:
-            return cd.vertcat(  model.get(f"lam_{idx_j}_{self.idx_i}_0"), 
-                                model.get(f"lam_{idx_j}_{self.idx_i}_1"), 
-                                model.get(f"lam_{idx_j}_{self.idx_i}_2"), 
-                                model.get(f"lam_{idx_j}_{self.idx_i}_3"))
+        return cd.vertcat(  model.get(f"lam_{idx_j}_{self.idx_i}_0"), 
+                            model.get(f"lam_{idx_j}_{self.idx_i}_1"), 
+                            model.get(f"lam_{idx_j}_{self.idx_i}_2"), 
+                            model.get(f"lam_{idx_j}_{self.idx_i}_3"))
         
     def get_s_ij(self, model, params, idx_j):
-        # if self.idx_i > idx_j:
-        #     return cd.vertcat(  model.get(f"s_{idx_j}_{self.idx_i}_0"), 
-        #                         model.get(f"s_{idx_j}_{self.idx_i}_1"))
-        # else:
-            return cd.vertcat(  model.get(f"s_{self.idx_i}_{idx_j}_0"), 
-                                model.get(f"s_{self.idx_i}_{idx_j}_1"))
+        return cd.vertcat(  model.get(f"s_{self.idx_i}_{idx_j}_0"), 
+                            model.get(f"s_{self.idx_i}_{idx_j}_1"))
     
     def neighbour_range(self):
         if self.scheme == 'distributed':
