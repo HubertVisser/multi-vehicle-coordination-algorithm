@@ -197,7 +197,7 @@ class MPCPlanner:
             self._x_init_ca = np.zeros((self._nx_ca, self._N))
         if not hasattr(self, "_u_init_ca"):
             self._u_init_ca = np.zeros((self._nu_ca, self._N))
-            # self.set_initial_duals(self._u_init_ca, solver_type='ca')
+            self.set_initial_duals(self._u_init_ca, solver_type='ca')
             
         try:
             # Set initial state

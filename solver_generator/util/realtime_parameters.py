@@ -80,7 +80,6 @@ class RealTimeModel:
 
 
 
-
 # Python real-time
 class AcadosRealTimeModel(RealTimeModel):
 
@@ -105,9 +104,13 @@ class AcadosRealTimeModel(RealTimeModel):
    
     def get_solution_ca(self, solver, x_init, u_init):
         # Retrieve the trajectory
-        for k in range(0, self._N):
-            x_init[:, k] = solver.get(k, 'x')
-            u_init[:, k] = solver.get(k, 'u')
+        for k in range(0, self._N-1):
+            x_init[:, k] = solver.get(k + 1, 'x')
+            u_init[:, k] = solver.get(k + 1, 'u')
+
+        # Last step
+        x_init[:, -1] = solver.get(self._N - 1, 'x')
+        u_init[:, -1] = solver.get(self._N - 1, 'u')
 
         return np.concatenate([x_init, u_init])
   

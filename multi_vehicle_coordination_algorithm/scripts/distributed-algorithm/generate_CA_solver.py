@@ -34,9 +34,9 @@ def configuration_basic(settings, idx):
     # Penalize ||steering||_2^2
     base_module = modules.add_module(MPCBaseModule(settings))
     for i in range(1, num_robots+1):
-        if i != idx:
-            base_module.weigh_variable(var_name=f"s_{idx}_{i}_0", weight_names="s_dual",)
-            base_module.weigh_variable(var_name=f"s_{idx}_{i}_1", weight_names="s_dual",)
+        # if i != idx:
+        #     base_module.weigh_variable(var_name=f"s_{idx}_{i}_0", weight_names="s_dual",)
+        #     base_module.weigh_variable(var_name=f"s_{idx}_{i}_1", weight_names="s_dual",)
         for j in range(1, num_robots+1):
             if j == i or (j != idx and i != idx):
                 continue
@@ -47,7 +47,7 @@ def configuration_basic(settings, idx):
             base_module.weigh_variable(var_name=f"lam_{i}_{j}_3", weight_names="lambda",)
             
     
-    modules.add_module(s2normConstraintModule(settings, idx))
+    # modules.add_module(s2normConstraintModule(settings, idx))
     modules.add_module(MinimizeCollisionAvoidanceModule(settings, idx))
     
     modules.add_module(PolytopicDminConstraintModule(settings, idx))
