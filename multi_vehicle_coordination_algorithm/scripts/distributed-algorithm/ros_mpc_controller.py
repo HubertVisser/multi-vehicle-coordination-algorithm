@@ -264,45 +264,22 @@ class ROSMPCPlanner:
                     self._params_nmpc.set(k, f"y_{j}", trajectory_j[1, k])
                     self._params_nmpc.set(k, f"theta_{j}", trajectory_j[2, k])
 
-            main = False
-            if main == False:
-                # Set duals
-                if self._ca_solution is None: 
-                    
-                    # Use initial duals
-                    dual_key = f"{self._idx}_{j}"
-                    dual_dict = self.init_duals_dict[dual_key]
-                    for key, value in dual_dict.items():
-                        for k in range(self._N):
-                            self._params_nmpc.set(k, key, value[k])
-                else:
-                    # Use CA solution for duals
-                    model_map = self._model_maps_ca[self._idx]
-                    for key, value in model_map.items():
-                            if value[0] == 'u':
-                                idx = value[1]
-                                for k in range(self._N):
-                                    self._params_nmpc.set(k, key, self._ca_solution[idx, k])
+            # Set duals
+            if self._ca_solution is None: 
+                # Use initial duals
+                dual_key = f"{self._idx}_{j}"
+                dual_dict = self.init_duals_dict[dual_key]
+                for key, value in dual_dict.items():
+                    for k in range(self._N):
+                        self._params_nmpc.set(k, key, value[k])
             else:
-                if self._ca_solution is None:
-                    initial_duals = getattr(self, f'initial_duals_{j}')
-                    for k in range(self._N):
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", initial_duals[4, k])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", initial_duals[5, k])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", initial_duals[6, k])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", initial_duals[7, k])
-
-                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", initial_duals[8, k])
-                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", initial_duals[9, k])
-                else:
-                    for k in range(self._N):
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_0", self._ca_solution[5, k])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_1", self._ca_solution[6, k])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_2", self._ca_solution[7, k])
-                        self._params_nmpc.set(k, f"lam_{j}_{self._idx}_3", self._ca_solution[8, k])
-
-                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_0", self._ca_solution[9, k])
-                        self._params_nmpc.set(k, f"s_{self._idx}_{j}_1", self._ca_solution[10, k])
+                # Use CA solution for duals
+                model_map = self._model_maps_ca[self._idx]
+                for key, value in model_map.items():
+                        if value[0] == 'u':
+                            idx = value[1]
+                            for k in range(self._N):
+                                self._params_nmpc.set(k, key, self._ca_solution[idx, k])
                         
 
     def set_ca_parameters(self):
