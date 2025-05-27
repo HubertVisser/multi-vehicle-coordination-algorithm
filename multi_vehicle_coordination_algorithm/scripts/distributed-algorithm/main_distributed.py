@@ -14,7 +14,6 @@ import rospy
 from nav_msgs.msg import Odometry, Path
 from concurrent.futures import ThreadPoolExecutor
 
-
 import numpy as np
 from copy import deepcopy
 import math
