@@ -38,8 +38,8 @@ class PathGenerator:
             self.robots[i] = robot_info
 
     def generate_t_junction_track(self):
-        pts_x_strt1 = np.ones(4) * self.start_x[1]
-        pts_y_strt1 = np.linspace(self.start_y[1], -2, 4)
+        pts_x_strt1 = np.ones(4) * self.robots[2]["start_x"]
+        pts_y_strt1 = np.linspace(self.robots[2]["start_y"], -2, 4)
 
         theta = np.linspace(0, 0.5 * np.pi, 8)
         pts_x_turn = -3 + 3 * np.cos(theta)
@@ -51,14 +51,14 @@ class PathGenerator:
         pts_x_2 = np.concatenate((pts_x_strt1[:-1], pts_x_turn[:-1], pts_x_strt2))
         pts_y_2 = np.concatenate((pts_y_strt1[:-1], pts_y_turn[:-1], pts_y_strt2))
 
-        pts_x_1, pts_y_1 = self.generate_strt_line_track_1_robot()
+        pts_x_1, pts_y_1 = self.generate_strt_line_track_2_robot()
 
         return pts_x_1, pts_y_1, pts_x_2, pts_y_2
 
 
     def generate_strt_line_track_1_robot(self):
         pts_x_1 = np.linspace(self.start_x[0], 5, self.n_pts)
-        pts_y_1 = np.ones(self.n_pts) * self.start_y[0]
+        pts_y_1 = np.ones(self.n_pts) * self.robots[1]["start_y"]
 
         return pts_x_1, pts_y_1
     

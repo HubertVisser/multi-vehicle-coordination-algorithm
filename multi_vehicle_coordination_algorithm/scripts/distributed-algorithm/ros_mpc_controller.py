@@ -45,6 +45,7 @@ class ROSMPCPlanner:
         self._number_of_robots = self._settings["number_of_robots"]
         self._iterations = self._settings["solver_settings"]["iterations_distributed"]
         self._scheme = self._settings["scheme"]
+        self._scenario = self._settings["track_choice"]
         self._idx = idx
 
         self._verbose = self._settings["verbose"]
@@ -111,9 +112,10 @@ class ROSMPCPlanner:
     def initialize_publishers_and_subscribers(self):
 
         # Subscribers DART
-        self._state_sub = rospy.Subscriber(f"vicon/jetracer{self._idx}", PoseStamped, self.state_pose_callback, queue_size=1)
-        self._vy_sub = rospy.Subscriber(f"vy_{self._idx}", Float32, self.vy_pose_callback, queue_size=1)
-        self._w_sub = rospy.Subscriber(f"omega_{self._idx}", Float32, self.w_pose_callback, queue_size=1)
+        if self._dart_simulator:
+            self._state_sub = rospy.Subscriber(f"vicon/jetracer{self._idx}", PoseStamped, self.state_pose_callback, queue_size=1)
+            self._vy_sub = rospy.Subscriber(f"vy_{self._idx}", Float32, self.vy_pose_callback, queue_size=1)
+            self._w_sub = rospy.Subscriber(f"omega_{self._idx}", Float32, self.w_pose_callback, queue_size=1)
 
         # Subscriber path generator
         self._path_sub = rospy.Subscriber(f"roadmap/reference_{self._idx}", Path, lambda msg: self.path_callback(msg), queue_size=1)
@@ -144,7 +146,7 @@ class ROSMPCPlanner:
         #     self._params_nmpc.write_to_file(f"params_output_multi_vehicle_nmpc_{self._idx}_call_{self._r}.txt")
         #     self._r += 1
 
-        self._params_nmpc.print() if self._idx == 2 else None
+        # self._params_nmpc.print() if self._idx == 2 else None
         mpc_timer = Timer("NMPC")
 
         output, self._mpc_feasible, trajectory = self._planner.solve_nmpc(self._state, self._params_nmpc.get_solver_params())
@@ -464,7 +466,7 @@ class ROSMPCPlanner:
             # Calculate the direction vector of the line (perpendicular to the normal vector)
             direction_vector = np.array([-s[1], s[0]]) 
             assert np.dot(direction_vector, np.array(s)) == 0
-            line_length = 100
+            line_length = 1000
             line_start = midpoint - (line_length / 2) * direction_vector
             line_end = midpoint + (line_length / 2) * direction_vector
             pose_a = Pose()
@@ -612,6 +614,39 @@ class ROSMPCPlanner:
     def all_neighbor_trajectories_received(self):
         # Exclude self._idx
         return all(self._trajectory_received[j] for j in range(1, self._number_of_robots + 1) if j != self._idx)
+    
+    def load_centralised_traj(self):
+        """Load trajectory from file and set self._states_history."""
+        script_dir = os.path.abspath(os.path.dirname(__file__))
+        data_dir = os.path.join(script_dir, '..', '..', '..', '..', 'data')
+        traj_path = os.path.join(data_dir, f"{self._idx}_{self._scenario}_centralised_traj.npy")
+        if not os.path.exists(traj_path):
+            print(f"File {traj_path} does not exist.")
+            self._states_history = []
+            return
+        states_centralised = np.load(traj_path)
+        print(f"Loaded {len(states_centralised)} states from {traj_path}")
+        return states_centralised
+
+    def evaluate_tracking_error(self):
+        """Evaluate cumulative tracking error between states_centralised and self._states_history."""
+        states_centralised = self.load_centralised_traj()
+        if states_centralised is None or len(self._states_history) == 0:
+            print("No data to compare.")
+            return
+
+        # Ensure both arrays are the same length
+        n = min(len(states_centralised), len(self._states_history))
+        cumulative_tracking_error_centralised = 0.0
+
+        for i in range(n):
+            pos_centralised = np.array([states_centralised[i, 0], states_centralised[i, 1]])
+            pos_distributed = np.array([self._states_history[i][0], self._states_history[i][1]])
+            distance = np.linalg.norm(pos_centralised - pos_distributed)
+            cumulative_tracking_error_centralised += distance
+
+        rospy.loginfo(f"Cumulative Tracking Error {self._idx} With Centralised: {cumulative_tracking_error_centralised}")
+
 
 
 if __name__ == "__main__":
