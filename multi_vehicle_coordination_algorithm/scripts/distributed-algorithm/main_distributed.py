@@ -83,18 +83,6 @@ class ROSMPCCoordinator:
         del nmpc_ca_timer
         _, _, calls = self.time_tracker.get_stats()
         print_value("calls", calls)
-        
-
-    # def run_ca_for_all_robots(self, timer):
-    #     with self._trajectory_condition:
-    #         while self._trajectory_counter < self._number_of_robots:
-    #             self._trajectory_condition.wait()
-
-    #         for robot in self._robots:
-    #             if robot._spline_fitter._splines:
-    #                 robot.run_ca(timer)
-
-    #         self._trajectory_counter = 0
 
     def plot_distance(self):
         
@@ -129,6 +117,7 @@ if __name__ == "__main__":
     for robot in coordinator._robots:
         robot.plot_states()
         robot.plot_duals()
+        robot.evaluate_tracking_error()
         robot.log_tracking_error()
 
     coordinator.plot_distance()

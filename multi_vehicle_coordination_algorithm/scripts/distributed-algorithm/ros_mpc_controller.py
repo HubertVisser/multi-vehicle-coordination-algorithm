@@ -44,6 +44,7 @@ class ROSMPCPlanner:
         self._number_of_robots = self._settings["number_of_robots"]
         self._iterations = self._settings["solver_settings"]["iterations_distributed"]
         self._scheme = self._settings["scheme"]
+        self._scenario = self._settings["track_choice"]
         self._idx = idx
 
         self._verbose = self._settings["verbose"]
@@ -669,6 +670,38 @@ class ROSMPCPlanner:
     
     def log_tracking_error(self):
         rospy.loginfo(f"Cumulative Tracking Error: {self._cumulative_tracking_error:.2f}")
+
+    def load_centralised_traj(self):
+        """Load trajectory from file and set self._states_save."""
+        script_dir = os.path.abspath(os.path.dirname(__file__))
+        data_dir = os.path.join(script_dir, '..', '..', '..', '..', 'data')
+        traj_path = os.path.join(data_dir, f"{self._idx}_{self._scenario}_centralised_traj.npy")
+        if not os.path.exists(traj_path):
+            print(f"File {traj_path} does not exist.")
+            self._states_save = []
+            return
+        states_centralised = np.load(traj_path)
+        print(f"Loaded {len(states_centralised)} states from {traj_path}")
+        return states_centralised
+
+    def evaluate_tracking_error(self):
+        """Evaluate cumulative tracking error between states_centralised and self._states_save."""
+        states_centralised = self.load_centralised_traj()
+        if states_centralised is None or len(self._states_save) == 0:
+            print("No data to compare.")
+            return
+
+        # Ensure both arrays are the same length
+        n = min(len(states_centralised), len(self._states_save))
+        cumulative_tracking_error_centralised = 0.0
+
+        for i in range(n):
+            pos_centralised = np.array([states_centralised[i, 0], states_centralised[i, 1]])
+            pos_distributed = np.array([self._states_save[i][0], self._states_save[i][1]])
+            distance = np.linalg.norm(pos_centralised - pos_distributed)
+            cumulative_tracking_error_centralised += distance
+
+        rospy.loginfo(f"Cumulative Tracking Error {self._idx} With Centralised: {cumulative_tracking_error_centralised}")
 
 
 if __name__ == "__main__":

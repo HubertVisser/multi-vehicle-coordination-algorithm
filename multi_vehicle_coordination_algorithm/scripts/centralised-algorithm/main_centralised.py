@@ -48,6 +48,7 @@ class ROSMPCPlanner:
         self._debug_visuals = self._settings["debug_visuals"]
         self._dart_simulator = self._settings["dart_simulator"]
         self._scheme = self._settings["scheme"]
+        self._scenario = self._settings["track_choice"]
 
         self._planner = MPCPlanner(self._settings)
 
@@ -562,6 +563,16 @@ class ROSMPCPlanner:
     def log_tracking_error(self):
         rospy.loginfo(f"Cumulative Tracking Error: {self._cumulative_tracking_error:.2f}")
 
+    def save_states(self):
+        centralised_traj_1 = np.array(self._states_save_1)
+        centralised_traj_2 = np.array(self._states_save_2)
+
+        data_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'data')
+        os.makedirs(data_dir, exist_ok=True)
+
+        np.save(os.path.join(data_dir, f'1_{self._scenario}_centralised_traj.npy'), centralised_traj_1)
+        np.save(os.path.join(data_dir, f'2_{self._scenario}_centralised_traj.npy'), centralised_traj_2)
+
 def run_centralised_algorithm():
     """
     Initializes the ROS node and runs the centralised coordination algorithm.
@@ -575,6 +586,7 @@ def run_centralised_algorithm():
         rospy.spin()
         
     # mpc.plot_outputs()
+    mpc.save_states()
     mpc.plot_states()
     mpc.plot_duals()
     mpc.plot_distance()

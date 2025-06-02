@@ -246,7 +246,7 @@ class MPCPlanner:
                     output[f"s_{self._idx}_{j}_1"] = self._model_ca.get(1, f"s_{self._idx}_{j}_1")
                         
             
-            print_value(f"Current cost (ca {self._idx}):", f"{self.get_cost_ca():.2f}")
+            print_value(f"Current cost (ca {self._idx})", f"{self.get_cost_ca():.2f}")
             self._prev_solution_ca = self._model_ca.get_solution_ca(self._solver_ca, self._x_init_ca, self._u_init_ca)
         except AttributeError:
             output = dict()
