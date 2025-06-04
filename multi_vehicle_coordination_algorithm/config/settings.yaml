@@ -1,5 +1,5 @@
 name: "Jetracer"
-scheme: distributed # centralised or distributed
+scheme: centralised # centralised or distributed
 N: 20
 integrator_step: 0.3
 track_choice: straight_line # straight_line, sinus, t_junction, merging
@@ -31,7 +31,7 @@ verbose: false
 debug_visuals: false
 
 solver_settings:
-  iterations_centralised: 2
+  iterations_centralised: 1
   iterations_distributed: 2 # iterations for distributed nmpc-ca combi
   solver_type: SQP_RTI # SQP_RTI (default) or SQP
 
@@ -55,8 +55,8 @@ weights:
   dmin_objective: .1
   velocity: 0.6
   reference_velocity: 0.5
-  lag: 0.8
-  contour: 0.8
+  lag: 0.5
+  contour: 0.5
   terminal_angle: 1.0 #0.0
   terminal_contour: 1.0 # 0.0
   terminal_lag: 1.0 # 0.0

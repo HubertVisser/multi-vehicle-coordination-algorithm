@@ -49,6 +49,7 @@ class ROSMPCPlanner:
         self._debug_visuals = self._settings["debug_visuals"]
         self._dart_simulator = self._settings["dart_simulator"]
         self._scheme = self._settings["scheme"]
+        self._scenario = self._settings["track_choice"]
 
         self._planner = MPCPlanner(self._settings)
         self._spline_fitters = {n: SplineFitter(self._settings) for n in range(1, self._number_of_robots + 1)}
@@ -134,6 +135,7 @@ class ROSMPCPlanner:
         
         self.set_parameters()
 
+        self._params.print()
         mpc_timer = Timer("MPC")
         output, self._mpc_feasible, self._trajectory = self._planner.solve( 
             self._state, self._params.get_solver_params()
@@ -174,7 +176,7 @@ class ROSMPCPlanner:
                 self.publish_steering(output)
             
         self.visualize()
-
+        
 
     def set_parameters(self):
         for n in range(1, self._number_of_robots + 1):
@@ -471,6 +473,16 @@ class ROSMPCPlanner:
     def plot_slack(self):
 
         plot_slack_centralised(self._planner.get_slack_tracker())
+
+    def save_states(self):
+        centralised_traj_1 = np.array(self._states_save_1)
+        centralised_traj_2 = np.array(self._states_save_2)
+
+        data_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'data')
+        os.makedirs(data_dir, exist_ok=True)
+
+        np.save(os.path.join(data_dir, f'1_{self._scenario}_centralised_traj.npy'), centralised_traj_1)
+        np.save(os.path.join(data_dir, f'2_{self._scenario}_centralised_traj.npy'), centralised_traj_2)
 
 def run_centralised_algorithm():
     """

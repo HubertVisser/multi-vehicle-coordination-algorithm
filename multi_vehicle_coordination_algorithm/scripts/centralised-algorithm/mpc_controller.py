@@ -20,7 +20,7 @@ from util.slack import SlackTracker
 
 from util.logging import print_warning, print_value, print_success, TimeTracker, print_header
 from util.realtime_parameters import AcadosRealTimeModel
-from dual_initialiser import get_all_initial_duals
+from dual_initialiser import get_all_initial_duals, set_initial_x_plan
 
 
 class MPCPlanner:
@@ -35,7 +35,7 @@ class MPCPlanner:
         self._dmin = self._settings["polytopic"]["d_min"]
         self._solver_iterations = self._settings["solver_settings"]["iterations_centralised"]
         
-        self._map = load_settings("model_map", package="mpc_planner_solver")
+        self._model_map = load_settings("model_map", package="mpc_planner_solver")
 
         self.init_acados_solver()
 
@@ -81,8 +81,8 @@ class MPCPlanner:
         # Initialize the initial guesses
         if not hasattr(self, "_mpc_x_plan"):
             self._mpc_x_plan = np.tile(np.array(xinit).reshape((-1, 1)), (1, self._N))
-            # self.set_initial_x_plan_1(xinit)
-            # self.set_initial_x_plan_2(xinit) if self._number_of_robots > 1 else None
+            self._mpc_x_plan[:3] = set_initial_x_plan(self._settings, xinit[:3])
+            self._mpc_x_plan[7:10] = set_initial_x_plan(self._settings, xinit[7:10])
 
         if not hasattr(self, "_mpc_u_plan"):
             self._mpc_u_plan = np.zeros((self._nu, self._N))
@@ -235,14 +235,14 @@ class MPCPlanner:
 
     def set_initial_throttle(self):
         throttle_value = self.get_initial_throttle_value()
-        throttle_indices = [v[1] - self._nx for k, v in self._map.items() if k.startswith('throttle_')]
+        throttle_indices = [v[1] - self._nx for k, v in self._model_map.items() if k.startswith('throttle_')]
         self._mpc_u_plan[throttle_indices, :] = throttle_value
 
     def set_initial_duals(self):
         for pair, dual_dict in self._init_duals_dict.items():
             for key in dual_dict:
-                if key in self._map:
-                    idx = self._map[key][1] - self._nx
+                if key in self._model_map:
+                    idx = self._model_map[key][1] - self._nx
                     self._mpc_u_plan[idx, :] = dual_dict[key]
                 else:
                     print_warning(f"Key {key} not found in model map. Skipping.")
