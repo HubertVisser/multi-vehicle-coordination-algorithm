@@ -129,8 +129,10 @@ if __name__ == "__main__":
     for robot in coordinator._robots:
         robot.plot_states()
         robot.plot_duals()
-        robot.log_tracking_error()
+        robot.evaluate_tracking_error()
+        # robot.log_tracking_error()
         robot.plot_slack()
+
 
     coordinator.plot_distance()
     coordinator.plot_trajectory()
