@@ -197,8 +197,11 @@ def plot_trajectory(poses_1, poses_2, reference_1, reference_2, track_choice, sc
     plt.figure()
     plt.plot(poses_1[:, 0], poses_1[:, 1], label='Robot 1', color='blue')
     plt.plot(poses_2[:, 0], poses_2[:, 1], label='Robot 2', color='red')
-    if track_choice == 'straight_line':
+    if track_choice == 'straight_line' and scheme == 'centralised':
         plt.plot(reference_1[:, 0], reference_1[:, 1], label='Reference Path', color='grey', alpha=0.5, linestyle='--')
+    elif track_choice == 'straight_line' and scheme == 'distributed':
+        plt.plot(reference_1[:, 0], reference_1[:, 1], label='Centralised 1', color='blue', alpha=0.5, linestyle='--')
+        plt.plot(reference_2[:, 0], reference_2[:, 1], label='Centralised 2', color='red', alpha=0.5, linestyle='--')
     else:
         plt.plot(reference_1[:, 0], reference_1[:, 1], label='Reference Path 1', color='blue', alpha=0.5, linestyle='--')
         plt.plot(reference_2[:, 0], reference_2[:, 1], label='Reference Path 2', color='red', alpha=0.5, linestyle='--')

@@ -59,7 +59,7 @@ class ROSMPCCoordinator:
                 nmpc_futures = [
                     executor.submit(robot.run_nmpc, timer, it)
                     for robot in self._robots
-                    if robot._spline_fitter._splines
+                    if robot._spline_fitter._splines 
                 ]
 
                 # Wait for all NMPC tasks to complete
@@ -70,7 +70,7 @@ class ROSMPCCoordinator:
                 ca_futures = [
                     executor.submit(robot.run_ca, timer, it)
                     for robot in self._robots
-                    if robot._spline_fitter._splines
+                    if robot._spline_fitter._splines and robot.all_neighbor_trajectories_received()
                 ]
 
                 # Wait for all CA tasks to complete
@@ -134,8 +134,8 @@ class ROSMPCCoordinator:
 
         poses_1 = self._robots[0]._states_history
         poses_2 = self._robots[1]._states_history
-        reference_1 = get_reference_from_path_msg(self._robots[0]._path_msg)
-        reference_2 = get_reference_from_path_msg(self._robots[1]._path_msg)
+        reference_1 = self._robots[0].load_centralised_traj(1)
+        reference_2 = self._robots[1].load_centralised_traj(2)
 
         plot_trajectory(np.array(poses_1), np.array(poses_2), reference_1, reference_2, track_choice=self._settings["track_choice"], scheme=self._settings["scheme"])
 

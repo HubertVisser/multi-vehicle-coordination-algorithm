@@ -146,7 +146,7 @@ class ROSMPCPlanner:
         #     self._params_nmpc.write_to_file(f"params_output_multi_vehicle_nmpc_{self._idx}_call_{self._r}.txt")
         #     self._r += 1
 
-        # self._params_nmpc.print() if self._idx == 2 else None
+        # self._params_nmpc.print() if self._idx == 1 else None
         mpc_timer = Timer("NMPC")
 
         output, self._mpc_feasible, trajectory = self._planner.solve_nmpc(self._state, self._params_nmpc.get_solver_params())
@@ -178,7 +178,7 @@ class ROSMPCPlanner:
         # self._params.print()
         # self._params.check_for_nan()
 
-        self._params_ca.print() if self._idx == 2 else None
+        # self._params_ca.print() if self._idx == 2 else None
         ca_timer = Timer("CA")
         output, self._ca_feasible, self._ca_solution = self._planner.solve_ca(self._params_ca.get_solver_params())
         del ca_timer
@@ -622,11 +622,13 @@ class ROSMPCPlanner:
         # Exclude self._idx
         return all(self._trajectory_received[j] for j in range(1, self._number_of_robots + 1) if j != self._idx)
     
-    def load_centralised_traj(self):
+    def load_centralised_traj(self, idx=None):
         """Load trajectory from file and set self._states_history."""
+        if idx is None:
+            idx = self._idx
         script_dir = os.path.abspath(os.path.dirname(__file__))
         data_dir = os.path.join(script_dir, '..', '..', '..', '..', 'data')
-        traj_path = os.path.join(data_dir, f"{self._idx}_{self._scenario}_centralised_traj.npy")
+        traj_path = os.path.join(data_dir, f"{idx}_{self._scenario}_centralised_traj.npy")
         if not os.path.exists(traj_path):
             print(f"File {traj_path} does not exist.")
             self._states_history = []
