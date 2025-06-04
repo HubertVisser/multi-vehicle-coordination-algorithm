@@ -101,6 +101,8 @@ class ROSMPCPlanner:
 
     def initialize_publishers_and_subscribers(self):
 
+        self._throttle_pubs = {}
+        self._steering_pubs = {}
         for n in range(1, self._number_of_robots + 1):
 
             # Subscribers for the reference path
@@ -109,9 +111,6 @@ class ROSMPCPlanner:
             
             if not self._dart_simulator:
                 continue
-
-            self._throttle_pubs = {}
-            self._steering_pubs = {}
 
             # Subscribers for the robot state  
             rospy.Subscriber(f"vicon/jetracer{n}", PoseStamped, functools.partial(self.state_pose_callback, robot_id=n), queue_size=1)

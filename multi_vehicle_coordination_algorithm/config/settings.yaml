@@ -57,6 +57,7 @@ weights:
   reference_velocity: 0.4
   lag: 0.4
   contour: 0.4
+  consensus: 0.1
   terminal_angle: 1.0 #0.0
   terminal_contour: 1.0 # 0.0
   terminal_lag: 1.0 # 0.0

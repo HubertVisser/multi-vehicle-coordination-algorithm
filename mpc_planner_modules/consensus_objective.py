@@ -16,30 +16,27 @@ class LambdaConsensusObjective(Objective):
 
     def __init__(self, settings, robot_idx):
         self._idx = robot_idx
+        self.number_of_robots = settings["number_of_robots"]
 
     def define_parameters(self, params):
         for j in range(1, self.number_of_robots+1):
-
-            params.add(f"lam_{j}_{self._idx}_0_{j}")
-            params.add(f"lam_{j}_{self._idx}_1_{j}")
-            params.add(f"lam_{j}_{self._idx}_2_{j}")
-            params.add(f"lam_{j}_{self._idx}_3_{j}")
+            for k in range(4):
+                params.add(f"lam_{j}_{self._idx}_{k}")
 
         return params
 
     def get_value(self, model, params, settings, stage_idx):
         cost = 0.0
 
-        consensus_weight = params.get("consensus_weight")
+        consensus_weight = params.get("consensus")
 
         for j in range(1, self.number_of_robots+1):
             if j == self._idx:
                 continue
             
             for k in range(4):
-                cost += consensus_weight * (model.get(f"lam_{j}_{self._idx}_{k}") - params.get(f"lam_{j}_{self._idx}_{k}_{j}"))**2
+                cost += consensus_weight * (model.get(f"lam_{j}_{self._idx}_{k}") - params.get(f"lam_{j}_{self._idx}_{k}"))**2
         return cost
-        
 
 
 class LambdaConsensusModule(ObjectiveModule):

@@ -18,6 +18,7 @@ from multi_vehicle_coordination_algorithm.msg import LambdaArrayList, LambdaArra
 import numpy as np
 from copy import deepcopy
 import matplotlib.pyplot as plt
+import functools
 
 from util.files import load_settings, load_model
 from util.realtime_parameters import RealTimeParameters
@@ -118,11 +119,18 @@ class ROSMPCPlanner:
         # Subscriber path generator
         self._path_sub = rospy.Subscriber(f"roadmap/reference_{self._idx}", Path, lambda msg: self.path_callback(msg), queue_size=1)
         
+        self._lambda_pubs = {}
+
         for j in range(1, self._number_of_robots+1):
-            setattr(self, f'_traj_{j}_sub', rospy.Subscriber(f"trajectory_{j}", Path, self.trajectory_callback, callback_args=j))
+            if j == self._idx:
+                continue
+            rospy.Subscriber(f"trajectory_{j}", Path, functools.partial(self.trajectory_callback, j=j), queue_size=1)
+            rospy.Subscriber(f"lambda_{j}_{self._idx}", LambdaArrayList, functools.partial(self.lambda_callback, j=j), queue_size=1)
+
+            # setattr(self, f'_traj_{j}_sub', rospy.Subscriber(f"trajectory_{j}", Path, self.trajectory_callback, callback_args=j))
             # setattr(self, f'_lam_{j}_sub', rospy.Subscriber(f"lambda_{j}_{self._idx}", LambdaArrayList, self.lambda_callback, callback_args=j))
-            # setattr(self, f'_lam_{j}_pub', rospy.Publisher(f"lambda_{j}_{self._idx}", LambdaArrayList, queue_size=1))
-            
+            self._lambda_pubs[j] = rospy.Publisher(f"lambda_{self._idx}_{j}", LambdaArrayList, queue_size=1)
+
         # Publishers
         self._th_pub = rospy.Publisher(f"throttle_{self._idx}", Float32, queue_size=1) 
         self._st_pub = rospy.Publisher(f"steering_{self._idx}", Float32, queue_size=1) 
@@ -556,8 +564,6 @@ class ROSMPCPlanner:
         if not traj_msg.poses:
             rospy.logwarn(f"Received empty path robot {j}")
             return
-        if j == self._idx:
-            return
         
         
         for k, pose in enumerate(traj_msg.poses):
@@ -570,9 +576,7 @@ class ROSMPCPlanner:
         if not msg.rows:
             rospy.logwarn(f"Received empty lambda robot {j}")
             return
-        if j == self._idx:
-            return
-
+        
         for k, lam_msg in enumerate(msg.rows):
             self._lambdas[j][k, :] = [lam_msg.data[0], lam_msg.data[1], lam_msg.data[2], lam_msg.data[3]]
                 

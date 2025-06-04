@@ -20,6 +20,7 @@ from polytopic_dmin_constraints import PolytopicDminConstraintModule
 from polytopic_si_constraints import PolytopicSidualConstraintModule
 from polytopic_sj_constraints import PolytopicSjdualConstraintModule
 from s_2_norm_constraints import s2normConstraintModule
+from consensus_objective import LambdaConsensusModule
 
 # Import solver models that you want to use
 from solver_model import CollisionAvoidanceModel
@@ -47,12 +48,13 @@ def configuration_basic(settings, idx):
             base_module.weigh_variable(var_name=f"lam_{i}_{j}_3", weight_names="lambda",)
             
     
-    # modules.add_module(s2normConstraintModule(settings, idx))
     modules.add_module(MinimizeCollisionAvoidanceModule(settings, idx))
+    modules.add_module(LambdaConsensusModule(settings, idx))
     
     modules.add_module(PolytopicDminConstraintModule(settings, idx))
     modules.add_module(PolytopicSidualConstraintModule(settings, idx))
     modules.add_module(PolytopicSjdualConstraintModule(settings, idx))
+    modules.add_module(s2normConstraintModule(settings, idx))
 
     return model, modules
 
