@@ -135,7 +135,7 @@ class ROSMPCPlanner:
         
         self.set_parameters()
 
-        self._params.print()
+        # self._params.print()
         mpc_timer = Timer("MPC")
         output, self._mpc_feasible, self._trajectory = self._planner.solve( 
             self._state, self._params.get_solver_params()
@@ -447,11 +447,10 @@ class ROSMPCPlanner:
             plot_distance(poses1, poses2, width, length, scheme=self._settings["scheme"])
     
     def plot_trajectory(self):
-        # TODO: Implement this function
-        reference_1 = get_reference_from_path_msg(self._path_msg_1)
-        reference_2 = get_reference_from_path_msg(self._path_msg_2)
+        reference_1 = get_reference_from_path_msg(self._path_msgs[1])
+        reference_2 = get_reference_from_path_msg(self._path_msgs[2])
 
-        plot_trajectory(np.array(self._states_save_1), np.array(self._states_save_2), reference_1, reference_2, self._settings['track_choice'], self._scheme)
+        plot_trajectory(np.array(self._states_history[1]), np.array(self._states_history[2]), reference_1, reference_2, self._settings['track_choice'], self._scheme)
 
     def update_tracking_error(self, robot_id):
         # Ensure _spline_fitter and _closest_s are available
@@ -475,8 +474,8 @@ class ROSMPCPlanner:
         plot_slack_centralised(self._planner.get_slack_tracker())
 
     def save_states(self):
-        centralised_traj_1 = np.array(self._states_save_1)
-        centralised_traj_2 = np.array(self._states_save_2)
+        centralised_traj_1 = np.array(self._states_history[1])
+        centralised_traj_2 = np.array(self._states_history[2])
 
         data_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'data')
         os.makedirs(data_dir, exist_ok=True)
@@ -500,10 +499,11 @@ def run_centralised_algorithm():
     mpc.plot_states()
     mpc.plot_duals()
     mpc.plot_distance()
-    # mpc.plot_trajectory()
+    mpc.plot_trajectory()
     mpc.log_tracking_error()
     mpc.print_stats()
     mpc.plot_distance()
+    mpc.save_states()
     # mpc.plot_slack()
 
 if __name__ == "__main__":
