@@ -20,9 +20,12 @@ class LambdaConsensusObjective(Objective):
 
     def define_parameters(self, params):
         for j in range(1, self.number_of_robots+1):
+            if j == self._idx:
+                continue
             for k in range(4):
                 params.add(f"lam_{j}_{self._idx}_{k}")
 
+        params.add("consensus") 
         return params
 
     def get_value(self, model, params, settings, stage_idx):

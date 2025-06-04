@@ -72,7 +72,7 @@ class ROSMPCCoordinator:
                 ca_futures = [
                     executor.submit(robot.run_ca, timer, it)
                     for robot in self._robots
-                    if robot._spline_fitter._splines and robot.all_neighbor_trajectories_received()
+                    if robot._spline_fitter._splines and robot.all_neighbor_trajectories_received() and robot.all_neighbor_lambdas_received()
                 ]
 
                 # Wait for all CA tasks to complete

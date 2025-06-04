@@ -50,13 +50,13 @@ contouring:
 weights:
   throttle: .1
   steering: .1
-  lambda: 0.2  # centralised very sensitive on this weight
-  s_dual: 0.2   # centralised very sensitive on this weight
+  lambda: 0.1  # centralised very sensitive on this weight
+  s_dual: 0.1   # centralised very sensitive on this weight
   dmin_objective: .1
-  velocity: 0.3
-  reference_velocity: 0.4
-  lag: 0.4
-  contour: 0.4
+  velocity: 0.8
+  reference_velocity: 0.6
+  lag: 0.8
+  contour: 0.8
   consensus: 0.1
   terminal_angle: 1.0 #0.0
   terminal_contour: 1.0 # 0.0

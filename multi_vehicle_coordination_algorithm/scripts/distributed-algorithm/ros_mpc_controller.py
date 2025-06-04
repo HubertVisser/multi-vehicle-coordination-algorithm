@@ -57,7 +57,8 @@ class ROSMPCPlanner:
 
         self._solver_settings_nmpc = load_settings(f"solver_settings_nmpc_{self._idx}", package="mpc_planner_solver")
         self._solver_settings_ca = load_settings(f"solver_settings_ca_{self._idx}", package="mpc_planner_solver")
-        self._model_maps_ca = {n: load_model(f"model_map_ca_{n}", package="mpc_planner_solver") for n in range(1, self._number_of_robots + 1)}
+        self._model_map_nmpc = load_model(f"model_map_nmpc_{self._idx}", package="mpc_planner_solver")
+        self._model_map_ca = load_model(f"model_map_ca_{self._idx}", package="mpc_planner_solver")
 
         # Tied to the solver
         self._params_nmpc = RealTimeParameters(self._settings, parameter_map_name=f"parameter_map_nmpc_{idx}")  
@@ -96,8 +97,9 @@ class ROSMPCPlanner:
 
         self._trajectories = {n: np.zeros((3, self._N)) for n in range(1, self._number_of_robots + 1)}
         self._trajectory_received = {n: False for n in range(1, self._number_of_robots + 1) if n != self._idx}
+        self._lambdas_received = {n: False for n in range(1, self._number_of_robots + 1) if n != self._idx}
 
-        self._lambdas = {n: np.zeros((self._N, 4)) for n in range(1, self._number_of_robots + 1)}
+        self._lambdas = {n: np.zeros((self._N, 4)) for n in range(1, self._number_of_robots + 1) if n != self._idx}
 
         self._enable_output = False
         self._mpc_feasible = True
@@ -152,7 +154,7 @@ class ROSMPCPlanner:
         #     self._params_nmpc.write_to_file(f"params_output_multi_vehicle_nmpc_{self._idx}_call_{self._r}.txt")
         #     self._r += 1
 
-        self._params_nmpc.print() if self._idx == 2 else None
+        self._params_nmpc.print() if self._idx == 1 else None
         mpc_timer = Timer("NMPC")
 
         output, self._mpc_feasible, trajectory = self._planner.solve_nmpc(self._state, self._params_nmpc.get_solver_params())
@@ -164,6 +166,7 @@ class ROSMPCPlanner:
 
         if self._mpc_feasible:
             self.publish_trajectory(trajectory)
+            self.publish_lambdas(trajectory)
             self._trajectories[self._idx] = trajectory[:3, :]
 
             if it == self._iterations:
@@ -174,6 +177,7 @@ class ROSMPCPlanner:
                 lam = {}
     
                 self._outputs_history.append([output["throttle"], output["steering"]])
+            self.visualize()
             
     def run_ca(self, timer, it):
         # Check if splines exist
@@ -184,6 +188,7 @@ class ROSMPCPlanner:
         # self._params.print()
         # self._params.check_for_nan()
 
+        self._params_ca.print() if self._idx == 2 else None
         ca_timer = Timer("CA")
         output, self._ca_feasible, self._ca_solution = self._planner.solve_ca(self._params_ca.get_solver_params())
         del ca_timer
@@ -219,6 +224,7 @@ class ROSMPCPlanner:
         
         for j in self._trajectory_received:
             self._trajectory_received[j] = False
+            self._lambdas_received[j] = False
         self.visualize()
 
 
@@ -282,8 +288,7 @@ class ROSMPCPlanner:
                         self._params_nmpc.set(k, key, value[k])
             else:
                 # Use CA solution for duals
-                model_map = self._model_maps_ca[self._idx]
-                for key, value in model_map.items():
+                for key, value in self._model_map_ca.items():
                         if value[0] == 'u':
                             idx = value[1]
                             for k in range(self._N):
@@ -341,6 +346,12 @@ class ROSMPCPlanner:
                     self._params_ca.set(k, f"x_{j}", trajectory_j[0, k])
                     self._params_ca.set(k, f"y_{j}", trajectory_j[1, k])
                     self._params_ca.set(k, f"theta_{j}", trajectory_j[2, k])
+
+            # Set consensus lambdas
+            for k in range(self._N):
+                for l in range(4):
+                    self._params_ca.set(k, f"lam_{j}_{self._idx}_{l}", self._lambdas[j][k, l])
+                
 
     def initialise_duals(self):
         for j in range(1, self._number_of_robots+1):
@@ -407,29 +418,30 @@ class ROSMPCPlanner:
             self._traj_pub.publish(traj_msg)
     
     # Publish lambdas shifted by 1
-    def publish_lambdas(self, lambdas):
+    def publish_lambdas(self, nmpc_solution):
 
-        if lambdas is None:
+        if nmpc_solution is None:
             return
         
         for j in range(1, self._number_of_robots+1):
             if j == self._idx:
                 continue
             arr_msg = LambdaArrayList()
+            lambda_pub = self._lambda_pubs[j]
             for k in range(1, self._N+1):
-                lam_pub = getattr(self, f'_lam_{j}_pub')
-                n = 0
-                if k != self._N:
-                    row = LambdaArray()
-                    row.data = lambdas[n:n+4, k].tolist()
-                    arr_msg.rows.append(row)
-                elif k == self._N:  
-                    row = LambdaArray()
-                    row.data = lambdas[n:n+4, k-1].tolist()
-                    arr_msg.rows.append(row)
-                n += 1
+                row = LambdaArray()
+                row.data = []
+                for l in range(4):
+                    key = f"lam_{self._idx}_{j}_{l}"
+                    idx = self._model_map_nmpc[key][1]
+                    if k != self._N:
+                        row.data.append(nmpc_solution[idx, k])
+                    elif k == self._N:
+                        row.data.append(nmpc_solution[idx, k-1])
+                arr_msg.rows.append(row)
             assert len(arr_msg.rows) == self._N
-            lam_pub.publish(arr_msg)
+            # print(f"Publishing lambdas for robot {self._idx} to robot {j}: {arr_msg.rows}")
+            lambda_pub.publish(arr_msg)
                 
     def visualize(self): 
         # Update the tracking error
@@ -565,7 +577,6 @@ class ROSMPCPlanner:
             rospy.logwarn(f"Received empty path robot {j}")
             return
         
-        
         for k, pose in enumerate(traj_msg.poses):
             self._trajectories[j][0, k] = pose.pose.position.x
             self._trajectories[j][1, k] = pose.pose.position.y
@@ -579,6 +590,7 @@ class ROSMPCPlanner:
         
         for k, lam_msg in enumerate(msg.rows):
             self._lambdas[j][k, :] = [lam_msg.data[0], lam_msg.data[1], lam_msg.data[2], lam_msg.data[3]]
+        self._lambdas_received[j] = True
                 
     def print_stats(self):
         self._planner.print_stats()
@@ -616,6 +628,10 @@ class ROSMPCPlanner:
     def all_neighbor_trajectories_received(self):
         # Exclude self._idx
         return all(self._trajectory_received[j] for j in range(1, self._number_of_robots + 1) if j != self._idx)
+
+    def all_neighbor_lambdas_received(self):
+        # Exclude self._idx
+        return all(self._lambdas_received[j] for j in range(1, self._number_of_robots + 1) if j != self._idx)
 
 
 if __name__ == "__main__":
