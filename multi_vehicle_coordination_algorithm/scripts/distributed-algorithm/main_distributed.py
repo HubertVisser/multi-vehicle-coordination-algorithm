@@ -110,8 +110,8 @@ class ROSMPCCoordinator:
 
         poses_1 = self._robots[0]._states_history
         poses_2 = self._robots[1]._states_history
-        reference_1 = get_reference_from_path_msg(self._robots[0]._path_msg)
-        reference_2 = get_reference_from_path_msg(self._robots[1]._path_msg)
+        reference_1 = self._robots[0].load_centralised_traj(1)
+        reference_2 = self._robots[1].load_centralised_traj(2)
 
         plot_trajectory(np.array(poses_1), np.array(poses_2), reference_1, reference_2, track_choice=self._settings["track_choice"], scheme=self._settings["scheme"])
 
@@ -131,6 +131,7 @@ if __name__ == "__main__":
         robot.plot_duals()
         robot.log_tracking_error()
         robot.plot_slack()
+        robot.evaluate_tracking_error()
 
     coordinator.plot_distance()
     coordinator.plot_trajectory()

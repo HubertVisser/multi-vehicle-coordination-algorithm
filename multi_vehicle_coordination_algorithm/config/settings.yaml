@@ -4,7 +4,7 @@ N: 20
 integrator_step: 0.3
 track_choice: straight_line # straight_line, sinus, t_junction, merging
 dart_simulator: false
-skip_solver_generation: false
+skip_solver_generation: true
 
 add_slack: true
 slack_value: 1.0e0
@@ -53,10 +53,10 @@ weights:
   lambda: 0.1  # centralised very sensitive on this weight
   s_dual: 0.1   # centralised very sensitive on this weight
   dmin_objective: .1
-  velocity: 0.8
-  reference_velocity: 0.6
-  lag: 0.8
-  contour: 0.8
+  velocity: 0.6
+  reference_velocity: 0.5
+  lag: 0.7
+  contour: 0.7
   consensus: 0.1
   terminal_angle: 1.0 #0.0
   terminal_contour: 1.0 # 0.0

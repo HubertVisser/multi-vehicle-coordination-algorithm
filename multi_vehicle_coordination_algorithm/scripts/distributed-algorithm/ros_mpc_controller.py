@@ -46,6 +46,7 @@ class ROSMPCPlanner:
         self._number_of_robots = self._settings["number_of_robots"]
         self._iterations = self._settings["solver_settings"]["iterations_distributed"]
         self._scheme = self._settings["scheme"]
+        self._scenario = self._settings["track_choice"] #TODO: use one name
         self._idx = idx
 
         self._verbose = self._settings["verbose"]
@@ -261,7 +262,8 @@ class ROSMPCPlanner:
             if j == self._idx:
                 continue
             # Set neighbouring trajectories
-            if self._trajectory_received[j] == False:
+            trajectory_j = self._trajectories[j]
+            if np.all(trajectory_j == 0):
                 xinit_j = np.array([self._settings[f"robot_{j}"]["start_x"], 
                                     self._settings[f"robot_{j}"]["start_y"], 
                                     self._settings[f"robot_{j}"]["start_theta"] * np.pi,
@@ -272,7 +274,6 @@ class ROSMPCPlanner:
                     self._params_nmpc.set(k, f"y_{j}", x_plan_j[1, k])
                     self._params_nmpc.set(k, f"theta_{j}", x_plan_j[2, k])
             else:
-                trajectory_j = self._trajectories[j]
                 for k in range(self._N):
                     self._params_nmpc.set(k, f"x_{j}", trajectory_j[0, k])
                     self._params_nmpc.set(k, f"y_{j}", trajectory_j[1, k])
@@ -308,9 +309,15 @@ class ROSMPCPlanner:
             xinit_i = np.array([self._settings[f"robot_{self._idx}"]["start_x"], self._settings[f"robot_{self._idx}"]["start_y"], self._settings[f"robot_{self._idx}"]["start_theta"] * np.pi])
             x_plan_i = set_initial_x_plan(self._settings, xinit_i)
             for k in range(self._N):
-                self._params_ca.set(k, f"x_{self._idx}", x_plan_i[0, k])
-                self._params_ca.set(k, f"y_{self._idx}", x_plan_i[1, k])
-                self._params_ca.set(k, f"theta_{self._idx}", x_plan_i[2, k])
+                if k != self._N - 1:
+                    self._params_ca.set(k, f"x_{self._idx}", x_plan_i[0, k+1])
+                    self._params_ca.set(k, f"y_{self._idx}", x_plan_i[1, k+1])
+                    self._params_ca.set(k, f"theta_{self._idx}", x_plan_i[2, k+1])
+                elif k == self._N - 1:
+                    self._params_ca.set(k, f"x_{self._idx}", x_plan_i[0, k] + (x_plan_i[0, k] - x_plan_i[0, k-1]))
+                    self._params_ca.set(k, f"y_{self._idx}", x_plan_i[1, k] + (x_plan_i[1, k] - x_plan_i[1, k-1]))
+                    self._params_ca.set(k, f"theta_{self._idx}", x_plan_i[2, k] + (x_plan_i[2, k] - x_plan_i[2, k-1]))
+
         else:
             for k in range(self._N):
                 if k != self._N - 1:
@@ -328,7 +335,8 @@ class ROSMPCPlanner:
                 continue
 
             # If the trajectory of neighbour j is not received yet, set with initial trajectory
-            if self._trajectory_received[j] == False:
+            trajectory_j = self._trajectories[j]
+            if np.all(trajectory_j == 0):
                 xinit_j = np.array([self._settings[f"robot_{j}"]["start_x"], self._settings[f"robot_{j}"]["start_y"], self._settings[f"robot_{j}"]["start_theta"] * np.pi])
                 x_plan_j = set_initial_x_plan(self._settings, xinit_j)
                 for k in range(self._N):
@@ -341,7 +349,6 @@ class ROSMPCPlanner:
                         self._params_ca.set(k, f"y_{j}", x_plan_j[1, k])
                         self._params_ca.set(k, f"theta_{j}", x_plan_j[2, k])
             else:
-                trajectory_j = self._trajectories[j]
                 for k in range(self._N):
                     self._params_ca.set(k, f"x_{j}", trajectory_j[0, k])
                     self._params_ca.set(k, f"y_{j}", trajectory_j[1, k])
@@ -484,7 +491,7 @@ class ROSMPCPlanner:
             # Calculate the direction vector of the line (perpendicular to the normal vector)
             direction_vector = np.array([-s[1], s[0]]) 
             assert np.dot(direction_vector, np.array(s)) == 0
-            line_length = 100
+            line_length = 1000
             line_start = midpoint - (line_length / 2) * direction_vector
             line_end = midpoint + (line_length / 2) * direction_vector
             pose_a = Pose()
@@ -632,6 +639,40 @@ class ROSMPCPlanner:
     def all_neighbor_lambdas_received(self):
         # Exclude self._idx
         return all(self._lambdas_received[j] for j in range(1, self._number_of_robots + 1) if j != self._idx)
+    
+    def load_centralised_traj(self, idx=None):
+        """Load trajectory from file and set self._states_history."""
+        if idx is None:
+            idx = self._idx
+        script_dir = os.path.abspath(os.path.dirname(__file__))
+        data_dir = os.path.join(script_dir, '..', '..', '..', '..', 'data')
+        traj_path = os.path.join(data_dir, f"{idx}_{self._scenario}_centralised_traj.npy")
+        if not os.path.exists(traj_path):
+            print(f"File {traj_path} does not exist.")
+            self._states_history = []
+            return
+        states_centralised = np.load(traj_path)
+        print(f"Loaded {len(states_centralised)} states from {traj_path}")
+        return states_centralised
+
+    def evaluate_tracking_error(self):
+        """Evaluate cumulative tracking error between states_centralised and self._states_history."""
+        states_centralised = self.load_centralised_traj()
+        if states_centralised is None or len(self._states_history) == 0:
+            print("No data to compare.")
+            return
+
+        # Ensure both arrays are the same length
+        n = min(len(states_centralised), len(self._states_history))
+        cumulative_tracking_error_centralised = 0.0
+
+        for i in range(n):
+            pos_centralised = np.array([states_centralised[i, 0], states_centralised[i, 1]])
+            pos_distributed = np.array([self._states_history[i][0], self._states_history[i][1]])
+            distance = np.linalg.norm(pos_centralised - pos_distributed)
+            cumulative_tracking_error_centralised += distance
+
+        rospy.loginfo(f"Cumulative Tracking Error {self._idx} With Centralised: {cumulative_tracking_error_centralised}")
 
 
 if __name__ == "__main__":
