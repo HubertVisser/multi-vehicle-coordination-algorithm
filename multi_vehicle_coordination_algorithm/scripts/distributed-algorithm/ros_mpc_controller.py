@@ -45,7 +45,7 @@ class ROSMPCPlanner:
         self._number_of_robots = self._settings["number_of_robots"]
         self._iterations = self._settings["solver_settings"]["iterations_distributed"]
         self._scheme = self._settings["scheme"]
-        self._scenario = self._settings["track_choice"]
+        self._scenario = self._settings["track_choice"] #TODO: use one name
         self._idx = idx
 
         self._verbose = self._settings["verbose"]
@@ -178,6 +178,7 @@ class ROSMPCPlanner:
         # self._params.print()
         # self._params.check_for_nan()
 
+        self._params_ca.print() if self._idx == 2 else None
         ca_timer = Timer("CA")
         output, self._ca_feasible, self._ca_solution = self._planner.solve_ca(self._params_ca.get_solver_params())
         del ca_timer
@@ -249,7 +250,8 @@ class ROSMPCPlanner:
             if j == self._idx:
                 continue
             # Set neighbouring trajectories
-            if self._trajectory_received[j] == False:
+            trajectory_j = self._trajectories[j]
+            if np.all(trajectory_j == 0):
                 xinit_j = np.array([self._settings[f"robot_{j}"]["start_x"], 
                                     self._settings[f"robot_{j}"]["start_y"], 
                                     self._settings[f"robot_{j}"]["start_theta"] * np.pi,
@@ -260,7 +262,6 @@ class ROSMPCPlanner:
                     self._params_nmpc.set(k, f"y_{j}", x_plan_j[1, k])
                     self._params_nmpc.set(k, f"theta_{j}", x_plan_j[2, k])
             else:
-                trajectory_j = self._trajectories[j]
                 for k in range(self._N):
                     self._params_nmpc.set(k, f"x_{j}", trajectory_j[0, k])
                     self._params_nmpc.set(k, f"y_{j}", trajectory_j[1, k])
@@ -297,9 +298,15 @@ class ROSMPCPlanner:
             xinit_i = np.array([self._settings[f"robot_{self._idx}"]["start_x"], self._settings[f"robot_{self._idx}"]["start_y"], self._settings[f"robot_{self._idx}"]["start_theta"] * np.pi])
             x_plan_i = set_initial_x_plan(self._settings, xinit_i)
             for k in range(self._N):
-                self._params_ca.set(k, f"x_{self._idx}", x_plan_i[0, k])
-                self._params_ca.set(k, f"y_{self._idx}", x_plan_i[1, k])
-                self._params_ca.set(k, f"theta_{self._idx}", x_plan_i[2, k])
+                if k != self._N - 1:
+                    self._params_ca.set(k, f"x_{self._idx}", x_plan_i[0, k+1])
+                    self._params_ca.set(k, f"y_{self._idx}", x_plan_i[1, k+1])
+                    self._params_ca.set(k, f"theta_{self._idx}", x_plan_i[2, k+1])
+                elif k == self._N - 1:
+                    self._params_ca.set(k, f"x_{self._idx}", x_plan_i[0, k] + (x_plan_i[0, k] - x_plan_i[0, k-1]))
+                    self._params_ca.set(k, f"y_{self._idx}", x_plan_i[1, k] + (x_plan_i[1, k] - x_plan_i[1, k-1]))
+                    self._params_ca.set(k, f"theta_{self._idx}", x_plan_i[2, k] + (x_plan_i[2, k] - x_plan_i[2, k-1]))
+
         else:
             for k in range(self._N):
                 if k != self._N - 1:
@@ -646,7 +653,6 @@ class ROSMPCPlanner:
             cumulative_tracking_error_centralised += distance
 
         rospy.loginfo(f"Cumulative Tracking Error {self._idx} With Centralised: {cumulative_tracking_error_centralised}")
-
 
 
 if __name__ == "__main__":

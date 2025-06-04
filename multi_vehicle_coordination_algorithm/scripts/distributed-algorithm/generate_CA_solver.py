@@ -45,10 +45,8 @@ def configuration_basic(settings, idx):
             base_module.weigh_variable(var_name=f"lam_{i}_{j}_2", weight_names="lambda",)
             base_module.weigh_variable(var_name=f"lam_{i}_{j}_3", weight_names="lambda",)
     
-    modules.add_module(s2normConstraintModule(settings, idx))
     modules.add_module(MinimizeCollisionAvoidanceModule(settings, idx))
     modules.add_module(s2normConstraintModule(settings, idx))
-    
     
     modules.add_module(PolytopicDminConstraintModule(settings, idx))
     modules.add_module(PolytopicSidualConstraintModule(settings, idx))
