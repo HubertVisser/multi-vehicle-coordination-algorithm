@@ -28,7 +28,7 @@ import functools
 from solver_generator.util.files import load_settings
 from solver_generator.util.realtime_parameters import RealTimeParameters
 from solver_generator.util.convertion import quaternion_to_yaw, yaw_to_quaternion
-from solver_generator.util.logging import print_value 
+from solver_generator.util.logging_utils import print_value 
 from timer import Timer
 
 from contouring_spline import SplineFitter

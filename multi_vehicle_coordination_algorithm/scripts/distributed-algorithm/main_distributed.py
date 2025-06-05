@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 
 from util.files import load_settings
 from util.convertion import quaternion_to_yaw
-from util.logging import print_value, TimeTracker
+from util.logging_utils import print_value, TimeTracker
 
 from ros_mpc_controller import ROSMPCPlanner
 from plot_utils import plot_distance, plot_trajectory, get_reference_from_path_msg

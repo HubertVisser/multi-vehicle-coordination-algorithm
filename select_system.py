@@ -7,7 +7,7 @@ sys.path.append(os.path.join(sys.path[0], "solver_generator"))
 from pathlib import Path
 import shutil
 
-from util.logging import print_value, print_warning
+from util.logging_utils import print_value, print_warning
 
 skip_packages = ["solver_generator", "docs", ".github", "mpc_planner_util", "mpc_planner_modules", "mpc_planner_msgs", "mpc_planner_solver", "mpc_planner_types", "mpc_planner"]
 

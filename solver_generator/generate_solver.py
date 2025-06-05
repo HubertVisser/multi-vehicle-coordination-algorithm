@@ -9,7 +9,7 @@ from acados_template import AcadosOcp, AcadosOcpSolver, AcadosSimSolver
 
 from util.files import load_settings, write_to_yaml
 from util.files import solver_name, solver_path, solver_settings_path, default_solver_path, default_acados_solver_path, acados_solver_path
-from util.logging import print_value, print_success, print_header, print_warning, print_path
+from util.logging_utils import print_value, print_success, print_header, print_warning, print_path
 from util.parameters import Parameters, AcadosParameters
 
 from solver_definition import define_parameters, objective, constraints, constraint_lower_bounds, constraint_upper_bounds

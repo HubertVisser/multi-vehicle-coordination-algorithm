@@ -5,7 +5,7 @@ import os
 import casadi as cd  # Acados
 
 from util.files import write_to_yaml, parameter_map_path, load_parameters, rqt_config_path, get_current_package
-from util.logging import print_value, print_header
+from util.logging_utils import print_value, print_header
 from dynamic_reconfigure.parameter_generator_catkin import ParameterGenerator
 
 

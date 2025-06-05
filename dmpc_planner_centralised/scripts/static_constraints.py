@@ -3,7 +3,7 @@ import rospy
 
 from mpc_planner_standalone.srv import decomp, decompRequest
 
-from solver_generator.util.logging import print_success, print_value, TimeTracker
+from solver_generator.util.logging_utils import print_success, print_value, TimeTracker
 from .timer import Timer
 
 

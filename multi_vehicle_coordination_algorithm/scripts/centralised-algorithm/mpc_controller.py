@@ -18,7 +18,7 @@ from timer import Timer
 from util.files import solver_path, load_settings
 from util.slack import SlackTracker
 
-from util.logging import print_warning, print_value, print_success, TimeTracker, print_header
+from util.logging_utils import print_warning, print_value, print_success, TimeTracker, print_header
 from util.realtime_parameters import AcadosRealTimeModel
 from dual_initialiser import get_all_initial_duals, set_initial_x_plan
 

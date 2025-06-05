@@ -1,6 +1,6 @@
 
 
-from util.logging import print_value, print_header
+from util.logging_utils import print_value, print_header
 
 
 class ModuleManager:

@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 from util.files import load_settings, load_model
 from util.realtime_parameters import RealTimeParameters
 from util.convertion import quaternion_to_yaw, yaw_to_quaternion
-from util.logging import print_value 
+from util.logging_utils import print_value 
 from util.math import get_A, get_b
 
 from timer import Timer
