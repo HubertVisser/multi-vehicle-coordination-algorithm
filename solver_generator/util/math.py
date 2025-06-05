@@ -87,7 +87,7 @@ def min_distance_polytopes(pose1, pose2, length, width):
     y = cp.Variable(dim)
 
     # Define the objective function: minimize ||x - y||_2^2
-    objective = cp.Minimize(cp.sum_squares(x - y))
+    objective = cp.Minimize(cp.norm(x - y, 2))
 
     # Define the constraints
     constraints = [
