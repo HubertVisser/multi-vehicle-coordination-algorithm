@@ -2,7 +2,7 @@ import os, sys
 import yaml
 
 
-from util.logging_utils import print_success, print_value, print_path
+from util.logging import print_success, print_value, print_path
 
 def get_base_path():
     return os.path.dirname(os.path.realpath(sys.argv[0]))

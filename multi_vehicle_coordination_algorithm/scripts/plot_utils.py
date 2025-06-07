@@ -8,7 +8,7 @@ sys.path.append(os.path.join(sys.path[0], "..", "..", "solver_generator"))
 from geometry_msgs.msg import PoseStamped, Pose
 from nav_msgs.msg import Odometry, Path
 from util.math import min_distance_polytopes
-from util.logging_utils import print_value
+from util.logging import print_value
 
 
 

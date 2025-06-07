@@ -3,7 +3,7 @@ import numpy as np
 import math
 
 from util.files import model_map_path, write_to_yaml
-from util.logging_utils import print_value
+from util.logging import print_value
 from spline import Spline2D
 
 
