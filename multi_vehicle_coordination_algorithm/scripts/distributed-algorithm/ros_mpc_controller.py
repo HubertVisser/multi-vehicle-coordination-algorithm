@@ -146,15 +146,15 @@ class ROSMPCPlanner:
         #     self._params_nmpc.write_to_file(f"params_output_multi_vehicle_nmpc_{self._idx}_call_{self._r}.txt")
         #     self._r += 1
 
-        # self._params_nmpc.print() if self._idx == 1 else None
+        if self._verbose and self._idx == 1:
+            print(f"---- Params For Agent {self._idx} ----")
+            self._params_nmpc.print() if self._idx == 1 else None
         mpc_timer = Timer("NMPC")
 
         output, self._mpc_feasible, self._nmpc_solution = self._planner.solve_nmpc(self._state, self._params_nmpc.get_solver_params())
         
         del mpc_timer
 
-        if self._verbose:
-            time = timer.stop_and_print()
 
         if self._mpc_feasible:
             self.publish_trajectory(self._nmpc_solution)
@@ -163,11 +163,16 @@ class ROSMPCPlanner:
             if it == self._iterations:
                 if self._dart_simulator == False:
                     output_keys = [f"x_{self._idx}", f"y_{self._idx}", f"theta_{self._idx}", f"vx_{self._idx}", f"vy_{self._idx}", f"w_{self._idx}", f"s_{self._idx}"]
-                    self._state = [output[key] for key in output_keys]
+                    self._state = np.array([output[key] for key in output_keys])
                     self._states_history.append(deepcopy(self._state))
                 lam = {}
     
                 self._outputs_history.append([output["throttle"], output["steering"]])
+        else:
+            # If infeasible, repeat the current x, y, theta N times as a fallback trajectory
+            fallback_traj = np.tile(self._state[:3].reshape(3, 1), (1, self._N))
+            self.publish_trajectory(fallback_traj)
+
             
     def run_ca(self, timer, it):
         # Check if splines exist
@@ -213,6 +218,7 @@ class ROSMPCPlanner:
                 self.publish_steering(control_output, self._mpc_feasible) 
 
             self.extend_decision_variables()
+
         for j in self._trajectory_received:
             self._trajectory_received[j] = False
         self.visualize()
@@ -619,7 +625,7 @@ class ROSMPCPlanner:
 
         plot_slack_distributed(slack_nmpc, slack_ca)
 
-    def all_neighbor_trajectories_received(self):
+    def all_neighbour_trajectories_received(self):
         # Exclude self._idx
         return all(self._trajectory_received[j] for j in range(1, self._number_of_robots + 1) if j != self._idx)
     
@@ -635,7 +641,7 @@ class ROSMPCPlanner:
             self._states_history = []
             return
         states_centralised = np.load(traj_path)
-        print(f"Loaded {len(states_centralised)} states from {traj_path}")
+        # print(f"Loaded {len(states_centralised)} states from {traj_path}")
         return states_centralised
 
     def evaluate_tracking_error(self):
@@ -655,16 +661,15 @@ class ROSMPCPlanner:
             distance = np.linalg.norm(pos_centralised - pos_distributed)
             cumulative_tracking_error_centralised += distance
 
-        rospy.loginfo(f"Cumulative Tracking Error {self._idx} With Centralised: {cumulative_tracking_error_centralised}")
+        print_value(f"Centralised Tracking Error (Agent {self._idx})", cumulative_tracking_error_centralised, True)
 
     def get_contouring_control_errors(self, x, y, s):
         # For normalization
         max_contour = 4.0
         max_lag = 4.0
 
-        path = Spline2D(self._params_nmpc, self._settings["contouring"]["num_segments"], s, self._idx)
-        path_x, path_y = path.at(s)
-        path_dx_normalized, path_dy_normalized = path.deriv_normalized(s)
+        path_x, path_y = self._spline_fitter.evaluate(s)
+        path_dx_normalized, path_dy_normalized = self._spline_fitter.deriv_normalized(s)
 
         contour_error = path_dy_normalized * (x - path_x) - path_dx_normalized * (y - path_y)
         lag_error = path_dx_normalized * (x - path_x) + path_dy_normalized * (y - path_y)
@@ -679,9 +684,12 @@ class ROSMPCPlanner:
             ce, le = self.get_contouring_control_errors(x, y, s)
             contour_errors.append(ce)
             lag_errors.append(le)
-        return np.array(contour_errors), np.array(lag_errors)
+        return np.vstack((contour_errors,lag_errors))
     
     def extend_decision_variables(self):
+        if (not self._ca_feasible or not self._mpc_feasible) or self._nmpc_solution is None:
+            return
+        
         if not hasattr(self, "_nmpc_history"):
             self._nmpc_history = self._nmpc_solution
         else:
@@ -702,11 +710,12 @@ class ROSMPCPlanner:
     def evaluate_total_cost(self):
         """ evaluate total cost with centralised objective"""
         
-        decision_variables = np.vstack((self._contouring_lag_error_array, self._nmpc_history[3], self._nmpc_history[7:9], self._ca_history))
+        decision_variables = np.vstack((self._contouring_lag_error_array, self._nmpc_history[3], self._nmpc_history[7:9], self._ca_history[1:,:]))
         decision_variables[2, :] -= self._weights['reference_velocity']
         weight_vector = (
             [self._weights['contour']] +
             [self._weights['lag']] +
+            [self._weights['velocity']] +
             [self._weights['throttle']] +
             [self._weights['steering']] +
             [self._weights['lambda']] * self._nlam_ca +
@@ -714,10 +723,10 @@ class ROSMPCPlanner:
         )
         weight_matrix = np.diag(weight_vector)
         
-        cost = np.einsum('ij', 'jk', 'ik->k', decision_variables.T, weight_matrix, decision_variables.T)
+        cost = np.einsum('ij, jk, ik->k', decision_variables.T, weight_matrix, decision_variables.T)
         total_cost = np.sum(cost)
 
-        print("Total cost calculated with centralised objective:", total_cost)
+        print_value(f"Total Centralised Cost (Agent {self._idx})", total_cost, True)
 
 
 

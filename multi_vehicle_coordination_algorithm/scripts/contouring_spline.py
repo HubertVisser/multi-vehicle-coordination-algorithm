@@ -13,9 +13,6 @@ class SplineFitter:
         self._splines = []
         self._num_segments = settings["contouring"]["num_segments"]
         self._closest_s = None
-        # rospy.init_node('spline_fitter', anonymous=True)
-        # rospy.Subscriber('/reference_path', Path, self.path_callback)
-        # rospy.spin()
 
     def fit_path(self, path_msg):
         if not path_msg.poses:
@@ -33,14 +30,6 @@ class SplineFitter:
             return
 
         self.fit_splines(self.x, self.y)
-        # print(self.evaluate(0.))
-        # print(self.evaluate(4.))
-        # print(self.evaluate(6.7))
-        # print(self.find_closest_s(np.array([3., 0.])))
-        # splines = self.get_active_splines(np.array([3., 0.]))
-        # print(splines)
-
-        # self.log_splines()
 
     def fit_splines(self, x, y):
         # Clear previous splines
@@ -150,6 +139,17 @@ class SplineFitter:
 
         s_closest = (s_start + s_end) / 2
         return s_closest
+    
+    def deriv_normalized(self, s):
+        """
+        Returns the normalized derivatives dx/ds and dy/ds at path position s.
+        """
+        dx = self.cs_x(s, 1)  # First derivative of x with respect to s
+        dy = self.cs_y(s, 1)  # First derivative of y with respect to s
+        norm = np.sqrt(dx**2 + dy**2)
+        if norm == 0:
+            return 0.0, 0.0
+        return dx / norm, dy / norm
     
 if __name__ == "__main__":
     settings = {}

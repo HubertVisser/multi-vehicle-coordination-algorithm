@@ -44,6 +44,7 @@ class ROSMPCPlanner:
         self._integrator_step = self._settings["integrator_step"]
         self._braking_acceleration = self._settings["braking_acceleration"]
         self._number_of_robots = self._settings["number_of_robots"]
+        self._number_of_calls = self._settings['number_of_calls']
 
         self._verbose = self._settings["verbose"]
         self._debug_visuals = self._settings["debug_visuals"]
@@ -55,8 +56,13 @@ class ROSMPCPlanner:
         self._spline_fitters = {n: SplineFitter(self._settings) for n in range(1, self._number_of_robots + 1)}
 
         self._solver_settings = load_settings(
-            "solver_settings_centralised", package="mpc_planner_solver"
-        )
+            "solver_settings_centralised", 
+            package="mpc_planner_solver"
+            )
+        self._model_map = load_settings(
+            "model_map", 
+            package="mpc_planner_solver"
+            )
 
         # Tied to the solver
         self._params = RealTimeParameters(self._settings, parameter_map_name='parameter_map_centralised' )  # This maps to parameters used in the solver by name
@@ -93,9 +99,9 @@ class ROSMPCPlanner:
         self._enable_output = False
         self._mpc_feasible = True
 
-        self._timer = rospy.Timer(
-            rospy.Duration(1.0 / self._settings["control_frequency"]), self.run
-        )
+        # self._timer = rospy.Timer(
+        #     rospy.Duration(1.0 / self._settings["control_frequency"]), self.run
+        # )
 
         self.initialize_publishers_and_subscribers()
         self._enable_output = True
@@ -174,6 +180,8 @@ class ROSMPCPlanner:
             if self._dart_simulator:
                 self.publish_throttle(output)
                 self.publish_steering(output)
+            
+            self.track_cost()
             
         self.visualize()
         
@@ -272,7 +280,7 @@ class ROSMPCPlanner:
             midpoint = (pos1 + pos2) / 2
             direction_vector = np.array([-s[1], s[0]])
             assert np.dot(direction_vector, np.array(s)) == 0
-            line_length = 100
+            line_length = 1000
             line_start = midpoint - (line_length / 2) * direction_vector
             line_end = midpoint + (line_length / 2) * direction_vector
             pose_a = Pose()
@@ -467,7 +475,7 @@ class ROSMPCPlanner:
         return self._cumulative_tracking_error
     
     def log_tracking_error(self):
-        rospy.loginfo(f"Cumulative Tracking Error: {self._cumulative_tracking_error:.2f}")
+        print_value(f"Tracking Error:", self._cumulative_tracking_error, True)
     
     def plot_slack(self):
 
@@ -482,6 +490,74 @@ class ROSMPCPlanner:
 
         np.save(os.path.join(data_dir, f'1_{self._scenario}_centralised_traj.npy'), centralised_traj_1)
         np.save(os.path.join(data_dir, f'2_{self._scenario}_centralised_traj.npy'), centralised_traj_2)
+    
+    # def get_contouring_control_errors(self, x, y, s):
+    #     # For normalization
+    #     max_contour = 4.0
+    #     max_lag = 4.0
+
+    #     path_x, path_y = self._spline_fitter.evaluate(s)
+    #     path_dx_normalized, path_dy_normalized = self._spline_fitter.deriv_normalized(s)
+
+    #     contour_error = path_dy_normalized * (x - path_x) - path_dx_normalized * (y - path_y)
+    #     lag_error = path_dx_normalized * (x - path_x) + path_dy_normalized * (y - path_y)
+
+    #     return contour_error/max_contour, lag_error/max_lag
+    
+    # def batch_contouring_control_errors(self, arr):
+    #     # arr: shape (3, N), each column is [x, y, s]
+    #     contour_errors = []
+    #     lag_errors = []
+    #     for x, y, s in arr.T:
+    #         ce, le = self.get_contouring_control_errors(x, y, s)
+    #         contour_errors.append(ce)
+    #         lag_errors.append(le)
+    #     return np.vstack((contour_errors,lag_errors))
+    
+    # def extend_decision_variables(self):
+        
+    #     if not hasattr(self, "_trajectory_history"):
+    #         self._trajectory_history = self._trajectory
+    #     else:
+    #         self._trajectory_history = np.hstack((self._trajectory_history, self._trajectory))
+
+    #     arr = np.vstack((self._trajectory[:2,:], self._trajectory[6,:]))
+    #     contouring_lag_error_array = self.batch_contouring_control_errors(arr)
+    #     if not hasattr(self, "_contouring_lag_error_array"):
+    #         self._contouring_lag_error_array = contouring_lag_error_array
+    #     else:
+    #         self._contouring_lag_error_array = np.hstack((self._contouring_lag_error_array, contouring_lag_error_array))
+
+
+    # def evaluate_total_cost(self):
+    #     """ evaluate total cost with centralised objective"""
+        
+    #     decision_variables = np.vstack((self._contouring_lag_error_array, self._nmpc_history[3], self._nmpc_history[7:9], self._ca_history[1:,:]))
+    #     decision_variables[2, :] -= self._weights['reference_velocity']
+    #     weight_vector = (
+    #         [self._weights['contour']] +
+    #         [self._weights['lag']] +
+    #         [self._weights['velocity']] +
+    #         [self._weights['throttle']] +
+    #         [self._weights['steering']] +
+    #         [self._weights['lambda']] * self._nlam_ca +
+    #         [self._weights['s_dual']] * self._ns_dual_ca
+    #     )
+    #     weight_matrix = np.diag(weight_vector)
+        
+    #     cost = np.einsum('ij, jk, ik->k', decision_variables.T, weight_matrix, decision_variables.T)
+    #     total_cost = np.sum(cost)
+
+    #     print_value(f"Total Centralised Cost (Agent {self._idx})", total_cost, True)
+
+    def track_cost(self):
+        if not hasattr(self, "_total_cost"):
+            self._total_cost = self._planner.get_cost_acados()
+        else:
+            self._total_cost += self._planner.get_cost_acados()
+    
+    def print_total_cost(self):
+        print_value('Total Cost', self._total_cost, True)
 
 def run_centralised_algorithm():
     """
@@ -491,18 +567,22 @@ def run_centralised_algorithm():
     rospy.init_node("multi_vehicle_coordination_algorithm", anonymous=False)
 
     mpc = ROSMPCPlanner()
+    rate = rospy.Rate(mpc._settings['control_frequency'])
 
-    while not rospy.is_shutdown():
-        rospy.spin()
-        
+    for _ in range(mpc._number_of_calls):
+        if rospy.is_shutdown():
+            break
+        mpc.run(None)
+        rate.sleep()
+
     # mpc.plot_outputs()
+    mpc.print_stats()
     mpc.plot_states()
     mpc.plot_duals()
-    mpc.plot_distance()
     mpc.plot_trajectory()
     mpc.log_tracking_error()
-    mpc.print_stats()
     mpc.plot_distance()
+    mpc.print_total_cost()
     mpc.save_states()
     # mpc.plot_slack()
 

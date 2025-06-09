@@ -180,7 +180,6 @@ class MPCPlanner:
 
             self.time_tracker.add(solve_time)
 
-            current_time = datetime.now().strftime("%H:%M:%S")
             print_value(f"Current cost (nmpc {self._idx}):", f"{self.get_cost_nmpc():.2f}")
             self._prev_trajectory = self._model_nmpc.get_trajectory(self._solver_nmpc, self._mpc_x_plan, self._mpc_u_plan)
         except AttributeError:
