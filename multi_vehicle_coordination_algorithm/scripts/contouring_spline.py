@@ -150,6 +150,17 @@ class SplineFitter:
 
         s_closest = (s_start + s_end) / 2
         return s_closest
+
+    def deriv_normalized(self, s):
+        """
+        Returns the normalized derivatives dx/ds and dy/ds at path position s.
+        """
+        dx = self.cs_x(s, 1)  # First derivative of x with respect to s
+        dy = self.cs_y(s, 1)  # First derivative of y with respect to s
+        norm = np.sqrt(dx**2 + dy**2)
+        if norm == 0:
+            return 0.0, 0.0
+        return dx / norm, dy / norm
     
 if __name__ == "__main__":
     settings = {}
