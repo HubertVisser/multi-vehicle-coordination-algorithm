@@ -36,6 +36,7 @@ class ROSMPCCoordinator:
         self._integrator_step = self._settings["integrator_step"]
         self._number_of_robots = self._settings["number_of_robots"]
         self._iterations = self._settings['solver_settings']['iterations_distributed']
+        self._number_of_calls = self._settings['number_of_calls']
 
         self._robots = []
         for i in range(1, self._number_of_robots+1):
@@ -47,11 +48,23 @@ class ROSMPCCoordinator:
         self._trajectory_condition = threading.Condition(self._trajectory_lock)
 
         self.time_tracker = TimeTracker(f"Distributed - iterations: {self._iterations} vehicles: {self._number_of_robots}")
-        self._timer = rospy.Timer(
-            rospy.Duration(1.0 / self._settings["control_frequency"]), self.run
-        )
+        # self._timer = rospy.Timer(
+        #     rospy.Duration(1.0 / self._settings["control_frequency"]), self.run
+        # )
 
     def run(self, timer):
+
+        max_attempts = 10
+        attempts = 0
+        while not all(robot._spline_fitter._splines for robot in self._robots) and attempts < max_attempts:
+            rospy.loginfo("Waiting for all robots to fit their path splines... (attempt %d/%d)", attempts + 1, max_attempts)
+            rospy.sleep(0.1)  # Sleep 100ms before checking again
+            attempts += 1
+        if not all(robot._spline_fitter._splines for robot in self._robots):
+            rospy.logwarn("Not all robots have fitted their path splines after %d attempts. Shutting down.", max_attempts)
+            rospy.signal_shutdown("Failed to fit all robot path splines.")
+            return
+            
         nmpc_ca_timer = Timer("NMPC-CA")
 
         # Create a ThreadPoolExecutor for parallel execution
@@ -61,18 +74,28 @@ class ROSMPCCoordinator:
                 nmpc_futures = [
                     executor.submit(robot.run_nmpc, timer, it)
                     for robot in self._robots
-                    if robot._spline_fitter._splines
                 ]
 
                 # Wait for all NMPC tasks to complete
                 for future in nmpc_futures:
                     future.result()  # This will raise any exceptions if they occur
 
+                #--- Wait for all robots to receive neighbour trajectories ---
+                attempts = 0
+                while not all(robot.all_neighbour_trajectories_received() for robot in self._robots) and attempts < max_attempts:
+                    rospy.loginfo("Waiting for all robots to receive neighbour trajectories...(attempt %d/%d)", attempts + 1, max_attempts)
+                    rospy.sleep(0.1)
+                    attempts += 1
+                if not all(robot._spline_fitter._splines for robot in self._robots):
+                    rospy.logwarn("Not all trajectories are received after %d attempts. Shutting down.", max_attempts)
+                    rospy.signal_shutdown("Failed to fit all robot path splines.")
+                    return
+                # -----------------------------------------------------------
+
                 # Run CA for each robot in parallel
                 ca_futures = [
                     executor.submit(robot.run_ca, timer, it)
                     for robot in self._robots
-                    if robot._spline_fitter._splines and robot.all_neighbor_trajectories_received() and robot.all_neighbor_lambdas_received()
                 ]
 
                 # Wait for all CA tasks to complete
@@ -81,20 +104,6 @@ class ROSMPCCoordinator:
 
         self.time_tracker.add(nmpc_ca_timer.stop())
         del nmpc_ca_timer
-        _, _, calls = self.time_tracker.get_stats()
-        print_value("calls", calls)
-        
-
-    # def run_ca_for_all_robots(self, timer):
-    #     with self._trajectory_condition:
-    #         while self._trajectory_counter < self._number_of_robots:
-    #             self._trajectory_condition.wait()
-
-    #         for robot in self._robots:
-    #             if robot._spline_fitter._splines:
-    #                 robot.run_ca(timer)
-
-    #         self._trajectory_counter = 0
 
     def plot_distance(self):
         
@@ -122,20 +131,30 @@ if __name__ == "__main__":
     rospy.init_node("multi_vehicle_coordination_algorithm", anonymous=False)
 
     coordinator = ROSMPCCoordinator()
+    rate = rospy.Rate(coordinator._settings['control_frequency'])
 
-    while not rospy.is_shutdown():
-        rospy.spin()
+    # while not rospy.is_shutdown():
+    #     rospy.spin()
+
+    for _ in range(coordinator._number_of_calls):
+        if rospy.is_shutdown():
+            break
+        coordinator.run(None)
+        rate.sleep()
+
+    coordinator.plot_trajectory()
+    coordinator.time_tracker.print_stats()
+    coordinator.plot_distance()
 
     for robot in coordinator._robots:
         robot.plot_states()
         robot.plot_duals()
-        robot.log_tracking_error()
-        robot.plot_slack()
         robot.evaluate_tracking_error()
+        # robot.log_tracking_error()
+        robot.plot_slack()
+        robot.evaluate_total_cost()
 
-    coordinator.plot_distance()
-    coordinator.plot_trajectory()
-    coordinator.time_tracker.print_stats()
+
     
     
 
