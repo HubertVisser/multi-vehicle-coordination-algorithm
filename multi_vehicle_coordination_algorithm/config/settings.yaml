@@ -1,30 +1,30 @@
 name: "Jetracer"
-scheme: centralised # centralised or distributed
+scheme: distributed # centralised or distributed
 N: 20
 integrator_step: 0.3
-track_choice: t_junction # straight_line, sinus, t_junction, merging
+track_choice: straight_line # straight_line, sinus, t_junction, merging
 dart_simulator: false
-skip_solver_generation: true
+skip_solver_generation: false
 number_of_calls: 60
 
 add_slack: true
 slack_value: 1.0e0
 
-number_of_robots: 2
+number_of_robots: 4
 robot_1:
-  start_x: -3.0
-  start_y: 0.0
+  start_x: -4.0
+  start_y: 2.0
   start_theta: 0.0  # radians
 robot_2:
-  start_x: 0.0
-  start_y: -5.0
-  start_theta: 0.5  # radians
+  start_x: -5.0
+  start_y: -1.0
+  start_theta: 0.0  # radians
 robot_3:
-  start_x: -1.0
+  start_x: -2.0
   start_y: 1.0
   start_theta: 0.0  # radians
 robot_4:
-  start_x: -2.0
+  start_x: -3.0
   start_y: -2.0
   start_theta: 0.0  # radians
 

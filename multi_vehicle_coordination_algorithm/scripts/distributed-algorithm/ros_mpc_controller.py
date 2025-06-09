@@ -55,13 +55,22 @@ class ROSMPCPlanner:
         self._planner = MPCPlanner(self._settings, idx)
         self._spline_fitter = SplineFitter(self._settings)
 
-        self._solver_settings_nmpc = load_settings(f"solver_settings_nmpc_{self._idx}", package="mpc_planner_solver")
-        self._solver_settings_ca = load_settings(f"solver_settings_ca_{self._idx}", package="mpc_planner_solver")
-        self._model_maps_ca = {n: load_model(f"model_map_ca_{n}", package="mpc_planner_solver") for n in range(1, self._number_of_robots + 1)}
+        while True:
+            try:
+                self._solver_settings_nmpc = load_settings(f"solver_settings_nmpc_{self._idx}", package="mpc_planner_solver")
+                self._solver_settings_ca = load_settings(f"solver_settings_ca_{self._idx}", package="mpc_planner_solver")
+                self._model_maps_ca = {n: load_model(f"model_map_ca_{n}", package="mpc_planner_solver") for n in range(1, self._number_of_robots + 1)}
+
+                self._params_nmpc = RealTimeParameters(self._settings, parameter_map_name=f"parameter_map_nmpc_{idx}")  
+                self._params_ca = RealTimeParameters(self._settings, parameter_map_name=f"parameter_map_ca_{idx}")  
+
+                break  # Success, exit loop
+            except Exception as e:
+                rospy.logwarn(f"Failed to load settings or models: {e}. Retrying...")
+                rospy.sleep(0.5)  # Wait before retrying
 
         # Tied to the solver
-        self._params_nmpc = RealTimeParameters(self._settings, parameter_map_name=f"parameter_map_nmpc_{idx}")  
-        self._params_ca = RealTimeParameters(self._settings, parameter_map_name=f"parameter_map_ca_{idx}")  
+        
         self._weights = self._settings["weights"]
 
         self._nx_nmpc = self._solver_settings_nmpc["nx"]
