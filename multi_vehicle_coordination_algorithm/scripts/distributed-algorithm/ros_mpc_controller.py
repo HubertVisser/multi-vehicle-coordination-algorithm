@@ -55,19 +55,12 @@ class ROSMPCPlanner:
         self._planner = MPCPlanner(self._settings, idx)
         self._spline_fitter = SplineFitter(self._settings)
 
-        while True:
-            try:
-                self._solver_settings_nmpc = load_settings(f"solver_settings_nmpc_{self._idx}", package="mpc_planner_solver")
-                self._solver_settings_ca = load_settings(f"solver_settings_ca_{self._idx}", package="mpc_planner_solver")
-                self._model_maps_ca = {n: load_model(f"model_map_ca_{n}", package="mpc_planner_solver") for n in range(1, self._number_of_robots + 1)}
+        self._solver_settings_nmpc = load_settings(f"solver_settings_nmpc_{self._idx}", package="mpc_planner_solver")
+        self._solver_settings_ca = load_settings(f"solver_settings_ca_{self._idx}", package="mpc_planner_solver")
+        self._model_maps_ca = {n: load_model(f"model_map_ca_{n}", package="mpc_planner_solver") for n in range(1, self._number_of_robots + 1)}
 
-                self._params_nmpc = RealTimeParameters(self._settings, parameter_map_name=f"parameter_map_nmpc_{idx}")  
-                self._params_ca = RealTimeParameters(self._settings, parameter_map_name=f"parameter_map_ca_{idx}")  
-
-                break  # Success, exit loop
-            except Exception as e:
-                rospy.logwarn(f"Failed to load settings or models: {e}. Retrying...")
-                rospy.sleep(0.5)  # Wait before retrying
+        self._params_nmpc = RealTimeParameters(self._settings, parameter_map_name=f"parameter_map_nmpc_{idx}")  
+        self._params_ca = RealTimeParameters(self._settings, parameter_map_name=f"parameter_map_ca_{idx}")  
 
         # Tied to the solver
         
@@ -118,6 +111,7 @@ class ROSMPCPlanner:
 
         self._callbacks_enabled = False
         self.initialize_publishers_and_subscribers()
+        self._path_ready_event = threading.Event()
         self._callbacks_enabled = True
         self._enable_output = True
 
@@ -130,7 +124,7 @@ class ROSMPCPlanner:
 
         # Subscriber path generator
         self._path_sub = rospy.Subscriber(f"roadmap/reference_{self._idx}", Path, lambda msg: self.path_callback(msg), queue_size=1)
-        
+
         for j in range(1, self._number_of_robots+1):
             setattr(self, f'_traj_{j}_sub', rospy.Subscriber(f"trajectory_{j}", Path, self.trajectory_callback, callback_args=j))
             
@@ -456,6 +450,7 @@ class ROSMPCPlanner:
         self.visualize_seperating_hyperplane()
         self.visualize_debug_visuals()
         self.visualize_trajectory()
+        plot_path(self)
 
     def visualize_robot_position(self):
         if self._state_msg is None:
@@ -575,6 +570,7 @@ class ROSMPCPlanner:
         self._spline_fitter.fit_path(msg)
         # plot_splines(self._spline_fitter._splines)
         plot_path(self)
+        self._path_ready_event.set()
 
     def trajectory_callback(self, traj_msg, j):
 
@@ -583,7 +579,6 @@ class ROSMPCPlanner:
             return
         if j == self._idx:
             return
-        
         
         for k, pose in enumerate(traj_msg.poses):
             self._trajectories[j][0, k] = pose.pose.position.x

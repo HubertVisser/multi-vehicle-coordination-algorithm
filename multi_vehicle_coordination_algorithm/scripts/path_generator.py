@@ -150,5 +150,5 @@ if __name__ == '__main__':
     
     rospy.init_node('path_publisher')
     path_generator = PathGenerator()
-    path_generator.plot_reference_paths()
+    # path_generator.plot_reference_paths()
 

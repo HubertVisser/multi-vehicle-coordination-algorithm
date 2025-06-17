@@ -43,6 +43,10 @@ class ROSMPCCoordinator:
             robot = ROSMPCPlanner(i, self._settings)
             self._robots.append(robot)
 
+            rospy.loginfo(f"Waiting for path {i} to be received and plotted...")
+            robot._path_ready_event.wait()
+            rospy.loginfo(f"Path {i} received and plotted. Starting controller.")
+
         self._trajectory_counter = 0
         self._trajectory_lock = threading.Lock()
         self._trajectory_condition = threading.Condition(self._trajectory_lock)

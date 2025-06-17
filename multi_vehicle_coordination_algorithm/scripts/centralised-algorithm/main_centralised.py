@@ -72,6 +72,8 @@ class ROSMPCPlanner:
         self._nu = self._solver_settings["nu"]
         self._nx_one_robot = self._nx // self._number_of_robots
         self._nu_one_robot = self._nu // self._number_of_robots
+        self._ns_dual = self._solver_settings["ns_dual"]
+        self._nlam = self._solver_settings["nlam"]
 
         self._state = np.zeros((self._nx,))
         for n in range(1, self._number_of_robots+1):
@@ -181,7 +183,8 @@ class ROSMPCPlanner:
                 self.publish_throttle(output)
                 self.publish_steering(output)
             
-            self.track_cost()
+            # self.track_cost()
+            self.extend_decision_variables()
             
         self.visualize()
         
@@ -250,7 +253,9 @@ class ROSMPCPlanner:
             self.visualize_seperating_hyperplanes(n)
             self.visualize_debug(n)
             self.visualize_predicted_trajectory(n)
+
         self._visuals.publish()
+        self.plot_path()
 
     def visualize_robot_position(self, n):
         state_msg = self._state_msgs[n]
@@ -491,73 +496,82 @@ class ROSMPCPlanner:
         np.save(os.path.join(data_dir, f'1_{self._scenario}_centralised_traj.npy'), centralised_traj_1)
         np.save(os.path.join(data_dir, f'2_{self._scenario}_centralised_traj.npy'), centralised_traj_2)
     
-    # def get_contouring_control_errors(self, x, y, s):
-    #     # For normalization
-    #     max_contour = 4.0
-    #     max_lag = 4.0
+    def get_contouring_control_errors(self, x, y, s, idx):
+        # For normalization
+        max_contour = 4.0
+        max_lag = 4.0
 
-    #     path_x, path_y = self._spline_fitter.evaluate(s)
-    #     path_dx_normalized, path_dy_normalized = self._spline_fitter.deriv_normalized(s)
+        path_x, path_y = self._spline_fitters[idx].evaluate(s)
+        path_dx_normalized, path_dy_normalized = self._spline_fitters[idx].deriv_normalized(s)
 
-    #     contour_error = path_dy_normalized * (x - path_x) - path_dx_normalized * (y - path_y)
-    #     lag_error = path_dx_normalized * (x - path_x) + path_dy_normalized * (y - path_y)
+        contour_error = path_dy_normalized * (x - path_x) - path_dx_normalized * (y - path_y)
+        lag_error = path_dx_normalized * (x - path_x) + path_dy_normalized * (y - path_y)
 
-    #     return contour_error/max_contour, lag_error/max_lag
+        return contour_error/max_contour, lag_error/max_lag
     
-    # def batch_contouring_control_errors(self, arr):
-    #     # arr: shape (3, N), each column is [x, y, s]
-    #     contour_errors = []
-    #     lag_errors = []
-    #     for x, y, s in arr.T:
-    #         ce, le = self.get_contouring_control_errors(x, y, s)
-    #         contour_errors.append(ce)
-    #         lag_errors.append(le)
-    #     return np.vstack((contour_errors,lag_errors))
+    def batch_contouring_control_errors(self, arr, idx):
+        # arr: shape (3, N), each column is [x, y, s]
+        contour_errors = []
+        lag_errors = []
+        for x, y, s in arr.T:
+            ce, le = self.get_contouring_control_errors(x, y, s, idx)
+            contour_errors.append(ce)
+            lag_errors.append(le)
+        return np.vstack((contour_errors,lag_errors))
     
-    # def extend_decision_variables(self):
+    def extend_decision_variables(self):
         
-    #     if not hasattr(self, "_trajectory_history"):
-    #         self._trajectory_history = self._trajectory
-    #     else:
-    #         self._trajectory_history = np.hstack((self._trajectory_history, self._trajectory))
-
-    #     arr = np.vstack((self._trajectory[:2,:], self._trajectory[6,:]))
-    #     contouring_lag_error_array = self.batch_contouring_control_errors(arr)
-    #     if not hasattr(self, "_contouring_lag_error_array"):
-    #         self._contouring_lag_error_array = contouring_lag_error_array
-    #     else:
-    #         self._contouring_lag_error_array = np.hstack((self._contouring_lag_error_array, contouring_lag_error_array))
-
-
-    # def evaluate_total_cost(self):
-    #     """ evaluate total cost with centralised objective"""
-        
-    #     decision_variables = np.vstack((self._contouring_lag_error_array, self._nmpc_history[3], self._nmpc_history[7:9], self._ca_history[1:,:]))
-    #     decision_variables[2, :] -= self._weights['reference_velocity']
-    #     weight_vector = (
-    #         [self._weights['contour']] +
-    #         [self._weights['lag']] +
-    #         [self._weights['velocity']] +
-    #         [self._weights['throttle']] +
-    #         [self._weights['steering']] +
-    #         [self._weights['lambda']] * self._nlam_ca +
-    #         [self._weights['s_dual']] * self._ns_dual_ca
-    #     )
-    #     weight_matrix = np.diag(weight_vector)
-        
-    #     cost = np.einsum('ij, jk, ik->k', decision_variables.T, weight_matrix, decision_variables.T)
-    #     total_cost = np.sum(cost)
-
-    #     print_value(f"Total Centralised Cost (Agent {self._idx})", total_cost, True)
-
-    def track_cost(self):
-        if not hasattr(self, "_total_cost"):
-            self._total_cost = self._planner.get_cost_acados()
+        if not hasattr(self, "_trajectory_history"):
+            self._trajectory_history = self._trajectory
         else:
-            self._total_cost += self._planner.get_cost_acados()
+            self._trajectory_history = np.hstack((self._trajectory_history, self._trajectory))
+
+        arr1 = np.vstack((self._trajectory[:2,:], self._trajectory[6,:]))
+        arr2 = np.vstack((self._trajectory[7:9,:], self._trajectory[13,:]))
+       
+        contouring_lag_error_array1 = self.batch_contouring_control_errors(arr1, idx=1)
+        contouring_lag_error_array2 = self.batch_contouring_control_errors(arr2, idx=2)
+        if not hasattr(self, "_contouring_lag_error_array1"):
+            self._contouring_lag_error_array1 = contouring_lag_error_array1
+            self._contouring_lag_error_array2 = contouring_lag_error_array2
+        else:
+            self._contouring_lag_error_array1 = np.hstack((self._contouring_lag_error_array1, contouring_lag_error_array1))
+            self._contouring_lag_error_array2 = np.hstack((self._contouring_lag_error_array2, contouring_lag_error_array2))
+
+
+    def evaluate_total_cost(self):
+        """ evaluate total cost with centralised objective"""
+        # Vstack the contouring errors, vx's, dual variables
+        decision_variables = np.vstack((self._contouring_lag_error_array1, self._contouring_lag_error_array2, self._trajectory_history[3], self._trajectory_history[10], self._trajectory_history[14:]))
+        decision_variables[4:6, :] -= self._weights['reference_velocity']
+        weight_vector = (
+            [self._weights['contour']] +
+            [self._weights['lag']] +
+            [self._weights['contour']] +
+            [self._weights['lag']] +
+            [self._weights['velocity']] * 2 +
+            [self._weights['throttle']] +
+            [self._weights['steering']] +
+            [self._weights['throttle']] +
+            [self._weights['steering']] +
+            [self._weights['s_dual']] * self._ns_dual +
+            [self._weights['lambda']] * self._nlam 
+        )
+        weight_matrix = np.diag(weight_vector)
+        
+        cost = np.einsum('ij, jk, ik->k', decision_variables.T, weight_matrix, decision_variables.T)
+        total_cost = np.sum(cost)
+
+        print_value(f"Total Centralised Cost", total_cost, True)
+
+    # def track_cost(self):
+    #     if not hasattr(self, "_total_cost"):
+    #         self._total_cost = self._planner.get_cost_acados()
+    #     else:
+    #         self._total_cost += self._planner.get_cost_acados()
     
-    def print_total_cost(self):
-        print_value('Total Cost', self._total_cost, True)
+    # def print_total_cost(self):
+    #     print_value('Total Cost', self._total_cost, True)
 
 def run_centralised_algorithm():
     """
@@ -582,9 +596,9 @@ def run_centralised_algorithm():
     mpc.plot_trajectory()
     mpc.log_tracking_error()
     mpc.plot_distance()
-    mpc.print_total_cost()
     mpc.save_states()
     # mpc.plot_slack()
+    mpc.evaluate_total_cost()
 
 if __name__ == "__main__":
     run_centralised_algorithm()
