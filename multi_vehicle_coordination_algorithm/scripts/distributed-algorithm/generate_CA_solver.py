@@ -34,9 +34,9 @@ def configuration_basic(settings, idx):
     # Penalize ||steering||_2^2
     base_module = modules.add_module(MPCBaseModule(settings))
     for i in range(1, num_robots+1):
-        if i != idx:
-            base_module.weigh_variable(var_name=f"s_{idx}_{i}_0", weight_names="s_dual",)
-            base_module.weigh_variable(var_name=f"s_{idx}_{i}_1", weight_names="s_dual",)
+        # if i != idx:
+        #     base_module.weigh_variable(var_name=f"s_{idx}_{i}_0", weight_names="s_dual",)
+        #     base_module.weigh_variable(var_name=f"s_{idx}_{i}_1", weight_names="s_dual",)
         for j in range(1, num_robots+1):
             if j == i or (j != idx and i != idx):
                 continue

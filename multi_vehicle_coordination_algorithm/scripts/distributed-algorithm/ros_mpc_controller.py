@@ -441,6 +441,7 @@ class ROSMPCPlanner:
         self.visualize_seperating_hyperplane()
         self.visualize_debug_visuals()
         self.visualize_trajectory()
+        plot_path(self)
 
     def visualize_robot_position(self):
         if self._state_msg is None:
