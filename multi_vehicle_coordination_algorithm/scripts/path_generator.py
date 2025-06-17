@@ -132,14 +132,23 @@ class PathGenerator:
             pub.publish(path)
         rospy.loginfo("Paths published")
 
+    def plot_reference_paths(self):
+        self.generate_path_msg()
+        for i in range(1, self.num_robot + 1):
+            path = self.robots[i]["path"]
+            xs = [pose.pose.position.x for pose in path.poses]
+            ys = [pose.pose.position.y for pose in path.poses]
+            plt.plot(xs, ys, label=f"Robot {i} reference")
+        plt.xlabel("x")
+        plt.ylabel("y")
+        plt.legend()
+        plt.title("Reference Paths")
+        plt.show()
+
+
 if __name__ == '__main__':
+    
     rospy.init_node('path_publisher')
     path_generator = PathGenerator()
+    path_generator.plot_reference_paths()
 
-    # choice = 't_junction'
-    # start_x = [-4, 0]
-    # start_y = [0, -4]
-    # raw_track = raw_track(choice, start_x, start_y, positive_track=False)
-    # plt.plot(raw_track[0], raw_track[1])
-    # plt.plot(raw_track[2], raw_track[3])
-    # plt.show()
