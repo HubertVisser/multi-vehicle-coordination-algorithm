@@ -2,10 +2,10 @@ name: "Jetracer"
 scheme: distributed # centralised or distributed
 N: 20
 integrator_step: 0.3
-track_choice: t_junction # straight_line, sinus, t_junction, merging
+track_choice: straight_line # straight_line, sinus, t_junction
 dart_simulator: false
-skip_solver_generation: true
-number_of_calls: 50
+skip_solver_generation: false
+number_of_calls: 60
 
 add_slack: true
 slack_value: 1.0e0
@@ -13,18 +13,18 @@ slack_value: 1.0e0
 number_of_robots: 2
 robot_1:
   start_x: -5.0
-  start_y: 0.0
+  start_y: 1.0
   start_theta: 0.0  # radians
 robot_2:
-  start_x: 0.0
-  start_y: -2.1
-  start_theta: 0.5  # radians
+  start_x: -4.0
+  start_y: -1.0
+  start_theta: 0.0  # radians
 robot_3:
-  start_x: -2.0
+  start_x: -1.0
   start_y: 1.0
   start_theta: 0.0  # radians
 robot_4:
-  start_x: -3.0
+  start_x: -2.0
   start_y: -2.0
   start_theta: 0.0  # radians
 
@@ -40,24 +40,21 @@ control_frequency: 5.0
 braking_acceleration: 0.4
 
 polytopic:
-  d_min: 0.2
-  length: 0.5
-  width: 0.5
+  d_min: 0.1
+  length: .5
+  width: .5
 
 contouring:
   num_segments: 5
   use_huber: false
 
 weights:
-  throttle: 0.1
-  steering: 0.1
-  lambda: 0.1
-  s_dual: 0.1
-  dmin_objective: 0.1
+  throttle: .1
+  steering: .1
+  lambda: 0.1  # centralised very sensitive on this weight
+  s_dual: 0.1   # centralised very sensitive on this weight
+  dmin_objective: .1
   velocity: 0.6
   reference_velocity: 0.5
-  lag: 0.2
+  lag: 0.7
   contour: 0.7
-  terminal_angle: 1.0 #0.0
-  terminal_contour: 1.0 # 0.0
-  terminal_lag: 1.0 # 0.0
