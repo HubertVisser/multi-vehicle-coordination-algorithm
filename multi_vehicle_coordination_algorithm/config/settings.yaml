@@ -5,7 +5,7 @@ integrator_step: 0.3
 track_choice: straight_line # straight_line, sinus, t_junction
 dart_simulator: false
 skip_solver_generation: false
-number_of_calls: 60
+number_of_calls: 50
 
 add_slack: true
 slack_value: 1.0e0
