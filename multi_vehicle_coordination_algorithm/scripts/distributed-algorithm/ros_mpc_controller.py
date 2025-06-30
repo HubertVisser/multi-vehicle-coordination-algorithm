@@ -107,7 +107,6 @@ class ROSMPCPlanner:
         self._enable_output = False
         self._mpc_feasible = True
         self._ca_feasible = True
-        self._r= 0
 
         self._callbacks_enabled = False
         self.initialize_publishers_and_subscribers()
@@ -143,11 +142,6 @@ class ROSMPCPlanner:
             return
         
         self.set_nmpc_parameters()
-        # self._params.check_for_nan()
-        
-        # if it == self._iterations:
-        #     self._params_nmpc.write_to_file(f"params_output_multi_vehicle_nmpc_{self._idx}_call_{self._r}.txt")
-        #     self._r += 1
 
         if self._verbose and self._idx == 1:
             print(f"---- Params For Agent {self._idx} ----")
@@ -157,7 +151,6 @@ class ROSMPCPlanner:
         output, self._mpc_feasible, self._nmpc_solution = self._planner.solve_nmpc(self._state, self._params_nmpc.get_solver_params())
         
         del mpc_timer
-
 
         if self._mpc_feasible:
             self.publish_trajectory(self._nmpc_solution)
@@ -186,7 +179,6 @@ class ROSMPCPlanner:
         # self._params.print()
         # self._params.check_for_nan()
 
-        # self._params_ca.print() if self._idx == 2 else None
         ca_timer = Timer("CA")
         output, self._ca_feasible, self._ca_solution = self._planner.solve_ca(self._params_ca.get_solver_params())
         del ca_timer
