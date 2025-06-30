@@ -15,8 +15,6 @@ __pycache__/
 poetry.lock
 
 # Virtual environment
-.dmpc-venv/
-dmpc-venv/
 .venv/
 venv/
 

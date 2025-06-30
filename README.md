@@ -1,24 +1,32 @@
-[![Test Solver Generation Package](https://github.com/oscardegroot/mpc_planner/actions/workflows/main.yml/badge.svg)](https://github.com/oscardegroot/mpc_planner/actions/workflows/main.yml)
-![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/oscardegroot/8356b652d94441ec2318b597dcf4680d/raw/test.json)
+# Distributed Multi-Vehicle Coordination Algorithm
 
+This repository implements a **Distributed Multi-Vehicle Coordination Algorithm** for cooperative motion planning in merging and t-junction scenarios. Each vehicle runs a nonlinear MPC (NMPC) with contouring control optimization and a collision avoidance (CA) optimization per iteration. The optimizations are solved using the open-source [ACADOS](https://github.com/acados/acados) software. The controller can be run in closed-loop with the [DART simulator](https://github.com/Lorenzo-Lyons/DART.git).
 
-<!-- # robot-Agnostic Trajectory Optimization (ATO) -->
-# MPC Planner
-This package implements robot agnostic Model Predictive Control (MPC) for motion planning in dynamic environments in ROS1/ROS2 C++.
+---
 
-If you find this repository useful for your research, please consider citing one of the papers below:
+## Features
 
-**Related Publications:**
+- Distributed and centralized cooperative motion planning
+- Nonlinear MPC with contouring control and collision avoidance
+- Configurable scenarios (merging, t-junction, etc.)
+- Integration with DART simulator for closed-loop testing
+- Visualization in RViz
+- Docker support for easy setup
 
-- **Topology-Driven Model Predictive Control (T-MPC)** O. de Groot, L. Ferranti, D. Gavrila, and J. Alonso-Mora, “Topology-Driven Parallel Trajectory Optimization in Dynamic Environments.” arXiv, Jan. 11, 2024. [Online]. Available: http://arxiv.org/abs/2401.06021
-- **Safe Horizon Model Predictive Control (SH-MPC)** O. de Groot, L. Ferranti, D. Gavrila, and J. Alonso-Mora, “Scenario-Based Motion Planning with Bounded Probability of Collision.” arXiv, Jul. 03, 2023. [Online]. Available: https://arxiv.org/pdf/2307.01070.pdf
-- **Scenario-based Model Predictive Contouring Control (S-MPCC)** O. de Groot, B. Brito, L. Ferranti, D. Gavrila, and J. Alonso-Mora, “Scenario-Based Trajectory Optimization in Uncertain Dynamic Environments,” IEEE RA-L, pp. 5389–5396, 2021.
+---
 
+## Installation
 
+### Prerequisites
 
+- **ROS1** (Noetic recommended).  
+  Alternatively, use the provided Docker setup (see [docker-files](docker-files/)).
+- **ACADOS**: See below for installation instructions.
+- Python dependencies: see [`pyproject.toml`](pyproject.toml).
 
-## Installation (Acados)
-In any folder, clone and build Acados:
+### Install ACADOS
+
+See the [README section](README.md) or run:
 
 ```bash
 git clone https://github.com/acados/acados.git
@@ -30,173 +38,171 @@ cmake -DACADOS_WITH_QPOASES=ON -DACADOS_SILENT=ON ..
 make install -j4
 ```
 
-In `~/.bashrc` add environment variables:
+Add to your `~/.bashrc`:
 
 ```bash
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:<path_to_acados>/lib"
 export ACADOS_SOURCE_DIR="<path_to_acados>"
 ```
 
-In `<catkin_ws>/src/mpc_planner`, set up the poetry environment:
+
+**Note:** The Dockerfile already includes installation of ACADOS, so no manual installation is required when using the Docker image.
+
+### Install Python Dependencies
+
+
+**Note:** All Python dependencies are managed via `pyproject.toml` and installed with `poetry install`.
 
 ```bash
 poetry install
 ```
 
-Then generate a solver (e.g., for `jackalsimulator`)
+Or, using pip and requirements.txt:
 
 ```bash
-poetry run python mpc_planner_jackalsimulator/scripts/generate_jackalsimulator_solver.py
+python3 -m venv .venv --system-site-packages
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
+### ROS Workspace Setup
 
-
-## Installation (Solver Generation)
-The NMPC solver is generated with Forces Pro. For now it is assumed that your Forces directory is placed at `~/forces_pro_client/`. A poetry environment is provided with the solver generation. The environment requires `python 3.8.10`. We recommend to install this version with `pyenv`.
-
-<!-- <details> -->
-<!-- <summary>Safely installing Python 3.8.10</summary> -->
-You can use `pyenv` to safely install the required Python version. Install pyenv with
-
-```
-curl https://pyenv.run | bash
-```
-
-
-Add the following to ~/.bashrc:
+- Clone this repository into your ROS workspace's `src/` directory.
+- Clone [dart_simulator_pkg](https://github.com/Lorenzo-Lyons/DART.git) into `src/`.
+- Build the workspace:
 
 ```bash
-export PYENV_ROOT="$HOME/.pyenv"
-[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
+catkin_make
+source devel/setup.bash
 ```
 
-Install pyenv system dependencies:
-```
-sudo apt update; sudo apt install build-essential libssl-dev zlib1g-dev \
-libbz2-dev libreadline-dev libsqlite3-dev curl \
-libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
-```
+- Install additional ROS packages as needed, e.g.:
+  ```bash
+  sudo apt-get install ros-noetic-robot-localization
+  ```
 
-Then install python3.8.10 and activate it, before installing the `poetry` environment. In some cases installing with `pyenv local 3.8.10` may work, but in general `pyenv global 3.8.10` is necessary.
+---
 
-```
-pyenv install 3.8.10
-pyenv global 3.8.10
-```
+## Docker Usage
 
-To setup the virtual environment run:
+Docker support is provided for easy setup and reproducibility.  
+See [`docker-files/`](docker-files/) for:
+
+- [`dmpc_container.Dockerfile`](docker-files/dmpc_container.Dockerfile): The main Dockerfile for the DMPC planner environment.
+- [`docker-compose.yml`](docker-files/docker-compose.yml): Example setup for running the planner and a noVNC server for graphical output.
+
+### Build and Run with Docker
 
 ```bash
-pip3 install poetry
-poetry install --no-root
+cd docker-files
+docker build -f dmpc_container.Dockerfile -t dmpc_planner:latest ..
+docker-compose up
 ```
 
+- The `novnc` service exposes a web-based desktop at [http://localhost:8080](http://localhost:8080) for RViz and GUI tools.
 
-To generate a solver for your system (e.g., `jackal`), run
+A pre-built Docker image is available at:
+hubertvisser/multi_vehicle_coordination_algorithm:latest
+
+You can pull and run it directly:
 
 ```bash
-poetry run python mpc_planner_jackal/scripts/generate_jackal_solver.py
+docker pull hubertvisser/multi_vehicle_coordination_algorithm:latest
+docker run --rm -it hubertvisser/multi_vehicle_coordination_algorithm:latest
 ```
+---
 
-## Installation (Planning)
-Install basic dependencies:
+## Usage
 
-```bash
-sudo apt-get install libeigen3-dev pkg-config libomp-dev yaml-cpp clang
-```
+1. **Configure the scenario and hyperparameters**  
+   Edit [`multi_vehicle_coordination_algorithm/config/settings.yaml`](multi_vehicle_coordination_algorithm/config/settings.yaml) to set:
+   - Scenario (track_choice)
+   - Number of vehicles
+   - Horizon, weights, open/closed-loop, etc.
+   - Centralized or distributed mode
+   - Number of control steps (iterations)
 
-In your `catkin_ws/src` directory:
+2. **Select algorithm (centralized/distributed)**  
+   The launch wrapper (`multi_vehicle_coordination_algorithm/launch_wrapper.py`) will select the correct launch file based on your settings.
 
-```bash
-git clone https://github.com/asr-ros/asr_rapidxml.git
-```
+3. **Run the algorithm**  
+   After building and sourcing your workspace, launch with:
 
-To install other dependencies, run:
+   ```bash
+   roslaunch multi_vehicle_coordination_algorithm multi_vehicle_coordination_algorithm.launch
+   ```
 
-```bash
-rosdep install --from-paths src --ignore-src -r -y
-```
+   The online trajectories will be shown in RViz.
 
-<details>
-<summary>Ignoring a system</summary>
-To ignore a system you do not care about use:
+4. **Docker Usage**  
+   See above for Docker instructions. For graphical output, you can use the provided noVNC setup.
 
-```bash
-rosdep install --from-paths src --ignore-src -r -y --skip-keys="mpc_planner_jackal"
-```
-</details>
+5. **Results**  
+   After the specified number of control steps, the simulation stops and results (trajectories, plots, etc.) are saved in:
+   ```
+   multi_vehicle_coordination_algorithm/scripts/{centralised-algorithm|distributed-algorithm}/plots/
+   ```
+### Example RViz Output
 
+<table>
+  <tr>
+    <th>Merging Centralised</th>
+    <th>Merging Distributed</th>
+  </tr>
+  <tr>
+    <td><img src="docs/merging_centralised.gif" width="400"/></td>
+    <td><img src="docs/merging_distributed.gif" width="400"/></td>
+  </tr>
+</table>
 
+<table>
+  <tr>
+    <th>T-junction Centralised</th>
+    <th>T-junction Distributed</th>
+  </tr>
+  <tr>
+    <td><img src="docs/t_junction_centralised.gif" width="400"/></td>
+    <td><img src="docs/t_junction_distributed.gif" width="400"/></td>
+  </tr>
+</table>
 
-Build the repository (`source devel/setup.sh`):
+---
 
-```bash
-catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
-catkin build mpc_planner-<system>
-```
-## Building gpt-navigation
-```
-catkin build mpc_planner_standalone guidance_planner mpc_planner_py hey_robot jackal_socialsim rviz_camera_stream -DCMAKE_BUILD_TYPE="Release"
-```
+## Project Structure
 
-## Running
-Each system should define its own launch files to launch requirements and this planning node. For example:
+- `multi_vehicle_coordination_algorithm/scripts/centralised-algorithm/`  
+  Centralized controller scripts
+- `multi_vehicle_coordination_algorithm/scripts/distributed-algorithm/`  
+  Distributed controller scripts
+- [`mpc_planner_modules`](mpc_planner_modules/)  
+  Helper modules for MPC and constraints
+- [`mpc_planner_msgs`](mpc_planner_msgs/)  
+  Custom ROS messages
+- [`solver_generator`](solver_generator/)  
+  Solver/model generation utilities
+- [`multi_vehicle_coordination_algorithm/config/settings.yaml`](multi_vehicle_coordination_algorithm/config/settings.yaml)  
+  Main configuration file
+- [`docker-files/`](docker-files/)  
+  Dockerfile and docker-compose for containerized setup
 
-```bash
-roslaunch mpc_planner_jackal jackalsimulator.launch
-```
+---
 
-<details>
-<summary>Example Launch File</summary>
-Example launch file for the jackal:
+## Configuration
 
-```xml
-  <rosparam command="load" file="$(find mpc_planner_jackal)/config/guidance_planner.yaml"/>
-  <node pkg="mpc_planner_jackal" type="jackal_planner" name="jackal_planner" respawn="false" output="screen">
-        <remap from="/input/state" to="robot_state"/>
-        <remap from="/input/goal" to="/goal_pose"/>
-        <remap from="/input/reference_path" to="roadmap/reference"/>
-        <remap from="/input/obstacles" to="/pedestrian_simulator/trajectory_predictions"/>
-        <remap from="/output/command" to="/cmd_vel"/>
-  </node>
-```
-</details>
+All main settings are in [`multi_vehicle_coordination_algorithm/config/settings.yaml`](multi_vehicle_coordination_algorithm/config/settings.yaml).
 
+---
 
+## Special Notes
 
-**Example Output:**
+- **Currently, only 2 vehicles are fully supported.**  
+  Support for more vehicles is under development.
+- **Algorithm variants:**  
+  - DMPC-RCA and centralized algorithms are in the default `main` branch.
+  - The consensus algorithm (DMPC-RCA-C) is in the `lambda_consensu_algorithm` branch.
 
-<img src="docs/jackalsimulator.gif" width="400" />
+---
 
+## Contact
 
-## Adding your system
-See the `jackal` system for an example (best to copy that package and replace all occurences of `jackal` with your robot name):
-
-- **Solver Generation:** [mpc_planner_jackal/scripts/generate_jackal_solver.py](./mpc_planner_jackal/scripts/generate_jackal_solver.py)
-
-- **ROS1 Controller:** [mpc_planner_jackal/src/ros1_planner.cpp](./mpc_planner_jackal/src/ros1_planner.cpp)
-
-- **ROS2 Controller:** [mpc_planner_jackal/src/ros2_planner.cpp](./mpc_planner_jackal/src/ros2_planner.cpp)
-
-
-For current systems, check the individual `README.md`.
-
-## ROS Compatibility
-This package supports `ROS1` and `ROS2`. A script is provided to switch `CMakelists.txt` and `package.xml` files for the respective version. To switch to `ROS2`, use:
-
-```
-poetry run python switch_to_ros.py 2
-```
-
-Note:
-
-- Changes to `CMakelists.txt` and `package.xml` are saved first to the respective files ending with `1` or `2`.
-- The system level packages, e.g., `mpc_planner_jackal` still do need different control files for `ROS1` and `ROS2`, but both versions can be available in one repository.
-
-## Selecting a single system
-You can disable requirements for other packages by running:
-
-```
-python3 select_system.py mpc_planner_jackal
-```
+For questions or contributions, please contact [Hubert Visser](mailto:hubertvisser@icloud.com)

@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "dmpc_planner"
+name = "multi_vehicle_coordination_algorithm"
 version = "0.1.0"
 description = ""
-authors = ["oscardegroot <groot.oscar.de@gmail.com>"]
+authors = ["hubertvisser <hubertvisser@icloud.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
